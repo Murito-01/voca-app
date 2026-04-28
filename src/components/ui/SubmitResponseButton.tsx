@@ -41,7 +41,7 @@ export default function SubmitResponseButton() {
           type="text" 
           value={userId}
           onChange={e => setUserId(e.target.value)}
-          className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-shadow"
+          className="border border-gray-300 rounded-md px-3 py-2 text-sm text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-shadow"
           placeholder="Enter user UUID"
         />
       </div>
@@ -52,7 +52,7 @@ export default function SubmitResponseButton() {
           type="text" 
           value={surveyId}
           onChange={e => setSurveyId(e.target.value)}
-          className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-shadow"
+          className="border border-gray-300 rounded-md px-3 py-2 text-sm text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-shadow"
           placeholder="Enter survey UUID"
         />
       </div>
@@ -63,7 +63,7 @@ export default function SubmitResponseButton() {
           type="number" 
           value={score}
           onChange={e => setScore(Number(e.target.value))}
-          className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-shadow"
+          className="border border-gray-300 rounded-md px-3 py-2 text-sm text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-shadow"
           placeholder="Enter score"
         />
       </div>
