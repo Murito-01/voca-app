@@ -14,7 +14,9 @@ export async function submitSurveyResponse(payload: SubmitResponsePayload) {
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to submit response: ${response.statusText}`);
+    const errorData = await response.json().catch(() => ({}));
+    const errorMessage = errorData.error || response.statusText;
+    throw new Error(`Failed to submit response: ${errorMessage}`);
   }
 
   return response.json();
