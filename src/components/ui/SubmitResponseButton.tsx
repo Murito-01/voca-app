@@ -4,6 +4,10 @@ import { useState } from "react";
 import { submitSurveyResponse } from "@/services/response.service";
 
 export default function SubmitResponseButton() {
+  const [userId, setUserId] = useState('804b6c11-71ce-4264-a822-28dfd721fef0');
+  const [surveyId, setSurveyId] = useState('d01a3fae-1250-4c4e-90e9-4c300dbce497');
+  const [score, setScore] = useState<number>(80);
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -15,9 +19,9 @@ export default function SubmitResponseButton() {
 
     try {
       await submitSurveyResponse({
-        user_id: 'f4cbd13c-d626-4575-833a-cf60e287c643',     // Nanti ambil dari auth
-        survey_id: 'd01a3fae-1250-4c4e-90e9-4c300dbce497', // Nanti dari halaman survey
-        score: 80                 // Sementara hardcode dulu
+        user_id: userId,
+        survey_id: surveyId,
+        score: score
       });
 
       setSuccess(true);
@@ -30,11 +34,44 @@ export default function SubmitResponseButton() {
   };
 
   return (
-    <div className="flex flex-col gap-4 items-center">
+    <div className="flex flex-col gap-5 w-full max-w-sm">
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-medium text-gray-700">User ID</label>
+        <input 
+          type="text" 
+          value={userId}
+          onChange={e => setUserId(e.target.value)}
+          className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-shadow"
+          placeholder="Enter user UUID"
+        />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-medium text-gray-700">Survey ID</label>
+        <input 
+          type="text" 
+          value={surveyId}
+          onChange={e => setSurveyId(e.target.value)}
+          className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-shadow"
+          placeholder="Enter survey UUID"
+        />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-medium text-gray-700">Score</label>
+        <input 
+          type="number" 
+          value={score}
+          onChange={e => setScore(Number(e.target.value))}
+          className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-shadow"
+          placeholder="Enter score"
+        />
+      </div>
+
       <button 
         onClick={handleSubmit} 
         disabled={isLoading}
-        className={`px-6 py-2.5 font-medium text-white rounded-lg transition-all duration-200 ${
+        className={`mt-2 px-6 py-2.5 font-medium text-white rounded-lg transition-all duration-200 flex justify-center ${
           isLoading 
             ? "bg-gray-400 cursor-not-allowed opacity-70" 
             : "bg-blue-600 hover:bg-blue-700 active:scale-95 shadow-md hover:shadow-lg"
@@ -54,12 +91,12 @@ export default function SubmitResponseButton() {
       </button>
 
       {error && (
-        <div className="text-red-500 bg-red-50 px-4 py-2 rounded-md border border-red-100 text-sm">
+        <div className="text-red-500 bg-red-50 px-4 py-3 rounded-md border border-red-100 text-sm break-words">
           {error}
         </div>
       )}
       {success && (
-        <div className="text-green-600 bg-green-50 px-4 py-2 rounded-md border border-green-100 text-sm">
+        <div className="text-green-600 bg-green-50 px-4 py-3 rounded-md border border-green-100 text-sm">
           Response submitted successfully!
         </div>
       )}
