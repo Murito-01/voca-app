@@ -4,9 +4,9 @@ import { useState } from "react";
 import { submitSurveyResponse } from "@/services/response.service";
 
 export default function SubmitResponseButton() {
-  const [userId, setUserId] = useState('804b6c11-71ce-4264-a822-28dfd721fef0');
-  const [surveyId, setSurveyId] = useState('d01a3fae-1250-4c4e-90e9-4c300dbce497');
-  const [score, setScore] = useState<number>(80);
+  const [userId, setUserId] = useState('');
+  const [surveyId, setSurveyId] = useState('');
+  const [score, setScore] = useState<number | string>('');
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +21,7 @@ export default function SubmitResponseButton() {
       await submitSurveyResponse({
         user_id: userId,
         survey_id: surveyId,
-        score: score
+        score: Number(score)
       });
 
       setSuccess(true);
