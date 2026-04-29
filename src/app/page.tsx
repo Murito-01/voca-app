@@ -36,28 +36,40 @@ export default function Home() {
           {user && <p className="text-sm text-blue-600 font-medium mb-2">Logged in as {user.email}</p>}
           <p className="text-gray-500 text-base">Explore available surveys, submit responses, and earn rewards easily.</p>
         </div>
-        
+
         <div className="flex flex-col gap-3 w-full">
-          <Link 
-            href="/surveys" 
+          <Link
+            href="/surveys"
             className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md active:scale-95 w-full"
           >
             View Surveys
+          </Link>
+
+          <Link href="/my-surveys"
+            className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md active:scale-95 w-full"
+          >
+            My Surveys
+          </Link>
+
+          <Link href="/create-survey"
+            className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md active:scale-95 w-full"
+          >
+            Create Survey
           </Link>
 
           {!loading && (
             <>
               {!user ? (
                 <>
-                  <Link 
-                    href="/login" 
+                  <Link
+                    href="/login"
                     className="px-6 py-3 bg-white text-gray-700 font-medium rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors shadow-sm hover:shadow-md active:scale-95 w-full"
                   >
                     Login
                   </Link>
 
-                  <Link 
-                    href="/register" 
+                  <Link
+                    href="/register"
                     className="px-6 py-3 bg-white text-gray-700 font-medium rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors shadow-sm hover:shadow-md active:scale-95 w-full"
                   >
                     Register

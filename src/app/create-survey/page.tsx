@@ -2,94 +2,83 @@
 
 import { useState } from 'react'
 
-export default function CreateSurveyPage() {
+const containerStyle = {
+    maxWidth: 600,
+    margin: '40px auto',
+    padding: 24,
+    background: '#fff',
+    borderRadius: 8,
+    boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+}
+
+const inputStyle = {
+    width: '100%',
+    padding: 10,
+    marginTop: 8,
+    marginBottom: 16,
+    border: '1px solid #ccc',
+    borderRadius: 6,
+    color: 'black'
+}
+
+const buttonStyle = {
+    width: '100%',
+    padding: 12,
+    background: '#2563eb',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 6,
+    cursor: 'pointer'
+}
+
+export default function CreateSurvey() {
     const [title, setTitle] = useState('')
     const [reward, setReward] = useState(0)
     const [total, setTotal] = useState(0)
-    const [loading, setLoading] = useState(false)
+
+    const totalBudget = reward * total
 
     const handleSubmit = async () => {
-
         if (!title || reward <= 0 || total <= 0) {
             alert('Isi semua field dengan benar')
             return
         }
 
-        setLoading(true)
-
-        try {
-            const res = await fetch('/api/survey/create', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    creator_id: '5f8684c9-32c6-4e2c-85de-ec677afd916f', // 🔥 Sementara hardcode
-                    title: title,
-                    reward_per_response: reward,
-                    total_responses: total
-                })
-            })
-
-            const data = await res.json()
-
-            if (!res.ok) {
-                alert(data.error)
-                return
-            }
-
-            alert('Survey berhasil dibuat! 🎉')
-            console.log('Survey ID:', data.survey_id)
-
-            // reset form
-            setTitle('')
-            setReward(0)
-            setTotal(0)
-
-        } catch (err) {
-            console.error(err)
-            alert('Terjadi error')
-        } finally {
-            setLoading(false)
-        }
+        alert('Submit ke API di sini')
     }
 
     return (
-        <div style={{ padding: 24 }}>
-            <h1>Create Survey</h1>
+        <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+            <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
+                <h2 className="text-gray-500 text-base">Create Survey</h2>
 
-            <div style={{ marginTop: 16 }}>
+                <label className="text-gray-500 text-base">Judul Survey</label>
                 <input
-                    type="text"
-                    placeholder="Judul Survey"
+                    style={inputStyle}
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                 />
-            </div>
 
-            <div style={{ marginTop: 16 }}>
+                <label className="text-gray-500 text-base">Reward per Response</label>
                 <input
                     type="number"
-                    placeholder="Reward per response"
+                    style={inputStyle}
                     value={reward}
                     onChange={(e) => setReward(Number(e.target.value))}
                 />
-            </div>
 
-            <div style={{ marginTop: 16 }}>
+                <label className="text-gray-500 text-base">Total Responses</label>
                 <input
                     type="number"
-                    placeholder="Total responden"
+                    style={inputStyle}
                     value={total}
                     onChange={(e) => setTotal(Number(e.target.value))}
                 />
-            </div>
 
-            <p>
-                Total Budget: <strong>Rp {reward * total}</strong>
-            </p>
+                <p className="text-gray-500 text-base"><b>Total Budget: Rp {totalBudget}</b></p>
 
-            <div style={{ marginTop: 24 }}>
-                <button onClick={handleSubmit} disabled={loading}>
-                    {loading ? 'Creating...' : 'Create Survey'}
+                <button style={buttonStyle} onClick={handleSubmit}>
+                    Create Survey
                 </button>
             </div>
         </div>
