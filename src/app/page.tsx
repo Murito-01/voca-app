@@ -51,6 +51,12 @@ export default function Home() {
             My Surveys
           </Link>
 
+          <Link href="/my-responses"
+            className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md active:scale-95 w-full"
+          >
+            My Responses
+          </Link>
+
           <Link href="/create-survey"
             className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md active:scale-95 w-full"
           >
