@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { submitSurveyResponse } from "@/services/response.service";
 import { supabase } from "@/lib/supabase";
 
-export default function SubmitResponseButton({ surveyId: initialSurveyId }: { surveyId?: string }) {
+export default function SubmitResponseButton({ surveyId: initialSurveyId, onSuccessCallback }: { surveyId?: string, onSuccessCallback?: () => void }) {
   const [userId, setUserId] = useState('');
   const [surveyId, setSurveyId] = useState(initialSurveyId || '');
   const [score, setScore] = useState<number | string>('');
@@ -53,6 +53,9 @@ export default function SubmitResponseButton({ surveyId: initialSurveyId }: { su
       });
 
       setSuccess(true);
+      if (onSuccessCallback) {
+        onSuccessCallback();
+      }
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -70,7 +73,8 @@ export default function SubmitResponseButton({ surveyId: initialSurveyId }: { su
             type="text" 
             value={surveyId}
             onChange={e => setSurveyId(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-shadow"
+            disabled={success}
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-shadow disabled:bg-gray-100"
             placeholder="Enter survey UUID"
           />
         </div>
@@ -82,16 +86,17 @@ export default function SubmitResponseButton({ surveyId: initialSurveyId }: { su
           type="number" 
           value={score}
           onChange={e => setScore(Number(e.target.value))}
-          className="border border-gray-300 rounded-md px-3 py-2 text-sm text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-shadow"
+          disabled={success}
+          className="border border-gray-300 rounded-md px-3 py-2 text-sm text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-shadow disabled:bg-gray-100"
           placeholder="Enter score"
         />
       </div>
 
       <button 
         onClick={handleSubmit} 
-        disabled={isLoading || !userId}
+        disabled={isLoading || !userId || success}
         className={`mt-2 px-6 py-2.5 font-medium text-white rounded-lg transition-all duration-200 flex justify-center ${
-          isLoading || !userId
+          isLoading || !userId || success
             ? "bg-gray-400 cursor-not-allowed opacity-70" 
             : "bg-blue-600 hover:bg-blue-700 active:scale-95 shadow-md hover:shadow-lg"
         }`}
@@ -106,6 +111,8 @@ export default function SubmitResponseButton({ surveyId: initialSurveyId }: { su
           </span>
         ) : !userId ? (
           "Please log in to submit"
+        ) : success ? (
+          "Response Submitted"
         ) : (
           "Submit Response"
         )}

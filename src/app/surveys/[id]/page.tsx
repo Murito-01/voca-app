@@ -65,7 +65,7 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
             <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
               {survey.status === 'active' ? 'Active' : survey.status || 'Unknown Status'}
             </span>
-            <span className="text-sm text-gray-500 font-medium bg-gray-100 px-3 py-1 rounded-full">
+            <span className="text-sm text-gray-500 font-medium bg-gray-100 px-3 py-1 rounded-full transition-all">
               {survey.remaining_responses} responses left
             </span>
           </div>
@@ -117,7 +117,15 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
 
         <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
           <h2 className="text-xl font-bold text-gray-900 mb-6">Submit a Response</h2>
-          <SubmitResponseButton surveyId={survey.id} />
+          <SubmitResponseButton 
+            surveyId={survey.id} 
+            onSuccessCallback={() => {
+              setSurvey((prev: any) => ({
+                ...prev,
+                remaining_responses: Math.max(0, prev.remaining_responses - 1)
+              }));
+            }} 
+          />
         </div>
       </div>
     </div>
