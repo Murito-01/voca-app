@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { submitSurveyResponse } from "@/services/response.service";
+import { supabase } from "@/lib/supabase";
 
 export default function SubmitResponseButton({ surveyId: initialSurveyId }: { surveyId?: string }) {
   const [userId, setUserId] = useState('');
@@ -12,7 +13,35 @@ export default function SubmitResponseButton({ surveyId: initialSurveyId }: { su
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  useEffect(() => {
+    // Fetch the logged-in user
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+      }
+    };
+    
+    fetchUser();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+      } else {
+        setUserId('');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   const handleSubmit = async () => {
+    if (!userId) {
+      setError("You must be logged in to submit a response.");
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     setSuccess(false);
@@ -35,17 +64,6 @@ export default function SubmitResponseButton({ surveyId: initialSurveyId }: { su
 
   return (
     <div className="flex flex-col gap-5 w-full max-w-sm">
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-gray-700">User ID</label>
-        <input 
-          type="text" 
-          value={userId}
-          onChange={e => setUserId(e.target.value)}
-          className="border border-gray-300 rounded-md px-3 py-2 text-sm text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-shadow"
-          placeholder="Enter user UUID"
-        />
-      </div>
-
       {!initialSurveyId && (
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-gray-700">Survey ID</label>
@@ -72,9 +90,9 @@ export default function SubmitResponseButton({ surveyId: initialSurveyId }: { su
 
       <button 
         onClick={handleSubmit} 
-        disabled={isLoading}
+        disabled={isLoading || !userId}
         className={`mt-2 px-6 py-2.5 font-medium text-white rounded-lg transition-all duration-200 flex justify-center ${
-          isLoading 
+          isLoading || !userId
             ? "bg-gray-400 cursor-not-allowed opacity-70" 
             : "bg-blue-600 hover:bg-blue-700 active:scale-95 shadow-md hover:shadow-lg"
         }`}
@@ -87,6 +105,8 @@ export default function SubmitResponseButton({ surveyId: initialSurveyId }: { su
             </svg>
             Submitting...
           </span>
+        ) : !userId ? (
+          "Please log in to submit"
         ) : (
           "Submit Response"
         )}
