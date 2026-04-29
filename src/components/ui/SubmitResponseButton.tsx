@@ -4,14 +4,20 @@ import { useState, useEffect } from "react";
 import { submitSurveyResponse } from "@/services/response.service";
 import { supabase } from "@/lib/supabase";
 
-export default function SubmitResponseButton({ surveyId: initialSurveyId, onSuccessCallback }: { surveyId?: string, onSuccessCallback?: () => void }) {
+export default function SubmitResponseButton({ surveyId: initialSurveyId, onSuccessCallback, hasSubmitted: initialHasSubmitted }: { surveyId?: string, onSuccessCallback?: () => void, hasSubmitted?: boolean }) {
   const [userId, setUserId] = useState('');
   const [surveyId, setSurveyId] = useState(initialSurveyId || '');
   const [score, setScore] = useState<number | string>('');
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [success, setSuccess] = useState(initialHasSubmitted || false);
+
+  useEffect(() => {
+    if (initialHasSubmitted) {
+      setSuccess(true);
+    }
+  }, [initialHasSubmitted]);
 
   useEffect(() => {
     // Fetch the logged-in user

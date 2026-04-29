@@ -22,10 +22,14 @@ export async function getSurveys() {
 }
 
 export async function getSurveyById(id: string) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
   const response = await fetch(`/api/survey/${id}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     },
   });
 

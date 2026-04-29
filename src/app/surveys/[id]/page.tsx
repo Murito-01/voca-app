@@ -119,10 +119,12 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
           <h2 className="text-xl font-bold text-gray-900 mb-6">Submit a Response</h2>
           <SubmitResponseButton 
             surveyId={survey.id} 
+            hasSubmitted={survey.has_submitted}
             onSuccessCallback={() => {
               setSurvey((prev: any) => ({
                 ...prev,
-                remaining_responses: Math.max(0, prev.remaining_responses - 1)
+                remaining_responses: Math.max(0, prev.remaining_responses - 1),
+                has_submitted: true
               }));
             }} 
           />
