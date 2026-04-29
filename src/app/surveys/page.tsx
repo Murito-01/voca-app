@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getSurveys } from "@/services/survey.service";
+import Link from "next/link";
 
 export default function SurveysPage() {
   const [surveys, setSurveys] = useState<any[]>([]);
@@ -72,9 +73,10 @@ export default function SurveysPage() {
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {surveys.map((survey) => (
-              <div 
+              <Link 
+                href={`/surveys/${survey.id}`}
                 key={survey.id} 
-                className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+                className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-200 transition-all block group"
               >
                 <div className="flex justify-between items-start mb-4">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -101,7 +103,7 @@ export default function SurveysPage() {
                     <span className="block font-semibold text-blue-600">Rewards: {survey.points} Pts</span>
                   )}
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}

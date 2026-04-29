@@ -19,3 +19,20 @@ export async function getSurveys(userId?: string) {
 
   return response.json();
 }
+
+export async function getSurveyById(id: string) {
+  const response = await fetch(`/api/survey/${id}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    const errorMessage = errorData.error || response.statusText;
+    throw new Error(`Failed to fetch survey: ${errorMessage}`);
+  }
+
+  return response.json();
+}
