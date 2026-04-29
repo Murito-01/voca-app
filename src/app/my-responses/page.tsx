@@ -24,6 +24,10 @@ export default function MyResponses() {
         fetchData()
     }, [])
 
+    const totalReward = data.reduce((acc, r) => {
+        return acc + (r.surveys?.reward_per_response || 0)
+    }, 0)
+
     return (
         <div className="min-h-screen bg-gray-100 p-6">
             <div className="max-w-2xl mx-auto">
@@ -46,6 +50,26 @@ export default function MyResponses() {
                         Cari Survey Lain
                     </Link>
                 </div>
+
+                {/* Summary Card */}
+                {!loading && !error && data.length > 0 && (
+                    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-6 flex items-center justify-between border-l-4 border-l-blue-600">
+                        <div>
+                            <p className="text-sm text-gray-500 font-medium">Total Pendapatan</p>
+                            <h2 className="text-3xl font-bold text-blue-600">
+                                {new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR',
+                                    minimumFractionDigits: 0
+                                }).format(totalReward)}
+                            </h2>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-sm text-gray-500 font-medium">Total Survey</p>
+                            <p className="text-2xl font-bold text-gray-900">{data.length}</p>
+                        </div>
+                    </div>
+                )}
 
                 {/* Loading State */}
                 {loading && (
