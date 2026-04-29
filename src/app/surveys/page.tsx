@@ -7,28 +7,55 @@ export default function SurveysPage() {
   const [surveys, setSurveys] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [testUserId, setTestUserId] = useState("");
+
+  const fetchSurveysData = async (userId?: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await getSurveys(userId);
+      if (result && result.data) {
+        setSurveys(result.data);
+      } else {
+        setSurveys([]);
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchSurveysData = async () => {
-      try {
-        const result = await getSurveys();
-        if (result && result.data) {
-          setSurveys(result.data);
-        }
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchSurveysData();
   }, []);
+
+  const handleTestFetch = () => {
+    fetchSurveysData(testUserId || undefined);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Available Surveys</h1>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Available Surveys</h1>
+          
+          <div className="flex items-center gap-2 bg-white p-2 rounded-lg shadow-sm border border-gray-200">
+            <input
+              type="text"
+              placeholder="Test User ID..."
+              value={testUserId}
+              onChange={(e) => setTestUserId(e.target.value)}
+              className="px-3 py-1.5 text-sm text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-48"
+            />
+            <button
+              onClick={handleTestFetch}
+              className="px-4 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors whitespace-nowrap"
+            >
+              Test Fetch
+            </button>
+          </div>
+        </div>
         
         {isLoading ? (
           <div className="flex justify-center items-center h-40">
