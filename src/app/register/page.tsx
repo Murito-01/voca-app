@@ -30,8 +30,14 @@ export default function RegisterPage() {
     }
 
     if (authData.user) {
-      // Success - The public.users insert is now handled by the DB trigger
-      router.push("/login");
+      if (authData.session) {
+        // If session exists, email confirmation is disabled and they are logged in
+        router.push("/");
+      } else {
+        // If session is null, email confirmation is required
+        alert("Registration successful! Please check your email to confirm your account.");
+        router.push("/login");
+      }
     }
 
     setLoading(false);
