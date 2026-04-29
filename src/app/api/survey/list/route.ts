@@ -2,13 +2,21 @@ import { createClient } from '@supabase/supabase-js'
 
 export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(req.url)
-    const user_id = searchParams.get('user_id')
+    const authHeader = req.headers.get('Authorization')
+    let user_id: string | null = null
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
+
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '')
+      const { data: { user } } = await supabase.auth.getUser(token)
+      if (user) {
+        user_id = user.id
+      }
+    }
 
     let query = supabase
       .from('surveys')

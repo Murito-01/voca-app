@@ -1,13 +1,14 @@
-export async function getSurveys(userId?: string) {
-  let url = '/api/survey/list';
-  if (userId) {
-    url += `?user_id=${encodeURIComponent(userId)}`;
-  }
+import { supabase } from "@/lib/supabase";
 
-  const response = await fetch(url, {
+export async function getSurveys() {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  const response = await fetch('/api/survey/list', {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     },
   });
 
