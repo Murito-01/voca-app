@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { submitSurveyResponse } from "@/services/response.service";
 
-export default function SubmitResponseButton() {
+export default function SubmitResponseButton({ surveyId: initialSurveyId }: { surveyId?: string }) {
   const [userId, setUserId] = useState('');
-  const [surveyId, setSurveyId] = useState('');
+  const [surveyId, setSurveyId] = useState(initialSurveyId || '');
   const [score, setScore] = useState<number | string>('');
 
   const [isLoading, setIsLoading] = useState(false);
@@ -46,16 +46,18 @@ export default function SubmitResponseButton() {
         />
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-gray-700">Survey ID</label>
-        <input 
-          type="text" 
-          value={surveyId}
-          onChange={e => setSurveyId(e.target.value)}
-          className="border border-gray-300 rounded-md px-3 py-2 text-sm text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-shadow"
-          placeholder="Enter survey UUID"
-        />
-      </div>
+      {!initialSurveyId && (
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium text-gray-700">Survey ID</label>
+          <input 
+            type="text" 
+            value={surveyId}
+            onChange={e => setSurveyId(e.target.value)}
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-shadow"
+            placeholder="Enter survey UUID"
+          />
+        </div>
+      )}
 
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium text-gray-700">Score</label>

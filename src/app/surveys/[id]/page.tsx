@@ -112,6 +112,11 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
             </div>
           </div>
         </div>
+
+        <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+          <h2 className="text-xl font-bold text-gray-900 mb-6">Submit a Response</h2>
+          <SubmitResponseButton surveyId={survey.id} />
+        </div>
       </div>
     </div>
   );
