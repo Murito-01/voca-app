@@ -84,10 +84,16 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
               <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">Creator ID</h3>
               <p className="text-gray-900 font-mono text-sm break-all">{survey.creator_id}</p>
             </div>
-            {survey.points !== undefined && (
+            {survey.reward_per_response !== undefined && (
               <div>
-                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">Reward</h3>
-                <p className="text-blue-600 font-bold text-lg">{survey.points} Points</p>
+                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">Reward Per Response</h3>
+                <p className="text-blue-600 font-bold text-lg">{survey.reward_per_response} Points</p>
+              </div>
+            )}
+            {survey.total_responses !== undefined && (
+              <div>
+                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">Total Responses Target</h3>
+                <p className="text-gray-900 font-medium">{survey.total_responses}</p>
               </div>
             )}
             {survey.created_at && (
@@ -100,7 +106,7 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
                 </p>
               </div>
             )}
-            <div>
+            <div className="md:col-span-2">
               <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">Survey ID</h3>
               <p className="text-gray-500 font-mono text-xs break-all">{survey.id}</p>
             </div>

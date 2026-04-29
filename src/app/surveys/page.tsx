@@ -99,8 +99,8 @@ export default function SurveysPage() {
                 
                 <div className="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500">
                   <span className="block mb-1">Creator: {survey.creator_id?.substring(0, 8)}...</span>
-                  {survey.points && (
-                    <span className="block font-semibold text-blue-600">Rewards: {survey.points} Pts</span>
+                  {survey.reward_per_response && (
+                    <span className="block font-semibold text-blue-600">Reward: {survey.reward_per_response} Pts</span>
                   )}
                 </div>
               </Link>
