@@ -1,14 +1,19 @@
+import { supabase } from "@/lib/supabase";
+
 export interface SubmitResponsePayload {
-  user_id: string;
   survey_id: string;
   score: number;
 }
 
 export async function submitSurveyResponse(payload: SubmitResponsePayload) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
   const response = await fetch('/api/response/submit', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     },
     body: JSON.stringify(payload),
   });

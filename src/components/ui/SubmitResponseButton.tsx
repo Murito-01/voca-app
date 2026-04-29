@@ -48,7 +48,6 @@ export default function SubmitResponseButton({ surveyId: initialSurveyId }: { su
 
     try {
       await submitSurveyResponse({
-        user_id: userId,
         survey_id: surveyId,
         score: Number(score)
       });
