@@ -31,10 +31,20 @@ export default function SurveysPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-4xl mx-auto">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Available Surveys</h1>
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <Link
+              href="/"
+              className="text-blue-600 hover:underline text-sm font-medium"
+            >
+              ← Kembali ke Home
+            </Link>
+            <h1 className="text-2xl font-bold text-gray-900 mt-2">Survey Tersedia</h1>
+            <p className="text-gray-500 text-sm">Daftar survey yang tersedia untukmu</p>
+          </div>
         </div>
         
         {isLoading ? (
