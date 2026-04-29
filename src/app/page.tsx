@@ -9,12 +9,28 @@ export default function Home() {
           <p className="text-gray-500 text-base">Explore available surveys, submit responses, and earn rewards easily.</p>
         </div>
         
-        <Link 
-          href="/surveys" 
-          className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md active:scale-95 w-full"
-        >
-          View Surveys
-        </Link>
+        <div className="flex flex-col gap-3 w-full">
+          <Link 
+            href="/surveys" 
+            className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md active:scale-95 w-full"
+          >
+            View Surveys
+          </Link>
+
+          <Link 
+            href="/login" 
+            className="px-6 py-3 bg-white text-gray-700 font-medium rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors shadow-sm hover:shadow-md active:scale-95 w-full"
+          >
+            Login
+          </Link>
+
+          <Link 
+            href="/register" 
+            className="px-6 py-3 bg-white text-gray-700 font-medium rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors shadow-sm hover:shadow-md active:scale-95 w-full"
+          >
+            Register
+          </Link>
+        </div>
       </div>
     </main>
   );
