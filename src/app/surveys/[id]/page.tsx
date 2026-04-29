@@ -87,7 +87,9 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
             {survey.reward_per_response !== undefined && (
               <div>
                 <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">Reward Per Response</h3>
-                <p className="text-blue-600 font-bold text-lg">{survey.reward_per_response} Points</p>
+                <p className="text-blue-600 font-bold text-lg">
+                  {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(survey.reward_per_response)}
+                </p>
               </div>
             )}
             {survey.total_responses !== undefined && (
