@@ -35,7 +35,22 @@ export async function GET(req: Request) {
       return Response.json({ error: error.message }, { status: 400 })
     }
 
-    return Response.json({ data })
+    let filteredData = data;
+
+    // Filter out surveys the user has already responded to
+    if (user_id && data && data.length > 0) {
+      const { data: responses } = await supabase
+        .from('responses')
+        .select('survey_id')
+        .eq('user_id', user_id);
+
+      if (responses && responses.length > 0) {
+        const respondedIds = new Set(responses.map(r => r.survey_id));
+        filteredData = data.filter((survey: any) => !respondedIds.has(survey.id));
+      }
+    }
+
+    return Response.json({ data: filteredData })
 
   } catch (err) {
     return Response.json(
