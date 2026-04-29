@@ -1,24 +1,24 @@
 import { createClient } from '@supabase/supabase-js'
 
 export async function GET(req: Request) {
+    const authHeader = req.headers.get('Authorization')
+
+    if (!authHeader) {
+        return Response.json({ error: 'Missing authorization header' }, { status: 401 })
+    }
+
+    const token = authHeader.replace('Bearer ', '')
+
     const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        {
-            global: {
-                headers: {
-                    Authorization: req.headers.get('Authorization')!
-                }
-            }
-        }
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    const {
-        data: { user }
-    } = await supabase.auth.getUser()
+    // Verifikasi token dan ambil user secara eksplisit
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
 
-    if (!user) {
-        return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    if (authError || !user) {
+        return Response.json({ error: 'Unauthorized or invalid token' }, { status: 401 })
     }
 
     const { data, error } = await supabase
