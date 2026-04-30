@@ -109,9 +109,10 @@ export default function MySurveys() {
                             const totalSpend = completed * s.reward_per_response
 
                             return (
-                                <div
+                                <Link
+                                    href={`/my-surveys/${s.id}`}
                                     key={s.id}
-                                    className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm"
+                                    className="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition-all cursor-pointer"
                                 >
                                     {/* Title & Status */}
                                     <div className="flex items-start justify-between mb-4">
@@ -175,7 +176,7 @@ export default function MySurveys() {
                                             </p>
                                         </div>
                                     </div>
-                                </div>
+                                </Link>
                             )
                         })}
                     </div>

@@ -59,13 +59,13 @@ export default function CreateSurvey() {
                 setMessage(data.error || 'Gagal membuat survey')
             } else {
                 setIsError(false)
-                setMessage('Survey berhasil dibuat! Mengalihkan ke My Surveys...')
+                setMessage('Survey berhasil dibuat! Mengalihkan ke halaman detail...')
                 setTitle('')
                 setReward(0)
                 setTotal(0)
 
                 setTimeout(() => {
-                    router.push('/my-surveys')
+                    router.push(`/my-surveys/${data.survey_id}`)
                 }, 1500)
             }
         } catch (err) {
