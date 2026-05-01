@@ -8,12 +8,14 @@ export default function SubmitResponseButton({
   surveyId: initialSurveyId, 
   onSuccessCallback, 
   hasSubmitted: initialHasSubmitted,
-  disabled: externalDisabled
+  disabled: externalDisabled,
+  answers
 }: { 
   surveyId?: string, 
   onSuccessCallback?: () => void, 
   hasSubmitted?: boolean,
-  disabled?: boolean
+  disabled?: boolean,
+  answers?: Record<string, string | string[]>
 }) {
   const [userId, setUserId] = useState('');
   const [surveyId, setSurveyId] = useState(initialSurveyId || '');
@@ -65,7 +67,8 @@ export default function SubmitResponseButton({
     try {
       await submitSurveyResponse({
         survey_id: surveyId,
-        score: Number(score)
+        score: Number(score),
+        answers: answers || {}
       });
 
       setSuccess(true);

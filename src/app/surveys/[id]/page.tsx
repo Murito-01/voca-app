@@ -224,6 +224,7 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
             surveyId={survey.id} 
             hasSubmitted={survey.has_submitted}
             disabled={!isFormValid()}
+            answers={answers}
             onSuccessCallback={() => {
               setSurvey((prev: any) => ({
                 ...prev,

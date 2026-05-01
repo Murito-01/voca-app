@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 export interface SubmitResponsePayload {
   survey_id: string;
   score: number;
+  answers: Record<string, string | string[]>;
 }
 
 export async function submitSurveyResponse(payload: SubmitResponsePayload) {

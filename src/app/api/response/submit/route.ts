@@ -25,7 +25,8 @@ export async function POST(req: Request) {
   const { error } = await supabase.rpc('submit_response', {
     p_user_id: user.id,
     p_survey_id: body.survey_id,
-    p_score: body.score
+    p_score: body.score,
+    p_answers: body.answers
   })
 
   if (error) {
