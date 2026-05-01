@@ -13,6 +13,7 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
+  const [startedAt] = useState<string>(new Date().toISOString());
 
   useEffect(() => {
     const fetchData = async () => {
@@ -225,6 +226,7 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
             hasSubmitted={survey.has_submitted}
             disabled={!isFormValid()}
             answers={answers}
+            startedAt={startedAt}
             onSuccessCallback={() => {
               setSurvey((prev: any) => ({
                 ...prev,

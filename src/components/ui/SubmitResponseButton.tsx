@@ -9,17 +9,18 @@ export default function SubmitResponseButton({
   onSuccessCallback, 
   hasSubmitted: initialHasSubmitted,
   disabled: externalDisabled,
-  answers
+  answers,
+  startedAt
 }: { 
   surveyId?: string, 
   onSuccessCallback?: () => void, 
   hasSubmitted?: boolean,
   disabled?: boolean,
-  answers?: Record<string, string | string[]>
+  answers?: Record<string, string | string[]>,
+  startedAt: string
 }) {
   const [userId, setUserId] = useState('');
   const [surveyId, setSurveyId] = useState(initialSurveyId || '');
-  const [score, setScore] = useState<number | string>('');
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -67,7 +68,7 @@ export default function SubmitResponseButton({
     try {
       await submitSurveyResponse({
         survey_id: surveyId,
-        score: Number(score),
+        started_at: startedAt,
         answers: answers || {}
       });
 
@@ -99,17 +100,6 @@ export default function SubmitResponseButton({
         </div>
       )}
 
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-gray-700">Score</label>
-        <input 
-          type="number" 
-          value={score}
-          onChange={e => setScore(Number(e.target.value))}
-          disabled={success}
-          className="border border-gray-300 rounded-md px-3 py-2 text-sm text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-shadow disabled:bg-gray-100"
-          placeholder="Enter score"
-        />
-      </div>
 
       <button 
         onClick={handleSubmit} 
