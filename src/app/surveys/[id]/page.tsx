@@ -12,6 +12,7 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
   const [questions, setQuestions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -138,6 +139,8 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
                     <input 
                       type="text" 
                       placeholder="Your answer..."
+                      value={(answers[q.id] as string) || ''}
+                      onChange={(e) => setAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
                       className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none"
                     />
                   )}
@@ -150,6 +153,8 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
                             type="radio" 
                             name={`question-${q.id}`} 
                             value={opt.id}
+                            checked={answers[q.id] === opt.id}
+                            onChange={() => setAnswers(prev => ({ ...prev, [q.id]: opt.id }))}
                             className="w-4 h-4 text-blue-600 bg-white border-gray-300 focus:ring-blue-500"
                           />
                           <span className="text-sm text-gray-800">{opt.option_text}</span>
@@ -166,6 +171,15 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
                             type="checkbox" 
                             name={`question-${q.id}`} 
                             value={opt.id}
+                            checked={Array.isArray(answers[q.id]) ? (answers[q.id] as string[]).includes(opt.id) : false}
+                            onChange={(e) => {
+                              const currentAnswers = (answers[q.id] as string[]) || [];
+                              if (e.target.checked) {
+                                setAnswers(prev => ({ ...prev, [q.id]: [...currentAnswers, opt.id] }));
+                              } else {
+                                setAnswers(prev => ({ ...prev, [q.id]: currentAnswers.filter(id => id !== opt.id) }));
+                              }
+                            }}
                             className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500"
                           />
                           <span className="text-sm text-gray-800">{opt.option_text}</span>
