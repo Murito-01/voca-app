@@ -118,9 +118,9 @@ export default function SurveyDetailPage() {
 
                         {/* Progress */}
                         <div className="mt-6">
-                            <div className="flex justify-between text-sm mb-1">
+                            <div className="flex justify-between text-sm mb-1 text-gray-800 font-medium">
                                 <span>Progress</span>
-                                <span>
+                                <span className="font-semibold text-gray-900">
                                     {survey.total_responses - survey.remaining_responses} / {survey.total_responses}
                                 </span>
                             </div>
@@ -143,7 +143,7 @@ export default function SurveyDetailPage() {
                         {/* Questions Section */}
                         <div className="mt-8 border-t pt-6">
                             <div className="flex justify-between items-center mb-4">
-                                <h2 className="text-lg font-semibold">
+                                <h2 className="text-lg font-semibold text-gray-900">
                                     Pertanyaan Survey
                                 </h2>
                                 <Link
