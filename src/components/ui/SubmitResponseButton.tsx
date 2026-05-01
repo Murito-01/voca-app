@@ -4,7 +4,17 @@ import { useState, useEffect } from "react";
 import { submitSurveyResponse } from "@/services/response.service";
 import { supabase } from "@/lib/supabase";
 
-export default function SubmitResponseButton({ surveyId: initialSurveyId, onSuccessCallback, hasSubmitted: initialHasSubmitted }: { surveyId?: string, onSuccessCallback?: () => void, hasSubmitted?: boolean }) {
+export default function SubmitResponseButton({ 
+  surveyId: initialSurveyId, 
+  onSuccessCallback, 
+  hasSubmitted: initialHasSubmitted,
+  disabled: externalDisabled
+}: { 
+  surveyId?: string, 
+  onSuccessCallback?: () => void, 
+  hasSubmitted?: boolean,
+  disabled?: boolean
+}) {
   const [userId, setUserId] = useState('');
   const [surveyId, setSurveyId] = useState(initialSurveyId || '');
   const [score, setScore] = useState<number | string>('');
@@ -100,9 +110,9 @@ export default function SubmitResponseButton({ surveyId: initialSurveyId, onSucc
 
       <button 
         onClick={handleSubmit} 
-        disabled={isLoading || !userId || success}
+        disabled={isLoading || !userId || success || externalDisabled}
         className={`mt-2 px-6 py-2.5 font-medium text-white rounded-lg transition-all duration-200 flex justify-center ${
-          isLoading || !userId || success
+          isLoading || !userId || success || externalDisabled
             ? "bg-gray-400 cursor-not-allowed opacity-70" 
             : "bg-blue-600 hover:bg-blue-700 active:scale-95 shadow-md hover:shadow-lg"
         }`}

@@ -38,6 +38,24 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
     fetchData();
   }, [id]);
 
+  const isFormValid = () => {
+    if (questions.length === 0) return true;
+    
+    return questions.every(q => {
+      const answer = answers[q.id];
+      if (q.question_type === 'text') {
+        return typeof answer === 'string' && answer.trim().length > 0;
+      }
+      if (q.question_type === 'radio') {
+        return typeof answer === 'string' && answer.length > 0;
+      }
+      if (q.question_type === 'checkbox') {
+        return Array.isArray(answer) && answer.length > 0;
+      }
+      return false;
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 p-8 flex justify-center items-center">
@@ -195,9 +213,17 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
 
         <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
           <h2 className="text-xl font-bold text-gray-900 mb-6">Submit a Response</h2>
+          
+          {!isFormValid() && !survey.has_submitted && (
+            <p className="text-amber-600 text-sm mb-4 bg-amber-50 p-3 rounded-md border border-amber-100">
+              Please answer all questions before submitting.
+            </p>
+          )}
+
           <SubmitResponseButton 
             surveyId={survey.id} 
             hasSubmitted={survey.has_submitted}
+            disabled={!isFormValid()}
             onSuccessCallback={() => {
               setSurvey((prev: any) => ({
                 ...prev,
