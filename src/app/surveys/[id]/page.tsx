@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
-import { getSurveyById } from "@/services/survey.service";
+import { getSurveyById, getSurveyQuestions } from "@/services/survey.service";
 import Link from "next/link";
 import SubmitResponseButton from "@/components/ui/SubmitResponseButton";
 
@@ -9,15 +9,23 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
   const { id } = use(params);
   
   const [survey, setSurvey] = useState<any>(null);
+  const [questions, setQuestions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchSurveyDetail = async () => {
+    const fetchData = async () => {
       try {
-        const result = await getSurveyById(id);
-        if (result && result.data) {
-          setSurvey(result.data);
+        const [surveyResult, questionsResult] = await Promise.all([
+          getSurveyById(id),
+          getSurveyQuestions(id)
+        ]);
+        
+        if (surveyResult && surveyResult.data) {
+          setSurvey(surveyResult.data);
+        }
+        if (questionsResult && questionsResult.data) {
+          setQuestions(questionsResult.data);
         }
       } catch (err: any) {
         setError(err.message);
@@ -26,7 +34,7 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
       }
     };
 
-    fetchSurveyDetail();
+    fetchData();
   }, [id]);
 
   if (isLoading) {
@@ -114,6 +122,62 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
             </div>
           </div>
         </div>
+
+        {/* Survey Questions Section */}
+        {questions && questions.length > 0 && (
+          <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200 mb-8">
+            <h2 className="text-xl font-bold text-gray-900 mb-6">Questions</h2>
+            <div className="space-y-6">
+              {questions.map((q: any, index: number) => (
+                <div key={q.id} className="p-5 border border-gray-100 rounded-lg bg-gray-50">
+                  <p className="font-medium text-gray-900 mb-4">
+                    {index + 1}. {q.question_text}
+                  </p>
+                  
+                  {q.question_type === 'text' && (
+                    <input 
+                      type="text" 
+                      placeholder="Your answer..."
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none"
+                    />
+                  )}
+                  
+                  {q.question_type === 'radio' && q.options && (
+                    <div className="space-y-3">
+                      {q.options.map((opt: any) => (
+                        <label key={opt.id} className="flex items-center gap-3 cursor-pointer">
+                          <input 
+                            type="radio" 
+                            name={`question-${q.id}`} 
+                            value={opt.id}
+                            className="w-4 h-4 text-blue-600 bg-white border-gray-300 focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-800">{opt.option_text}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+
+                  {q.question_type === 'checkbox' && q.options && (
+                    <div className="space-y-3">
+                      {q.options.map((opt: any) => (
+                        <label key={opt.id} className="flex items-center gap-3 cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            name={`question-${q.id}`} 
+                            value={opt.id}
+                            className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-800">{opt.option_text}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
           <h2 className="text-xl font-bold text-gray-900 mb-6">Submit a Response</h2>
