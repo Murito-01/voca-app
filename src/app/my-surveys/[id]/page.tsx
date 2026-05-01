@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { getMySurveys, getSurveyQuestions } from '@/services/survey.service'
+import QuestionItem from '@/components/creator/QuestionItem'
+import { Question } from '@/types/survey.types'
 
 export default function SurveyDetailPage() {
     const params = useParams()
@@ -158,30 +160,8 @@ export default function SurveyDetailPage() {
                                 </p>
                             ) : (
                                 <div className="space-y-4">
-                                    {questions.map((q: any, i: number) => (
-                                        <div key={q.id} className="p-4 border rounded-lg bg-gray-50">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <h3 className="font-medium text-gray-900">
-                                                    {i + 1}. {q.question_text}
-                                                </h3>
-                                                <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full shrink-0 ml-2">
-                                                    {q.question_type === 'text' ? 'Teks Pendek' : q.question_type === 'radio' ? 'Pilihan Ganda' : 'Kotak Centang'}
-                                                </span>
-                                            </div>
-                                            
-                                            {q.options && q.options.length > 0 && (
-                                                <ul className="mt-2 space-y-1 pl-4">
-                                                    {q.options.map((opt: any) => (
-                                                        <li key={opt.id} className="text-sm text-gray-600 flex items-center gap-2">
-                                                            <span className="text-gray-400 text-xs">
-                                                                {q.question_type === 'radio' ? '○' : '□'}
-                                                            </span>
-                                                            {opt.option_text}
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            )}
-                                        </div>
+                                    {questions.map((q: Question, i: number) => (
+                                        <QuestionItem key={q.id} question={q} index={i} />
                                     ))}
                                 </div>
                             )}

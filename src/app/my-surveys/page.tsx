@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { getMySurveys } from '@/services/survey.service'
+import SurveyCard from '@/components/creator/SurveyCard'
+import { Survey } from '@/types/survey.types'
 
 export default function MySurveys() {
     const [data, setData] = useState<any[]>([])
@@ -40,7 +42,7 @@ export default function MySurveys() {
                         <p className="text-gray-500 text-sm">Daftar survey yang sudah kamu buat</p>
                     </div>
                     <Link
-                        href="/create-survey"
+                        href="/my-surveys/create"
                         className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
                     >
                         + Buat Survey
@@ -70,7 +72,7 @@ export default function MySurveys() {
                             Buat survey pertamamu dan mulai kumpulkan respons!
                         </p>
                         <Link
-                            href="/create-survey"
+                            href="/my-surveys/create"
                             className="inline-block px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
                         >
                             Buat Survey Sekarang
@@ -81,84 +83,9 @@ export default function MySurveys() {
                 {/* Survey List */}
                 {!loading && !error && data.length > 0 && (
                     <div className="space-y-4">
-                        {data.map((s) => {
-                            const completed = s.total_responses - s.remaining_responses
-                            const progress = s.total_responses > 0
-                                ? Math.round((completed / s.total_responses) * 100)
-                                : 0
-                            const totalSpend = completed * s.reward_per_response
-
-                            return (
-                                <Link
-                                    href={`/my-surveys/${s.id}`}
-                                    key={s.id}
-                                    className="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition-all cursor-pointer"
-                                >
-                                    {/* Title & Status */}
-                                    <div className="flex items-start justify-between mb-4">
-                                        <h2 className="text-lg font-semibold text-gray-900 leading-tight">
-                                            {s.title || 'Untitled Survey'}
-                                        </h2>
-                                        <span className={`ml-3 shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                            s.status === 'active'
-                                                ? 'bg-green-100 text-green-800'
-                                                : 'bg-gray-100 text-gray-600'
-                                        }`}>
-                                            {s.status === 'active' ? 'Aktif' : s.status || 'Unknown'}
-                                        </span>
-                                    </div>
-
-                                    {/* Progress */}
-                                    <div className="mb-4">
-                                        <div className="flex justify-between items-center mb-1.5">
-                                            <span className="text-sm text-gray-600 font-medium">
-                                                Progress Responden
-                                            </span>
-                                            <span className="text-sm font-semibold text-gray-800">
-                                                {completed} / {s.total_responses}
-                                                <span className="text-gray-400 font-normal ml-1">({progress}%)</span>
-                                            </span>
-                                        </div>
-                                        <div className="w-full bg-gray-100 rounded-full h-2.5">
-                                            <div
-                                                className="bg-green-500 h-2.5 rounded-full transition-all duration-300"
-                                                style={{ width: `${progress}%` }}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Stats Row */}
-                                    <div className="grid grid-cols-3 gap-3 pt-3 border-t border-gray-100">
-                                        <div>
-                                            <p className="text-xs text-gray-500 mb-0.5">Reward/Responden</p>
-                                            <p className="text-sm font-semibold text-blue-600">
-                                                {new Intl.NumberFormat('id-ID', {
-                                                    style: 'currency',
-                                                    currency: 'IDR',
-                                                    minimumFractionDigits: 0
-                                                }).format(s.reward_per_response)}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-gray-500 mb-0.5">Sisa Slot</p>
-                                            <p className="text-sm font-semibold text-gray-800">
-                                                {s.remaining_responses}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-gray-500 mb-0.5">Total Dikeluarkan</p>
-                                            <p className="text-sm font-semibold text-gray-800">
-                                                {new Intl.NumberFormat('id-ID', {
-                                                    style: 'currency',
-                                                    currency: 'IDR',
-                                                    minimumFractionDigits: 0
-                                                }).format(totalSpend)}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </Link>
-                            )
-                        })}
+                        {data.map((s: Survey) => (
+                            <SurveyCard key={s.id} survey={s} />
+                        ))}
                     </div>
                 )}
             </div>
