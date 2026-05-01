@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { createSurveyQuestion } from '@/services/survey.service'
 
 export default function AddQuestionPage() {
     const params = useParams()
@@ -54,41 +54,19 @@ export default function AddQuestionPage() {
         setLoading(true)
 
         try {
-            const session = await supabase.auth.getSession()
-            const token = session.data.session?.access_token
-
-            if (!token) {
-                setError('Kamu belum login')
-                setLoading(false)
-                return
-            }
-
             const payload = {
                 question_text: questionText,
                 question_type: questionType,
                 options: isOptionType ? options.filter(o => o.trim() !== '') : []
             }
 
-            const res = await fetch(`/api/survey/${surveyId}/questions`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify(payload)
-            })
+            await createSurveyQuestion(surveyId, payload)
 
-            const json = await res.json()
-
-            if (!res.ok) {
-                setError(json.error || 'Gagal menyimpan pertanyaan')
-            } else {
-                // Success, redirect back
-                router.push(`/my-surveys/${surveyId}`)
-                router.refresh()
-            }
-        } catch (err) {
-            setError('Terjadi kesalahan saat menyimpan data')
+            // Success, redirect back
+            router.push(`/my-surveys/${surveyId}`)
+            router.refresh()
+        } catch (err: any) {
+            setError(err.message || 'Terjadi kesalahan saat menyimpan data')
         } finally {
             setLoading(false)
         }

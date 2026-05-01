@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
+import { getMySurveys, getSurveyQuestions } from '@/services/survey.service'
 
 export default function SurveyDetailPage() {
     const params = useParams()
@@ -17,49 +17,24 @@ export default function SurveyDetailPage() {
     useEffect(() => {
         const fetchSurvey = async () => {
             try {
-                const session = await supabase.auth.getSession()
-                const token = session.data.session?.access_token
+                const json = await getMySurveys()
+                const found = json.data.find((s: any) => s.id === surveyId)
 
-                if (!token) {
-                    setError('Kamu belum login')
-                    setLoading(false)
-                    return
-                }
-
-                const res = await fetch(`/api/survey/my`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                })
-
-                const json = await res.json()
-
-                if (!res.ok) {
-                    setError(json.error || 'Gagal ambil data')
+                if (!found) {
+                    setError('Survey tidak ditemukan')
                 } else {
-                    const found = json.data.find((s: any) => s.id === surveyId)
-
-                    if (!found) {
-                        setError('Survey tidak ditemukan')
-                    } else {
-                        setSurvey(found)
-                        
-                        // Fetch questions
-                        try {
-                            const qRes = await fetch(`/api/survey/${surveyId}/questions`, {
-                                headers: { Authorization: `Bearer ${token}` }
-                            })
-                            if (qRes.ok) {
-                                const qJson = await qRes.json()
-                                setQuestions(qJson.data || [])
-                            }
-                        } catch (qErr) {
-                            console.error('Failed to fetch questions:', qErr)
-                        }
+                    setSurvey(found)
+                    
+                    // Fetch questions
+                    try {
+                        const qJson = await getSurveyQuestions(surveyId)
+                        setQuestions(qJson.data || [])
+                    } catch (qErr) {
+                        console.error('Failed to fetch questions:', qErr)
                     }
                 }
-            } catch (err) {
-                setError('Terjadi kesalahan')
+            } catch (err: any) {
+                setError(err.message || 'Terjadi kesalahan')
             } finally {
                 setLoading(false)
             }

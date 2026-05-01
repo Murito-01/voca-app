@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
+import { createSurvey } from '@/services/survey.service'
 
 export default function CreateSurvey() {
     const router = useRouter()
@@ -29,48 +29,24 @@ export default function CreateSurvey() {
         setIsError(false)
 
         try {
-            const session = await supabase.auth.getSession()
-            const token = session.data.session?.access_token
-
-            if (!token) {
-                setIsError(true)
-                setMessage('Kamu belum login. Silakan login terlebih dahulu.')
-                setLoading(false)
-                return
-            }
-
-            const res = await fetch('/api/survey/create', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    title,
-                    reward_per_response: reward,
-                    total_responses: total
-                })
+            const data = await createSurvey({
+                title,
+                reward_per_response: reward,
+                total_responses: total
             })
 
-            const data = await res.json()
+            setIsError(false)
+            setMessage('Survey berhasil dibuat! Mengalihkan ke halaman detail...')
+            setTitle('')
+            setReward(0)
+            setTotal(0)
 
-            if (!res.ok) {
-                setIsError(true)
-                setMessage(data.error || 'Gagal membuat survey')
-            } else {
-                setIsError(false)
-                setMessage('Survey berhasil dibuat! Mengalihkan ke halaman detail...')
-                setTitle('')
-                setReward(0)
-                setTotal(0)
-
-                setTimeout(() => {
-                    router.push(`/my-surveys/${data.survey_id}`)
-                }, 1500)
-            }
-        } catch (err) {
+            setTimeout(() => {
+                router.push(`/my-surveys/${data.survey_id}`)
+            }, 1500)
+        } catch (err: any) {
             setIsError(true)
-            setMessage('Terjadi kesalahan. Coba lagi.')
+            setMessage(err.message || 'Terjadi kesalahan. Coba lagi.')
         }
 
         setLoading(false)

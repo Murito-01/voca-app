@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
+import { getMySurveys } from '@/services/survey.service'
 
 export default function MySurveys() {
     const [data, setData] = useState<any[]>([])
@@ -12,30 +12,10 @@ export default function MySurveys() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const session = await supabase.auth.getSession()
-                const token = session.data.session?.access_token
-
-                if (!token) {
-                    setError('Kamu belum login. Silakan login terlebih dahulu.')
-                    setLoading(false)
-                    return
-                }
-
-                const res = await fetch('/api/survey/my', {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                })
-
-                const json = await res.json()
-
-                if (!res.ok) {
-                    setError(json.error || 'Gagal memuat data survey')
-                } else {
-                    setData(json.data || [])
-                }
-            } catch (err) {
-                setError('Terjadi kesalahan saat memuat data.')
+                const json = await getMySurveys()
+                setData(json.data || [])
+            } catch (err: any) {
+                setError(err.message || 'Terjadi kesalahan saat memuat data.')
             } finally {
                 setLoading(false)
             }
