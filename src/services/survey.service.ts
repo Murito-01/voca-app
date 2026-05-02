@@ -124,3 +124,43 @@ export async function createSurveyQuestion(surveyId: string, payload: { question
 
   return response.json();
 }
+
+export async function updateSurveyQuestion(surveyId: string, questionId: string, payload: { question_text: string; question_type: string; options: string[] }) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  const response = await fetch(`/api/survey/${surveyId}/questions/${questionId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Gagal mengedit pertanyaan');
+  }
+
+  return response.json();
+}
+
+export async function deleteSurveyQuestion(surveyId: string, questionId: string) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  const response = await fetch(`/api/survey/${surveyId}/questions/${questionId}`, {
+    method: 'DELETE',
+    headers: {
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Gagal menghapus pertanyaan');
+  }
+
+  return response.json();
+}

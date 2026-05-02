@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getMySurveys, getSurveyQuestions } from '@/services/survey.service'
 import QuestionItem from '@/components/creator/QuestionItem'
@@ -9,6 +9,7 @@ import { Question } from '@/types/survey.types'
 
 export default function SurveyDetailPage() {
     const params = useParams()
+    const router = useRouter()
     const surveyId = params.id as string
 
     const [survey, setSurvey] = useState<any>(null)
@@ -44,6 +45,24 @@ export default function SurveyDetailPage() {
 
         fetchSurvey()
     }, [surveyId])
+
+    const handleDeleteQuestion = async (questionId: string) => {
+        if (!confirm('Apakah Anda yakin ingin menghapus pertanyaan ini?')) return;
+
+        try {
+            const { deleteSurveyQuestion } = await import('@/services/survey.service');
+            await deleteSurveyQuestion(surveyId, questionId);
+            
+            // Hapus dari state agar UI langsung update tanpa reload penuh
+            setQuestions(prev => prev.filter(q => q.id !== questionId));
+        } catch (err: any) {
+            alert(err.message || 'Gagal menghapus pertanyaan');
+        }
+    }
+
+    const handleEditQuestion = (questionId: string) => {
+        router.push(`/my-surveys/${surveyId}/edit-question/${questionId}`);
+    }
 
     return (
         <div className="min-h-screen bg-gray-100 p-6">
@@ -161,7 +180,13 @@ export default function SurveyDetailPage() {
                             ) : (
                                 <div className="space-y-4">
                                     {questions.map((q: Question, i: number) => (
-                                        <QuestionItem key={q.id} question={q} index={i} />
+                                        <QuestionItem 
+                                            key={q.id} 
+                                            question={q} 
+                                            index={i} 
+                                            onDelete={handleDeleteQuestion}
+                                            onEdit={handleEditQuestion}
+                                        />
                                     ))}
                                 </div>
                             )}
