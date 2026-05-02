@@ -26,13 +26,17 @@ export async function DELETE(
         // Verify survey ownership
         const { data: survey, error: surveyError } = await supabase
             .from('surveys')
-            .select('id')
+            .select('id, status')
             .eq('id', surveyId)
             .eq('creator_id', user.id)
             .single();
 
         if (surveyError || !survey) {
             return Response.json({ error: 'Survey not found or unauthorized' }, { status: 403 });
+        }
+
+        if (survey.status === 'active') {
+            return Response.json({ error: 'Survey sudah aktif, tidak bisa menghapus pertanyaan' }, { status: 403 });
         }
 
         // Delete question (assuming CASCADE handles options, or we can manually delete options first if needed)
@@ -80,13 +84,17 @@ export async function PUT(
         // Verify survey ownership
         const { data: survey, error: surveyError } = await supabase
             .from('surveys')
-            .select('id')
+            .select('id, status')
             .eq('id', surveyId)
             .eq('creator_id', user.id)
             .single();
 
         if (surveyError || !survey) {
             return Response.json({ error: 'Survey not found or unauthorized' }, { status: 403 });
+        }
+
+        if (survey.status === 'active') {
+            return Response.json({ error: 'Survey sudah aktif, tidak bisa mengedit pertanyaan' }, { status: 403 });
         }
 
         const { question_text, question_type, options } = body;

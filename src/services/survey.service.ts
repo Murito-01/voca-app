@@ -164,3 +164,22 @@ export async function deleteSurveyQuestion(surveyId: string, questionId: string)
 
   return response.json();
 }
+
+export async function publishSurvey(surveyId: string) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  const response = await fetch(`/api/survey/${surveyId}/publish`, {
+    method: 'POST',
+    headers: {
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Gagal mempublikasikan survey');
+  }
+
+  return response.json();
+}

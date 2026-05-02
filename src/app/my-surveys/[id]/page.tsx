@@ -16,6 +16,7 @@ export default function SurveyDetailPage() {
     const [questions, setQuestions] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [isPublishing, setIsPublishing] = useState(false)
 
     useEffect(() => {
         const fetchSurvey = async () => {
@@ -64,6 +65,22 @@ export default function SurveyDetailPage() {
         router.push(`/my-surveys/${surveyId}/edit-question/${questionId}`);
     }
 
+    const handlePublish = async () => {
+        if (!confirm('Apakah Anda yakin ingin mem-publish survey ini? Setelah di-publish, Anda tidak bisa lagi menambah, mengedit, atau menghapus pertanyaan.')) return;
+        
+        setIsPublishing(true)
+        try {
+            const { publishSurvey } = await import('@/services/survey.service')
+            await publishSurvey(surveyId)
+            setSurvey({ ...survey, status: 'active' })
+            alert('Survey berhasil di-publish!')
+        } catch (err: any) {
+            alert(err.message || 'Gagal mem-publish survey')
+        } finally {
+            setIsPublishing(false)
+        }
+    }
+
     return (
         <div className="min-h-screen bg-gray-100 p-6">
             <div className="max-w-2xl mx-auto">
@@ -94,10 +111,25 @@ export default function SurveyDetailPage() {
                 {!loading && survey && (
                     <div className="bg-white mt-6 p-6 rounded-xl border shadow-sm">
 
-                        {/* Title */}
-                        <h1 className="text-2xl font-bold text-gray-900">
-                            {survey.title}
-                        </h1>
+                        {/* Title & Publish Button */}
+                        <div className="flex justify-between items-start">
+                            <h1 className="text-2xl font-bold text-gray-900">
+                                {survey.title}
+                            </h1>
+                            {survey.status === 'draft' && (
+                                <button
+                                    onClick={handlePublish}
+                                    disabled={isPublishing || questions.length === 0}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors ${
+                                        isPublishing || questions.length === 0
+                                            ? 'bg-gray-400 cursor-not-allowed'
+                                            : 'bg-green-600 hover:bg-green-700'
+                                    }`}
+                                >
+                                    {isPublishing ? 'Publishing...' : '🚀 Publish Survey'}
+                                </button>
+                            )}
+                        </div>
 
                         {/* Status */}
                         <span className={`inline-block mt-2 px-3 py-1 text-xs rounded-full ${survey.status === 'active'
@@ -165,12 +197,14 @@ export default function SurveyDetailPage() {
                                 <h2 className="text-lg font-semibold text-gray-900">
                                     Pertanyaan Survey
                                 </h2>
-                                <Link
-                                    href={`/my-surveys/${surveyId}/add-question`}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
-                                >
-                                    + Tambah Pertanyaan
-                                </Link>
+                                {survey.status === 'draft' && (
+                                    <Link
+                                        href={`/my-surveys/${surveyId}/add-question`}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
+                                    >
+                                        + Tambah Pertanyaan
+                                    </Link>
+                                )}
                             </div>
 
                             {questions.length === 0 ? (
@@ -184,8 +218,8 @@ export default function SurveyDetailPage() {
                                             key={q.id} 
                                             question={q} 
                                             index={i} 
-                                            onDelete={handleDeleteQuestion}
-                                            onEdit={handleEditQuestion}
+                                            onDelete={survey.status === 'draft' ? handleDeleteQuestion : undefined}
+                                            onEdit={survey.status === 'draft' ? handleEditQuestion : undefined}
                                         />
                                     ))}
                                 </div>

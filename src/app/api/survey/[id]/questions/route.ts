@@ -91,7 +91,7 @@ export async function POST(
         // Pastikan survey ini milik user yang login
         const { data: survey, error: surveyError } = await supabase
             .from('surveys')
-            .select('id, creator_id')
+            .select('id, creator_id, status')
             .eq('id', id)
             .single()
 
@@ -101,6 +101,10 @@ export async function POST(
 
         if (survey.creator_id !== user.id) {
             return Response.json({ error: 'Akses ditolak' }, { status: 403 })
+        }
+
+        if (survey.status === 'active') {
+            return Response.json({ error: 'Survey sudah aktif, tidak bisa menambah pertanyaan' }, { status: 403 })
         }
 
         const { question_text, question_type, options } = body
