@@ -2,7 +2,8 @@ import { supabase } from "@/lib/supabase";
 
 export interface SubmitResponsePayload {
   survey_id: string;
-  score: number;
+  started_at: string;
+  answers: Record<string, string | string[]>;
 }
 
 export async function submitSurveyResponse(payload: SubmitResponsePayload) {

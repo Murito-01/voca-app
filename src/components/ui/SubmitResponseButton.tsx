@@ -4,10 +4,27 @@ import { useState, useEffect } from "react";
 import { submitSurveyResponse } from "@/services/response.service";
 import { supabase } from "@/lib/supabase";
 
-export default function SubmitResponseButton({ surveyId: initialSurveyId, onSuccessCallback, hasSubmitted: initialHasSubmitted }: { surveyId?: string, onSuccessCallback?: () => void, hasSubmitted?: boolean }) {
+export default function SubmitResponseButton({ 
+  surveyId: initialSurveyId, 
+  onSuccessCallback,
+  onSubmitStart,
+  onSubmitError,
+  hasSubmitted: initialHasSubmitted,
+  disabled: externalDisabled,
+  answers,
+  startedAt
+}: { 
+  surveyId?: string, 
+  onSuccessCallback?: () => void,
+  onSubmitStart?: () => void,
+  onSubmitError?: () => void,
+  hasSubmitted?: boolean,
+  disabled?: boolean,
+  answers?: Record<string, string | string[]>,
+  startedAt: string
+}) {
   const [userId, setUserId] = useState('');
   const [surveyId, setSurveyId] = useState(initialSurveyId || '');
-  const [score, setScore] = useState<number | string>('');
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,13 +66,15 @@ export default function SubmitResponseButton({ surveyId: initialSurveyId, onSucc
     }
 
     setIsLoading(true);
+    if (onSubmitStart) onSubmitStart();
     setError(null);
     setSuccess(false);
 
     try {
       await submitSurveyResponse({
         survey_id: surveyId,
-        score: Number(score)
+        started_at: startedAt,
+        answers: answers || {}
       });
 
       setSuccess(true);
@@ -65,6 +84,7 @@ export default function SubmitResponseButton({ surveyId: initialSurveyId, onSucc
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      if (onSubmitError) onSubmitError();
     } finally {
       setIsLoading(false);
     }
@@ -86,23 +106,12 @@ export default function SubmitResponseButton({ surveyId: initialSurveyId, onSucc
         </div>
       )}
 
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-gray-700">Score</label>
-        <input 
-          type="number" 
-          value={score}
-          onChange={e => setScore(Number(e.target.value))}
-          disabled={success}
-          className="border border-gray-300 rounded-md px-3 py-2 text-sm text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-shadow disabled:bg-gray-100"
-          placeholder="Enter score"
-        />
-      </div>
 
       <button 
         onClick={handleSubmit} 
-        disabled={isLoading || !userId || success}
+        disabled={isLoading || !userId || success || externalDisabled}
         className={`mt-2 px-6 py-2.5 font-medium text-white rounded-lg transition-all duration-200 flex justify-center ${
-          isLoading || !userId || success
+          isLoading || !userId || success || externalDisabled
             ? "bg-gray-400 cursor-not-allowed opacity-70" 
             : "bg-blue-600 hover:bg-blue-700 active:scale-95 shadow-md hover:shadow-lg"
         }`}

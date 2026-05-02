@@ -70,6 +70,7 @@ export async function getMySurveys() {
   const response = await fetch('/api/survey/my', {
     method: 'GET',
     headers: {
+      'Content-Type': 'application/json',
       ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     },
   });
@@ -82,20 +83,22 @@ export async function getMySurveys() {
   return response.json();
 }
 
-export async function getSurveyQuestions(surveyId: string) {
+export async function getSurveyQuestions(id: string) {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
 
-  const response = await fetch(`/api/survey/${surveyId}/questions`, {
+  const response = await fetch(`/api/survey/${id}/questions`, {
     method: 'GET',
     headers: {
+      'Content-Type': 'application/json',
       ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     },
   });
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || 'Gagal memuat pertanyaan');
+    const errorMessage = errorData.error || response.statusText;
+    throw new Error(`Failed to fetch survey questions: ${errorMessage}`);
   }
 
   return response.json();
