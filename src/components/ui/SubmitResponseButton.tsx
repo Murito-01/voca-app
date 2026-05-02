@@ -6,14 +6,18 @@ import { supabase } from "@/lib/supabase";
 
 export default function SubmitResponseButton({ 
   surveyId: initialSurveyId, 
-  onSuccessCallback, 
+  onSuccessCallback,
+  onSubmitStart,
+  onSubmitError,
   hasSubmitted: initialHasSubmitted,
   disabled: externalDisabled,
   answers,
   startedAt
 }: { 
   surveyId?: string, 
-  onSuccessCallback?: () => void, 
+  onSuccessCallback?: () => void,
+  onSubmitStart?: () => void,
+  onSubmitError?: () => void,
   hasSubmitted?: boolean,
   disabled?: boolean,
   answers?: Record<string, string | string[]>,
@@ -62,6 +66,7 @@ export default function SubmitResponseButton({
     }
 
     setIsLoading(true);
+    if (onSubmitStart) onSubmitStart();
     setError(null);
     setSuccess(false);
 
@@ -79,6 +84,7 @@ export default function SubmitResponseButton({
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      if (onSubmitError) onSubmitError();
     } finally {
       setIsLoading(false);
     }

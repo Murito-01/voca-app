@@ -25,7 +25,7 @@ export default function MyResponses() {
     }, [])
 
     const totalReward = data.reduce((acc, r) => {
-        return acc + (r.surveys?.reward_per_response || 0)
+        return acc + (r.reward_final || 0)
     }, 0)
 
     return (
@@ -106,16 +106,30 @@ export default function MyResponses() {
                 {!loading && !error && data.length > 0 && (
                     <div className="space-y-4">
                         {data.map((r) => {
-                            const survey = r.surveys || {}
                             return (
                                 <div
                                     key={r.id}
                                     className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex items-center justify-between"
                                 >
                                     <div>
-                                        <h2 className="text-lg font-semibold text-gray-900 leading-tight mb-1">
-                                            {survey.title || 'Untitled Survey'}
-                                        </h2>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <h2 className="text-lg font-semibold text-gray-900 leading-tight">
+                                                {r.title || 'Untitled Survey'}
+                                            </h2>
+                                            <span className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded-full ${
+                                                r.status === 'valid' ? 'bg-green-100 text-green-700' :
+                                                r.status === 'low_quality' ? 'bg-orange-100 text-orange-700' :
+                                                r.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                                'bg-gray-100 text-gray-700'
+                                            }`}>
+                                                {r.status || 'Pending'}
+                                            </span>
+                                            {r.score !== null && r.score !== undefined && (
+                                                <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                                                    Score: {r.score}
+                                                </span>
+                                            )}
+                                        </div>
                                         <p className="text-xs text-gray-500">
                                             Dikerjakan pada: {new Date(r.created_at).toLocaleDateString('id-ID', {
                                                 year: 'numeric',
@@ -129,13 +143,22 @@ export default function MyResponses() {
                                     
                                     <div className="text-right">
                                         <p className="text-xs text-gray-500 mb-0.5">Reward Didapat</p>
-                                        <p className="text-lg font-bold text-green-600">
+                                        <p className={`text-lg font-bold ${r.reward_final > 0 ? 'text-green-600' : 'text-gray-400'}`}>
                                             {new Intl.NumberFormat('id-ID', {
                                                 style: 'currency',
                                                 currency: 'IDR',
                                                 minimumFractionDigits: 0
-                                            }).format(survey.reward_per_response || 0)}
+                                            }).format(r.reward_final || 0)}
                                         </p>
+                                        {r.reward_final !== r.reward && r.reward > 0 && (
+                                            <p className="text-[10px] text-gray-400 line-through">
+                                                {new Intl.NumberFormat('id-ID', {
+                                                    style: 'currency',
+                                                    currency: 'IDR',
+                                                    minimumFractionDigits: 0
+                                                }).format(r.reward)}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             )
