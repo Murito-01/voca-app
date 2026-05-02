@@ -14,6 +14,7 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
   const [error, setError] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [startedAt, setStartedAt] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleStartSurvey = () => {
     setStartedAt(new Date().toISOString());
@@ -170,8 +171,9 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
             {/* Survey Questions Section */}
             {questions && questions.length > 0 && (
               <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200 mb-8">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Questions</h2>
-                <div className="space-y-6">
+                <fieldset disabled={survey.has_submitted || isSubmitting} className="group">
+                  <h2 className="text-xl font-bold text-gray-900 mb-6 group-disabled:opacity-70">Questions</h2>
+                  <div className="space-y-6 group-disabled:opacity-70">
                   {questions.map((q: any, index: number) => (
                     <div key={q.id} className="p-5 border border-gray-100 rounded-lg bg-gray-50">
                       <p className="font-medium text-gray-900 mb-4">
@@ -232,7 +234,8 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
                       )}
                     </div>
                   ))}
-                </div>
+                  </div>
+                </fieldset>
               </div>
             )}
 
@@ -251,7 +254,10 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
                 disabled={!isFormValid()}
                 answers={answers}
                 startedAt={startedAt}
+                onSubmitStart={() => setIsSubmitting(true)}
+                onSubmitError={() => setIsSubmitting(false)}
                 onSuccessCallback={() => {
+                  setIsSubmitting(false);
                   setSurvey((prev: any) => ({
                     ...prev,
                     remaining_responses: Math.max(0, prev.remaining_responses - 1),
