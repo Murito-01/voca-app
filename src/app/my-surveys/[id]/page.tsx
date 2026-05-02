@@ -17,6 +17,11 @@ export default function SurveyDetailPage() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [isPublishing, setIsPublishing] = useState(false)
+    const [isEditingInfo, setIsEditingInfo] = useState(false)
+    const [editTitle, setEditTitle] = useState('')
+    const [editDescription, setEditDescription] = useState('')
+    const [isSavingInfo, setIsSavingInfo] = useState(false)
+
 
     useEffect(() => {
         const fetchSurvey = async () => {
@@ -28,6 +33,8 @@ export default function SurveyDetailPage() {
                     setError('Survey tidak ditemukan')
                 } else {
                     setSurvey(found)
+                    setEditTitle(found.title || '')
+                    setEditDescription(found.description || '')
                     
                     // Fetch questions
                     try {
@@ -81,6 +88,25 @@ export default function SurveyDetailPage() {
         }
     }
 
+    const handleSaveInfo = async () => {
+        if (!editTitle.trim()) {
+            alert('Judul tidak boleh kosong');
+            return;
+        }
+
+        setIsSavingInfo(true);
+        try {
+            const { updateSurveyDetails } = await import('@/services/survey.service');
+            await updateSurveyDetails(surveyId, { title: editTitle, description: editDescription });
+            setSurvey({ ...survey, title: editTitle, description: editDescription });
+            setIsEditingInfo(false);
+        } catch (err: any) {
+            alert(err.message || 'Gagal menyimpan perubahan');
+        } finally {
+            setIsSavingInfo(false);
+        }
+    }
+
     return (
         <div className="min-h-screen bg-gray-100 p-6">
             <div className="max-w-2xl mx-auto">
@@ -113,14 +139,70 @@ export default function SurveyDetailPage() {
 
                         {/* Title & Publish Button */}
                         <div className="flex justify-between items-start">
-                            <h1 className="text-2xl font-bold text-gray-900">
-                                {survey.title}
-                            </h1>
-                            {survey.status === 'draft' && (
+                            {isEditingInfo ? (
+                                <div className="flex-1 mr-4">
+                                    <input 
+                                        type="text" 
+                                        value={editTitle}
+                                        onChange={(e) => setEditTitle(e.target.value)}
+                                        className="w-full text-2xl font-bold text-gray-900 border-b-2 border-blue-500 focus:outline-none mb-2 bg-gray-50 px-2 py-1 rounded-t-md"
+                                        placeholder="Judul Survey"
+                                    />
+                                    <textarea 
+                                        value={editDescription}
+                                        onChange={(e) => setEditDescription(e.target.value)}
+                                        className="w-full text-gray-600 border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm resize-none"
+                                        placeholder="Deskripsi Survey (Opsional)"
+                                        rows={3}
+                                    />
+                                    <div className="mt-2 flex gap-2">
+                                        <button 
+                                            onClick={handleSaveInfo}
+                                            disabled={isSavingInfo}
+                                            className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:bg-blue-400"
+                                        >
+                                            {isSavingInfo ? 'Menyimpan...' : 'Simpan'}
+                                        </button>
+                                        <button 
+                                            onClick={() => {
+                                                setIsEditingInfo(false);
+                                                setEditTitle(survey.title || '');
+                                                setEditDescription(survey.description || '');
+                                            }}
+                                            disabled={isSavingInfo}
+                                            className="px-3 py-1.5 bg-gray-200 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-300 disabled:bg-gray-100"
+                                        >
+                                            Batal
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex-1 mr-4 group">
+                                    <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                                        {survey.title}
+                                        {survey.status === 'draft' && (
+                                            <button 
+                                                onClick={() => setIsEditingInfo(true)}
+                                                className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-blue-600 transition-opacity rounded-md hover:bg-blue-50"
+                                                title="Edit Judul & Deskripsi"
+                                            >
+                                                ✏️
+                                            </button>
+                                        )}
+                                    </h1>
+                                    {survey.description && (
+                                        <p className="mt-2 text-gray-600 text-sm whitespace-pre-wrap">
+                                            {survey.description}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+
+                            {survey.status === 'draft' && !isEditingInfo && (
                                 <button
                                     onClick={handlePublish}
                                     disabled={isPublishing || questions.length === 0}
-                                    className={`px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors ${
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors shrink-0 ${
                                         isPublishing || questions.length === 0
                                             ? 'bg-gray-400 cursor-not-allowed'
                                             : 'bg-green-600 hover:bg-green-700'

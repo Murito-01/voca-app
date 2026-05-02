@@ -9,6 +9,7 @@ export default function CreateSurvey() {
     const router = useRouter()
 
     const [title, setTitle] = useState('')
+    const [description, setDescription] = useState('')
     const [reward, setReward] = useState(0)
     const [total, setTotal] = useState(0)
     const [loading, setLoading] = useState(false)
@@ -31,6 +32,7 @@ export default function CreateSurvey() {
         try {
             const data = await createSurvey({
                 title,
+                description: description || undefined,
                 reward_per_response: reward,
                 total_responses: total
             })
@@ -84,6 +86,20 @@ export default function CreateSurvey() {
                                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
+                            />
+                        </div>
+
+                        {/* Description */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Deskripsi Survey <span className="text-gray-400 font-normal">(Opsional)</span>
+                            </label>
+                            <textarea
+                                placeholder="Jelaskan secara singkat tujuan dari survey ini..."
+                                rows={3}
+                                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-none"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
                             />
                         </div>
 

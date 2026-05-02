@@ -34,10 +34,13 @@ export async function POST(req: Request) {
             return Response.json({ error: error.message }, { status: 400 })
         }
 
-        // Force status to draft initially
+        // Force status to draft initially and set description
         const { error: updateError } = await supabase
             .from('surveys')
-            .update({ status: 'draft' })
+            .update({ 
+                status: 'draft',
+                description: body.description || null 
+            })
             .eq('id', data)
 
         if (updateError) {
