@@ -30,6 +30,8 @@ export async function GET(req: Request) {
         id,
         created_at,
         survey_id,
+        score,
+        status,
         surveys (
           title,
           reward_per_response
@@ -42,7 +44,31 @@ export async function GET(req: Request) {
       return Response.json({ error: error.message }, { status: 400 })
     }
 
-    return Response.json({ data })
+    // 🔥 inject reward_final + clean structure
+    const mapped = (data || []).map((item: any) => {
+      let reward_final = 0
+
+      if (item.status === 'valid') {
+        reward_final = item.surveys?.reward_per_response || 0
+      } else if (item.status === 'low_quality') {
+        reward_final = item.surveys?.reward_per_response || 0
+      } else {
+        reward_final = 0
+      }
+
+      return {
+        id: item.id,
+        created_at: item.created_at,
+        survey_id: item.survey_id,
+        title: item.surveys?.title || '',
+        score: item.score,
+        status: item.status,
+        reward: item.surveys?.reward_per_response || 0,
+        reward_final
+      }
+    })
+
+    return Response.json({ data: mapped })
 
   } catch (err) {
     console.error(err)
