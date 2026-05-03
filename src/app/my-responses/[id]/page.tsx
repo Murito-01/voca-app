@@ -118,7 +118,7 @@ export default function ResponseDetail() {
                                     {index + 1}. {answer.question_text}
                                 </p>
                                 <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 text-sm text-gray-700">
-                                    {answer.question_type === 'multiple_choice' || answer.question_type === 'single_choice' 
+                                    {answer.question_type === 'radio' || answer.question_type === 'checkbox' 
                                         ? answer.option_text || answer.answer_text 
                                         : answer.answer_text}
                                 </div>

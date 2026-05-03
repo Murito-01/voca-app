@@ -70,11 +70,11 @@ export async function GET(
     // 🔥 FLATTEN DATA
     // =========================
 
-    const survey = data.surveys?.[0] || {}
+    const survey: any = Array.isArray(data.surveys) ? data.surveys[0] : (data.surveys || {})
 
     const answers = (data.answers || []).map((a: any) => {
-      const question = a.questions?.[0] || {}
-      const option = a.options?.[0] || {}
+      const question: any = Array.isArray(a.questions) ? a.questions[0] : (a.questions || {})
+      const option: any = Array.isArray(a.options) ? a.options[0] : (a.options || {})
 
       return {
         answer_id: a.id,
