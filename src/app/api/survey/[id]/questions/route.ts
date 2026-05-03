@@ -103,8 +103,8 @@ export async function POST(
             return Response.json({ error: 'Akses ditolak' }, { status: 403 })
         }
 
-        if (survey.status === 'active') {
-            return Response.json({ error: 'Survey sudah aktif, tidak bisa menambah pertanyaan' }, { status: 403 })
+        if (survey.status !== 'draft') {
+            return Response.json({ error: 'Hanya survey draft yang bisa menambah pertanyaan' }, { status: 403 })
         }
 
         const { question_text, question_type, options } = body

@@ -21,6 +21,7 @@ export default function SurveyDetailPage() {
     const [editTitle, setEditTitle] = useState('')
     const [editDescription, setEditDescription] = useState('')
     const [isSavingInfo, setIsSavingInfo] = useState(false)
+    const [isChangingStatus, setIsChangingStatus] = useState(false)
 
 
     useEffect(() => {
@@ -85,6 +86,27 @@ export default function SurveyDetailPage() {
             alert(err.message || 'Gagal mem-publish survey')
         } finally {
             setIsPublishing(false)
+        }
+    }
+
+    const handleStatusChange = async (newStatus: 'paused' | 'active' | 'completed') => {
+        let confirmMsg = '';
+        if (newStatus === 'paused') confirmMsg = 'Apakah Anda yakin ingin menjeda (pause) survey ini? Responden tidak akan bisa melihat survey ini sementara waktu.';
+        if (newStatus === 'active') confirmMsg = 'Apakah Anda yakin ingin mengaktifkan kembali survey ini?';
+        if (newStatus === 'completed') confirmMsg = 'Apakah Anda yakin ingin MENUTUP PERMANEN survey ini? Status tidak akan bisa diubah lagi.';
+        
+        if (!confirm(confirmMsg)) return;
+
+        setIsChangingStatus(true);
+        try {
+            const { updateSurveyStatus } = await import('@/services/survey.service');
+            await updateSurveyStatus(surveyId, newStatus);
+            setSurvey({ ...survey, status: newStatus });
+            alert(`Survey berhasil diubah menjadi ${newStatus}`);
+        } catch (err: any) {
+            alert(err.message || 'Gagal mengubah status survey');
+        } finally {
+            setIsChangingStatus(false);
         }
     }
 
@@ -211,14 +233,54 @@ export default function SurveyDetailPage() {
                                     {isPublishing ? 'Publishing...' : '🚀 Publish Survey'}
                                 </button>
                             )}
+
+                            {survey.status === 'active' && !isEditingInfo && (
+                                <button
+                                    onClick={() => handleStatusChange('paused')}
+                                    disabled={isChangingStatus}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors shrink-0 ${
+                                        isChangingStatus ? 'bg-gray-400 cursor-not-allowed' : 'bg-yellow-500 hover:bg-yellow-600'
+                                    }`}
+                                >
+                                    {isChangingStatus ? 'Processing...' : '⏸️ Pause Survey'}
+                                </button>
+                            )}
+
+                            {survey.status === 'paused' && !isEditingInfo && (
+                                <div className="flex gap-2 shrink-0">
+                                    <button
+                                        onClick={() => handleStatusChange('active')}
+                                        disabled={isChangingStatus}
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors ${
+                                            isChangingStatus ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
+                                        }`}
+                                    >
+                                        {isChangingStatus ? 'Processing...' : '▶️ Resume Survey'}
+                                    </button>
+                                    <button
+                                        onClick={() => handleStatusChange('completed')}
+                                        disabled={isChangingStatus}
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors ${
+                                            isChangingStatus ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'
+                                        }`}
+                                    >
+                                        {isChangingStatus ? 'Processing...' : '🛑 Tutup Survey'}
+                                    </button>
+                                </div>
+                            )}
+
                         </div>
 
                         {/* Status */}
-                        <span className={`inline-block mt-2 px-3 py-1 text-xs rounded-full ${survey.status === 'active'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-gray-100 text-gray-600'
-                            }`}>
-                            {survey.status}
+                        <span className={`inline-block mt-2 px-3 py-1 text-xs rounded-full ${
+                            survey.status === 'active' ? 'bg-green-100 text-green-700' : 
+                            survey.status === 'paused' ? 'bg-yellow-100 text-yellow-800' :
+                            survey.status === 'completed' ? 'bg-blue-100 text-blue-700' :
+                            'bg-gray-100 text-gray-600'
+                        }`}>
+                            {survey.status === 'active' ? 'Active' :
+                             survey.status === 'paused' ? 'Paused' :
+                             survey.status === 'completed' ? 'Completed' : 'Draft'}
                         </span>
 
                         {/* Stats */}
