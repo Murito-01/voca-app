@@ -27,9 +27,6 @@ export async function GET(
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // =========================
-    // 🔍 FETCH RESPONSE DETAIL
-    // =========================
     const { data, error } = await supabase
       .from('responses')
       .select(`
@@ -38,48 +35,80 @@ export async function GET(
         score,
         status,
         score_breakdown,
-        reward_final,
         surveys (
           title,
+          description,
           reward_per_response
         ),
         answers (
-          question_id,
+          id,
           answer_text,
-          option_id
+          option_id,
+          questions (
+            id,
+            text,
+            question_type
+          ),
+          options (
+            id,
+            text
+          )
         )
       `)
       .eq('id', params.id)
       .eq('user_id', user.id)
       .single()
 
-    if (error || !data) {
-      return Response.json({ error: 'Not found' }, { status: 404 })
+    if (error) {
+      return Response.json({ error: error.message }, { status: 400 })
     }
 
     // =========================
-    // 🧠 FORMAT RESPONSE
+    // 🔥 FLATTEN DATA
     // =========================
-    const formatted = {
-      id: data.id,
-      created_at: data.created_at,
-      title: data.surveys?.title || '',
-      score: data.score,
-      status: data.status,
-      reward: data.surveys?.reward_per_response || 0,
-      reward_final: data.reward_final || 0,
 
-      breakdown: data.score_breakdown || {},
+    const survey = data.surveys?.[0] || {}
 
-      answers: (data.answers || []).map((a: any) => ({
-        question_id: a.question_id,
+    const answers = (data.answers || []).map((a: any) => {
+      const question = a.questions?.[0] || {}
+      const option = a.options?.[0] || {}
+
+      return {
+        answer_id: a.id,
+        question_id: question.id,
+        question_text: question.text,
+        question_type: question.question_type,
         answer_text: a.answer_text,
-        option_id: a.option_id
-      }))
+        option_id: a.option_id,
+        option_text: option.text
+      }
+    })
+
+    let reward_final = 0
+    if (data.status === 'valid') {
+      reward_final = survey.reward_per_response || 0
+    } else if (data.status === 'low_quality') {
+      reward_final = survey.reward_per_response || 0
     }
 
-    return Response.json({ data: formatted })
+    return Response.json({
+      data: {
+        id: data.id,
+        created_at: data.created_at,
+        score: data.score,
+        status: data.status,
+        score_breakdown: data.score_breakdown,
 
+        survey: {
+          title: survey.title || '',
+          description: survey.description || '',
+          reward: survey.reward_per_response || 0
+        },
+
+        reward_final,
+        answers
+      }
+    })
   } catch (err) {
     console.error(err)
     return Response.json({ error: 'Internal server error' }, { status: 500 })
