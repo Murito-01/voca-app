@@ -128,15 +128,76 @@ export default function ResponseDetail() {
 
                     {/* Score Breakdown Section */}
                     {data.score_breakdown && typeof data.score_breakdown === 'object' && Object.keys(data.score_breakdown).length > 0 && (
-                        <div className="mt-4 pt-4 border-t border-gray-100">
-                            <p className="text-xs font-semibold text-gray-700 mb-2">Detail Score</p>
-                            <div className="flex flex-wrap gap-2">
-                                {Object.entries(data.score_breakdown).map(([key, value]) => (
-                                    <div key={key} className="bg-gray-50 border border-gray-200 rounded px-2.5 py-1 text-xs flex items-center gap-1">
-                                        <span className="text-gray-500 capitalize">{key.replace(/_/g, ' ')}:</span>
-                                        <span className="font-semibold text-gray-900">{String(value)}</span>
+                        <div className="mt-6 pt-6 border-t border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            
+                            {/* Breakdown */}
+                            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                                    <span>🧮</span> Breakdown
+                                </h3>
+                                <div className="space-y-1.5 text-sm text-gray-600 font-mono">
+                                    <div className="flex justify-between">
+                                        <span>+ Base Score</span>
+                                        <span>{data.score_breakdown.base || 0}</span>
                                     </div>
-                                ))}
+                                    <div className="flex justify-between text-red-600">
+                                        <span>- Time Penalty</span>
+                                        <span>{data.score_breakdown.time_penalty || 0}</span>
+                                    </div>
+                                    <div className="flex justify-between text-red-600">
+                                        <span>- Essay Penalty</span>
+                                        <span>{data.score_breakdown.essay_penalty || 0}</span>
+                                    </div>
+                                    <div className="flex justify-between text-green-600">
+                                        <span>+ Reputation Bonus</span>
+                                        <span>{data.score_breakdown.reputation_bonus || 0}</span>
+                                    </div>
+                                    {data.score_breakdown.reputation_penalty > 0 && (
+                                        <div className="flex justify-between text-red-600">
+                                            <span>- Reputation Penalty</span>
+                                            <span>{data.score_breakdown.reputation_penalty}</span>
+                                        </div>
+                                    )}
+                                    <div className="pt-2 mt-2 border-t border-gray-300 flex justify-between font-bold text-gray-900">
+                                        <span>Final Score</span>
+                                        <span>{data.score_breakdown.final_score || data.score}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Additional Info */}
+                            <div className="space-y-4">
+                                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                    <h3 className="font-bold text-gray-900 mb-1 flex items-center gap-2">
+                                        <span>⏱️</span> Duration
+                                    </h3>
+                                    <p className="text-sm text-gray-700">
+                                        {data.score_breakdown.duration}s (Min: {data.score_breakdown.min_duration}s) 
+                                        {data.score_breakdown.duration >= data.score_breakdown.min_duration ? ' ✅' : ' ❌'}
+                                    </p>
+                                </div>
+
+                                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                    <h3 className="font-bold text-gray-900 mb-1 flex items-center gap-2">
+                                        <span>🧠</span> Attention Check
+                                    </h3>
+                                    <p className="text-sm text-gray-700">
+                                        {data.score_breakdown.attention_check === 'passed' ? 'Passed ✅' : 
+                                         data.score_breakdown.attention_check === 'failed' ? 'Failed ❌' : 
+                                         <span className="capitalize">{data.score_breakdown.attention_check || 'N/A'}</span>}
+                                    </p>
+                                </div>
+
+                                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                    <h3 className="font-bold text-gray-900 mb-1 flex items-center gap-2">
+                                        <span>⭐</span> Reputation
+                                    </h3>
+                                    <p className="text-sm text-gray-700">
+                                        {data.score_breakdown.reputation_bonus > 0 ? <span className="text-green-600 font-medium">+{data.score_breakdown.reputation_bonus} Bonus</span> : 
+                                         data.score_breakdown.reputation_penalty > 0 ? <span className="text-red-600 font-medium">-{data.score_breakdown.reputation_penalty} Penalty</span> : 
+                                         'No impact'}
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     )}
