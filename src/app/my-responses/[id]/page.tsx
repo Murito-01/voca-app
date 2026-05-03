@@ -171,9 +171,13 @@ export default function ResponseDetail() {
                                     <h3 className="font-bold text-gray-900 mb-1 flex items-center gap-2">
                                         <span>⏱️</span> Duration
                                     </h3>
-                                    <p className="text-sm text-gray-700">
-                                        {data.score_breakdown.duration}s (Min: {data.score_breakdown.min_duration}s) 
-                                        {data.score_breakdown.duration >= data.score_breakdown.min_duration ? ' ✅' : ' ❌'}
+                                    <p className="text-sm text-gray-700 flex items-center gap-2">
+                                        <span>{data.score_breakdown.duration}s (Min: {data.score_breakdown.min_duration}s)</span>
+                                        {data.score_breakdown.duration >= data.score_breakdown.min_duration ? (
+                                            <span className="text-[10px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">Normal ✅</span>
+                                        ) : (
+                                            <span className="text-[10px] font-bold text-red-700 bg-red-100 px-2 py-0.5 rounded-full">Too fast ❌</span>
+                                        )}
                                     </p>
                                 </div>
 
