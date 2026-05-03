@@ -125,6 +125,21 @@ export default function ResponseDetail() {
                             </p>
                         </div>
                     </div>
+
+                    {/* Score Breakdown Section */}
+                    {data.score_breakdown && typeof data.score_breakdown === 'object' && Object.keys(data.score_breakdown).length > 0 && (
+                        <div className="mt-4 pt-4 border-t border-gray-100">
+                            <p className="text-xs font-semibold text-gray-700 mb-2">Detail Score</p>
+                            <div className="flex flex-wrap gap-2">
+                                {Object.entries(data.score_breakdown).map(([key, value]) => (
+                                    <div key={key} className="bg-gray-50 border border-gray-200 rounded px-2.5 py-1 text-xs flex items-center gap-1">
+                                        <span className="text-gray-500 capitalize">{key.replace(/_/g, ' ')}:</span>
+                                        <span className="font-semibold text-gray-900">{String(value)}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Answers Section */}
