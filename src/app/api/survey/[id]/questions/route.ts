@@ -193,7 +193,7 @@ export async function POST(
                 survey_id: id,
                 question_text: finalQuestionText,
                 question_type,
-                is_attention_check: is_attention_check || false
+                is_attention_check: false
             })
             .select()
             .single()
@@ -242,7 +242,10 @@ export async function POST(
                 if (correctOptionId) {
                     await supabase
                         .from('questions')
-                        .update({ correct_option_id: correctOptionId })
+                        .update({
+                            correct_option_id: correctOptionId,
+                            is_attention_check: true
+                        })
                         .eq('id', questionData.id)
                 }
             }

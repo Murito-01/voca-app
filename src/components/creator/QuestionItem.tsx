@@ -23,7 +23,7 @@ export default function QuestionItem({ question: q, index, onEdit, onDelete }: Q
                     <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full shrink-0">
                         {q.question_type === 'text' ? 'Teks Pendek' : q.question_type === 'radio' ? 'Pilihan Ganda' : 'Kotak Centang'}
                     </span>
-                    {onEdit && (
+                    {onEdit && !q.is_attention_check && (
                         <button 
                             onClick={() => onEdit(q.id)}
                             className="text-blue-600 hover:bg-blue-50 p-1 rounded-md text-sm transition-colors"
@@ -32,7 +32,7 @@ export default function QuestionItem({ question: q, index, onEdit, onDelete }: Q
                             ✏️
                         </button>
                     )}
-                    {onDelete && (
+                    {onDelete && !q.is_attention_check && (
                         <button 
                             onClick={() => onDelete(q.id)}
                             className="text-red-500 hover:bg-red-50 p-1 rounded-md text-sm transition-colors"

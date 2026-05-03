@@ -98,34 +98,51 @@ export default function AddQuestionPage() {
                 <div className="bg-white p-6 rounded-xl border shadow-sm">
                     <div className="flex justify-between items-center mb-6">
                         <h1 className="text-2xl font-bold text-gray-900">Tambah Pertanyaan</h1>
-
+                        
                         <div className="flex gap-2">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setQuestionType('radio')
-                                    setQuestionText("Untuk memastikan kualitas, mohon pilih opsi 'Sangat Setuju' pada pertanyaan ini.")
-                                    setOptions(["Sangat Setuju", "Setuju", "Tidak Setuju"])
-                                    setIsAttentionCheck(true)
-                                    setCorrectOptionIndex(0)
-                                }}
-                                className="text-xs px-3 py-1.5 bg-red-100 text-red-700 hover:bg-red-200 font-medium rounded-md border border-red-200 transition-colors flex items-center gap-1"
-                            >
-                                ⚠️ Template Radio Jebakan
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setQuestionType('checkbox')
-                                    setQuestionText("Untuk membuktikan Anda bukan bot, pilih kotak 'Warna Merah' saja.")
-                                    setOptions(["Warna Merah", "Warna Biru", "Warna Hijau"])
-                                    setIsAttentionCheck(true)
-                                    setCorrectOptionIndex(0)
-                                }}
-                                className="text-xs px-3 py-1.5 bg-red-100 text-red-700 hover:bg-red-200 font-medium rounded-md border border-red-200 transition-colors flex items-center gap-1"
-                            >
-                                ⚠️ Template Checkbox Jebakan
-                            </button>
+                            {isAttentionCheck ? (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsAttentionCheck(false)
+                                        setQuestionText('')
+                                        setOptions(['', ''])
+                                        setQuestionType('text')
+                                    }}
+                                    className="text-xs px-3 py-1.5 bg-gray-100 text-gray-700 hover:bg-gray-200 font-medium rounded-md border border-gray-200 transition-colors"
+                                >
+                                    🔄 Reset (Gunakan Pertanyaan Biasa)
+                                </button>
+                            ) : (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setQuestionType('radio')
+                                            setQuestionText("Untuk memastikan kualitas, mohon pilih opsi 'Sangat Setuju' pada pertanyaan ini.")
+                                            setOptions(["Sangat Setuju", "Setuju", "Tidak Setuju"])
+                                            setIsAttentionCheck(true)
+                                            setCorrectOptionIndex(0)
+                                        }}
+                                        className="text-xs px-3 py-1.5 bg-red-100 text-red-700 hover:bg-red-200 font-medium rounded-md border border-red-200 transition-colors flex items-center gap-1"
+                                    >
+                                        ⚠️ Template Radio Jebakan
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setQuestionType('checkbox')
+                                            setQuestionText("Untuk membuktikan Anda bukan bot, pilih kotak 'Warna Merah' saja.")
+                                            setOptions(["Warna Merah", "Warna Biru", "Warna Hijau"])
+                                            setIsAttentionCheck(true)
+                                            setCorrectOptionIndex(0)
+                                        }}
+                                        className="text-xs px-3 py-1.5 bg-red-100 text-red-700 hover:bg-red-200 font-medium rounded-md border border-red-200 transition-colors flex items-center gap-1"
+                                    >
+                                        ⚠️ Template Checkbox Jebakan
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </div>
 
@@ -144,10 +161,11 @@ export default function AddQuestionPage() {
                             <textarea
                                 value={questionText}
                                 onChange={(e) => setQuestionText(e.target.value)}
-                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-gray-900 placeholder-gray-400 bg-white"
+                                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-gray-900 placeholder-gray-400 ${isAttentionCheck ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : 'bg-white'}`}
                                 rows={3}
                                 placeholder="Tuliskan pertanyaanmu di sini..."
                                 required
+                                disabled={isAttentionCheck}
                             />
                         </div>
 
@@ -159,7 +177,8 @@ export default function AddQuestionPage() {
                             <select
                                 value={questionType}
                                 onChange={(e) => setQuestionType(e.target.value)}
-                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-gray-900 bg-white"
+                                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-gray-900 ${isAttentionCheck ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : 'bg-white'}`}
+                                disabled={isAttentionCheck}
                             >
                                 <option value="text">Teks Pendek (Jawaban Singkat)</option>
                                 <option value="radio">Pilihan Ganda (Satu Jawaban)</option>
@@ -183,16 +202,16 @@ export default function AddQuestionPage() {
                                             type="text"
                                             value={opt}
                                             onChange={(e) => handleOptionChange(index, e.target.value)}
+                                            className={`flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm ${isAttentionCheck ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : 'bg-white'}`}
                                             placeholder={`Opsi ${index + 1}`}
-                                            className="flex-1 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 placeholder-gray-400 bg-white"
                                             required
+                                            disabled={isAttentionCheck}
                                         />
-                                        {options.length > 2 && (
+                                        {!isAttentionCheck && options.length > 2 && (
                                             <button
                                                 type="button"
                                                 onClick={() => handleRemoveOption(index)}
-                                                className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
-                                                title="Hapus opsi"
+                                                className="text-red-400 hover:text-red-600 p-1"
                                             >
                                                 ✕
                                             </button>
@@ -200,13 +219,15 @@ export default function AddQuestionPage() {
                                     </div>
                                 ))}
 
-                                <button
-                                    type="button"
-                                    onClick={handleAddOption}
-                                    className="text-sm text-blue-600 font-medium hover:underline flex items-center gap-1"
-                                >
-                                    <span>+</span> Tambah Opsi
-                                </button>
+                                {!isAttentionCheck && (
+                                    <button
+                                        type="button"
+                                        onClick={handleAddOption}
+                                        className="text-sm text-blue-600 font-medium hover:underline flex items-center gap-1"
+                                    >
+                                        <span>+</span> Tambah Opsi
+                                    </button>
+                                )}
 
                                 {isAttentionCheck && (
                                     <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
