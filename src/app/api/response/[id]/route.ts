@@ -46,12 +46,12 @@ export async function GET(
           option_id,
           questions (
             id,
-            text,
+            question_text,
             question_type
           ),
           options (
             id,
-            text
+            option_text
           )
         )
       `)
@@ -76,11 +76,11 @@ export async function GET(
       return {
         answer_id: a.id,
         question_id: question.id,
-        question_text: question.text,
+        question_text: question.question_text,
         question_type: question.question_type,
         answer_text: a.answer_text,
         option_id: a.option_id,
-        option_text: option.text
+        option_text: option.option_text
       }
     })
 
