@@ -48,3 +48,24 @@ export async function getMyResponses() {
 
   return response.json();
 }
+
+export async function getResponseById(id: string) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  const response = await fetch(`/api/response/${id}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    const errorMessage = errorData.error || response.statusText;
+    throw new Error(`Failed to fetch response details: ${errorMessage}`);
+  }
+
+  return response.json();
+}
