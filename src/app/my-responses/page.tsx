@@ -107,9 +107,10 @@ export default function MyResponses() {
                     <div className="space-y-4">
                         {data.map((r) => {
                             return (
-                                <div
+                                <Link
+                                    href={`/my-responses/${r.id}`}
                                     key={r.id}
-                                    className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex items-center justify-between"
+                                    className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex items-center justify-between hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
                                 >
                                     <div>
                                         <div className="flex items-center gap-2 mb-1">
@@ -160,7 +161,7 @@ export default function MyResponses() {
                                             </p>
                                         )}
                                     </div>
-                                </div>
+                                </Link>
                             )
                         })}
                     </div>
