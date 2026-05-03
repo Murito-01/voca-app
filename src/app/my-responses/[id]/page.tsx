@@ -84,7 +84,12 @@ export default function ResponseDetail() {
                             <h1 className="text-2xl font-bold text-gray-900 mb-2">
                                 {data.survey?.title || 'Untitled Survey'}
                             </h1>
-                            <p className="text-sm text-gray-500">
+                            {data.survey?.description && (
+                                <p className="text-sm text-gray-700 mb-3">
+                                    {data.survey.description}
+                                </p>
+                            )}
+                            <p className="text-xs text-gray-500">
                                 Dikerjakan pada: {new Date(data.created_at).toLocaleDateString('id-ID', {
                                     year: 'numeric',
                                     month: 'long',
