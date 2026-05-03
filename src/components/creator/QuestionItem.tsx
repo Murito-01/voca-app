@@ -15,6 +15,11 @@ export default function QuestionItem({ question: q, index, onEdit, onDelete }: Q
                     {index + 1}. {q.question_text}
                 </h3>
                 <div className="flex items-center gap-2">
+                    {q.is_attention_check && (
+                        <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full shrink-0 font-medium border border-red-200" title="Pertanyaan Jebakan">
+                            ⚠️ Validasi
+                        </span>
+                    )}
                     <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full shrink-0">
                         {q.question_type === 'text' ? 'Teks Pendek' : q.question_type === 'radio' ? 'Pilihan Ganda' : 'Kotak Centang'}
                     </span>
@@ -42,9 +47,9 @@ export default function QuestionItem({ question: q, index, onEdit, onDelete }: Q
             {q.options && q.options.length > 0 && (
                 <ul className="mt-2 space-y-1 pl-4">
                     {q.options.map((opt) => (
-                        <li key={opt.id} className="text-sm text-gray-600 flex items-center gap-2">
-                            <span className="text-gray-400 text-xs">
-                                {q.question_type === 'radio' ? '○' : '□'}
+                        <li key={opt.id} className={`text-sm flex items-center gap-2 ${q.is_attention_check && q.correct_option_id === opt.id ? 'text-green-700 font-medium bg-green-50 px-2 py-1 rounded w-fit' : 'text-gray-600'}`}>
+                            <span className={q.is_attention_check && q.correct_option_id === opt.id ? 'text-green-500 text-xs' : 'text-gray-400 text-xs'}>
+                                {q.is_attention_check && q.correct_option_id === opt.id ? '✅' : (q.question_type === 'radio' ? '○' : '□')}
                             </span>
                             {opt.option_text}
                         </li>

@@ -12,8 +12,11 @@ export default function AddQuestionPage() {
 
     const [questionText, setQuestionText] = useState('')
     const [questionType, setQuestionType] = useState('text')
-    const [options, setOptions] = useState<string[]>(['', '']) // Default 2 options for radio/checkbox
-    
+    const [options, setOptions] = useState<string[]>(['', ''])
+
+    const [isAttentionCheck, setIsAttentionCheck] = useState(false)
+    const [correctOptionIndex, setCorrectOptionIndex] = useState<number>(0)
+
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
@@ -54,10 +57,19 @@ export default function AddQuestionPage() {
         setLoading(true)
 
         try {
-            const payload = {
+            const payload: any = {
                 question_text: questionText,
                 question_type: questionType,
                 options: isOptionType ? options.filter(o => o.trim() !== '') : []
+            }
+
+            if (isAttentionCheck) {
+                payload.is_attention_check = true;
+                // Hitung ulang index karena opsi kosong difilter
+                const validOptions = options.filter(o => o.trim() !== '');
+                const originalCorrectValue = options[correctOptionIndex];
+                const newCorrectIndex = validOptions.findIndex(o => o === originalCorrectValue);
+                payload.correct_option_index = newCorrectIndex >= 0 ? newCorrectIndex : 0;
             }
 
             await createSurveyQuestion(surveyId, payload)
@@ -84,7 +96,38 @@ export default function AddQuestionPage() {
                 </Link>
 
                 <div className="bg-white p-6 rounded-xl border shadow-sm">
-                    <h1 className="text-2xl font-bold text-gray-900 mb-6">Tambah Pertanyaan</h1>
+                    <div className="flex justify-between items-center mb-6">
+                        <h1 className="text-2xl font-bold text-gray-900">Tambah Pertanyaan</h1>
+
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setQuestionType('radio')
+                                    setQuestionText("Untuk memastikan kualitas, mohon pilih opsi 'Sangat Setuju' pada pertanyaan ini.")
+                                    setOptions(["Sangat Setuju", "Setuju", "Tidak Setuju"])
+                                    setIsAttentionCheck(true)
+                                    setCorrectOptionIndex(0)
+                                }}
+                                className="text-xs px-3 py-1.5 bg-red-100 text-red-700 hover:bg-red-200 font-medium rounded-md border border-red-200 transition-colors flex items-center gap-1"
+                            >
+                                ⚠️ Template Radio Jebakan
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setQuestionType('checkbox')
+                                    setQuestionText("Untuk membuktikan Anda bukan bot, pilih kotak 'Warna Merah' saja.")
+                                    setOptions(["Warna Merah", "Warna Biru", "Warna Hijau"])
+                                    setIsAttentionCheck(true)
+                                    setCorrectOptionIndex(0)
+                                }}
+                                className="text-xs px-3 py-1.5 bg-red-100 text-red-700 hover:bg-red-200 font-medium rounded-md border border-red-200 transition-colors flex items-center gap-1"
+                            >
+                                ⚠️ Template Checkbox Jebakan
+                            </button>
+                        </div>
+                    </div>
 
                     {error && (
                         <div className="bg-red-50 text-red-700 border border-red-200 p-4 rounded-lg mb-6 text-sm">
@@ -130,7 +173,7 @@ export default function AddQuestionPage() {
                                 <label className="block text-sm font-medium text-gray-700">
                                     Opsi Jawaban
                                 </label>
-                                
+
                                 {options.map((opt, index) => (
                                     <div key={index} className="flex gap-2 items-center">
                                         <div className="shrink-0 text-gray-400">
@@ -160,10 +203,34 @@ export default function AddQuestionPage() {
                                 <button
                                     type="button"
                                     onClick={handleAddOption}
-                                    className="mt-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
+                                    className="text-sm text-blue-600 font-medium hover:underline flex items-center gap-1"
                                 >
-                                    + Tambah Opsi Lainnya
+                                    <span>+</span> Tambah Opsi
                                 </button>
+
+                                {isAttentionCheck && (
+                                    <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
+                                        <p className="text-sm text-red-800 font-medium mb-2 flex items-center gap-1">
+                                            ⚠️ Pilih Kunci Jawaban Validasi:
+                                        </p>
+                                        <div className="space-y-2">
+                                            {options.map((opt, index) => (
+                                                <label key={index} className="flex items-center gap-2 cursor-pointer">
+                                                    <input
+                                                        type="radio"
+                                                        name="correctOption"
+                                                        checked={correctOptionIndex === index}
+                                                        onChange={() => setCorrectOptionIndex(index)}
+                                                        className="w-4 h-4 text-red-600 focus:ring-red-500"
+                                                    />
+                                                    <span className={`text-sm ${correctOptionIndex === index ? 'font-semibold text-red-700' : 'text-gray-700'}`}>
+                                                        {opt || `Opsi ${index + 1}`}
+                                                    </span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -172,11 +239,10 @@ export default function AddQuestionPage() {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className={`w-full py-3 rounded-lg text-white font-medium transition-colors ${
-                                    loading 
-                                        ? 'bg-blue-400 cursor-not-allowed' 
+                                className={`w-full py-3 rounded-lg text-white font-medium transition-colors ${loading
+                                        ? 'bg-blue-400 cursor-not-allowed'
                                         : 'bg-blue-600 hover:bg-blue-700'
-                                }`}
+                                    }`}
                             >
                                 {loading ? 'Menyimpan...' : 'Simpan Pertanyaan'}
                             </button>
