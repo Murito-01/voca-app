@@ -104,7 +104,7 @@ export async function getSurveyQuestions(id: string) {
   return response.json();
 }
 
-export async function createSurveyQuestion(surveyId: string, payload: { question_text: string; question_type: string; options: string[] }) {
+export async function createSurveyQuestion(surveyId: string, payload: { question_text: string; question_type: string; options: string[]; is_attention_check?: boolean; correct_option_index?: number }) {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
 

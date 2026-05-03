@@ -16,7 +16,9 @@ export interface Question {
     question_text: string;
     question_type: 'text' | 'radio' | 'checkbox';
     is_required: boolean;
-    created_at: string;
+    created_at?: string;
+    is_attention_check?: boolean;
+    correct_option_id?: string | null;
     options?: Option[];
 }
 

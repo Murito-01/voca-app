@@ -58,7 +58,7 @@ export async function POST(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = await params;
+        const { id } = await params
         const body = await req.json()
         const authHeader = req.headers.get('Authorization')
 
@@ -76,6 +76,9 @@ export async function POST(
             process.env.SUPABASE_SERVICE_ROLE_KEY!
         )
 
+        // =========================
+        // 🔐 AUTH
+        // =========================
         const {
             data: { user },
             error: authError
@@ -88,7 +91,9 @@ export async function POST(
             )
         }
 
-        // Pastikan survey ini milik user yang login
+        // =========================
+        // 🔍 VALIDASI SURVEY
+        // =========================
         const { data: survey, error: surveyError } = await supabase
             .from('surveys')
             .select('id, creator_id, status')
@@ -104,52 +109,151 @@ export async function POST(
         }
 
         if (survey.status !== 'draft') {
-            return Response.json({ error: 'Hanya survey draft yang bisa menambah pertanyaan' }, { status: 403 })
+            return Response.json(
+                { error: 'Hanya survey draft yang bisa menambah pertanyaan' },
+                { status: 403 }
+            )
         }
 
-        const { question_text, question_type, options } = body
+        // =========================
+        // 📥 INPUT
+        // =========================
+        const {
+            question_text,
+            question_type,
+            options,
+            is_attention_check
+        } = body
 
-        if (!question_text || !question_type) {
-            return Response.json({ error: 'Data pertanyaan tidak lengkap' }, { status: 400 })
+        let finalQuestionText = question_text
+        let finalOptions = options
+        let finalCorrectOptionIndex = null
+
+        // =========================
+        // 🧠 ATTENTION CHECK SYSTEM (ANTI ABUSE)
+        // =========================
+        if (is_attention_check) {
+            // 🔒 HARD LIMIT (max 2 attention check per survey)
+            const { count } = await supabase
+                .from('questions')
+                .select('*', { count: 'exact', head: true })
+                .eq('survey_id', id)
+                .eq('is_attention_check', true)
+
+            if ((count || 0) >= 2) {
+                return Response.json(
+                    { error: 'Maksimal 2 attention check per survey' },
+                    { status: 400 }
+                )
+            }
+
+            // 🎯 TEMPLATE SYSTEM (bukan dari creator)
+            const templates = [
+                {
+                    text: "Untuk memastikan kualitas, pilih jawaban 'Sangat Setuju'.",
+                    options: ['Sangat Setuju', 'Setuju', 'Tidak Setuju'],
+                    correct: 0
+                },
+                {
+                    text: "Pilih opsi 'Warna Merah' untuk validasi.",
+                    options: ['Warna Merah', 'Warna Biru', 'Warna Hijau'],
+                    correct: 0
+                },
+                {
+                    text: "Silakan pilih jawaban 'Ya' pada pertanyaan ini.",
+                    options: ['Ya', 'Tidak'],
+                    correct: 0
+                }
+            ]
+
+            const randomTemplate =
+                templates[Math.floor(Math.random() * templates.length)]
+
+            finalQuestionText = randomTemplate.text
+            finalOptions = randomTemplate.options
+            finalCorrectOptionIndex = randomTemplate.correct
+        } else {
+            // =========================
+            // 📌 VALIDASI NORMAL QUESTION
+            // =========================
+            if (!question_text || !question_type) {
+                return Response.json(
+                    { error: 'Data pertanyaan tidak lengkap' },
+                    { status: 400 }
+                )
+            }
         }
 
-        // Insert Question
+        // =========================
+        // 📝 INSERT QUESTION
+        // =========================
         const { data: questionData, error: qError } = await supabase
             .from('questions')
             .insert({
                 survey_id: id,
-                question_text,
-                question_type
+                question_text: finalQuestionText,
+                question_type,
+                is_attention_check: is_attention_check || false
             })
             .select()
             .single()
 
         if (qError || !questionData) {
-            return Response.json({ error: qError?.message || 'Gagal menyimpan pertanyaan' }, { status: 400 })
+            return Response.json(
+                { error: qError?.message || 'Gagal menyimpan pertanyaan' },
+                { status: 400 }
+            )
         }
 
-        // Insert Options jika ada
-        if (options && Array.isArray(options) && options.length > 0 && ['radio', 'checkbox'].includes(question_type)) {
-            const optionsToInsert = options.map(optText => ({
+        // =========================
+        // 📝 INSERT OPTIONS
+        // =========================
+        if (
+            finalOptions &&
+            Array.isArray(finalOptions) &&
+            finalOptions.length > 0 &&
+            ['radio', 'checkbox'].includes(question_type)
+        ) {
+            const optionsToInsert = finalOptions.map((optText: string) => ({
                 question_id: questionData.id,
                 option_text: optText
             }))
 
-            const { error: optError } = await supabase
+            const { data: insertedOptions, error: optError } = await supabase
                 .from('options')
                 .insert(optionsToInsert)
+                .select()
 
             if (optError) {
-                // Walaupun gagal insert options, question sudah terbuat.
-                // Bisa saja dihandle lebih baik (misalnya rollback/delete question),
-                // tapi kita kembalikan error dulu.
                 return Response.json({ error: optError.message }, { status: 400 })
+            }
+
+            // =========================
+            // 🎯 SET CORRECT OPTION (AUTO)
+            // =========================
+            if (
+                is_attention_check &&
+                insertedOptions &&
+                finalCorrectOptionIndex !== null
+            ) {
+                const correctOptionId =
+                    insertedOptions[finalCorrectOptionIndex]?.id
+
+                if (correctOptionId) {
+                    await supabase
+                        .from('questions')
+                        .update({ correct_option_id: correctOptionId })
+                        .eq('id', questionData.id)
+                }
             }
         }
 
-        return Response.json({ success: true, data: questionData })
-
+        return Response.json({
+            success: true,
+            data: questionData
+        })
     } catch (err) {
+        console.error(err)
         return Response.json(
             { error: 'Internal server error' },
             { status: 500 }
