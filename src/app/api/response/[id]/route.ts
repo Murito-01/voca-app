@@ -2,9 +2,12 @@ import { createClient } from '@supabase/supabase-js'
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params
+    const id = params.id
+    
     const authHeader = req.headers.get('Authorization')
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -55,7 +58,7 @@ export async function GET(
           )
         )
       `)
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', user.id)
       .single()
 
