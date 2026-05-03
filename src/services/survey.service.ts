@@ -104,7 +104,7 @@ export async function getSurveyQuestions(id: string) {
   return response.json();
 }
 
-export async function createSurveyQuestion(surveyId: string, payload: { question_text: string; question_type: string; options: string[] }) {
+export async function createSurveyQuestion(surveyId: string, payload: { question_text: string; question_type: string; options: string[]; is_attention_check?: boolean; correct_option_index?: number }) {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
 
@@ -200,6 +200,27 @@ export async function updateSurveyDetails(surveyId: string, payload: { title: st
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.error || 'Gagal mengupdate info survey');
+  }
+
+  return response.json();
+}
+
+export async function updateSurveyStatus(surveyId: string, status: 'paused' | 'active' | 'completed') {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  const response = await fetch(`/api/survey/${surveyId}/status`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ status })
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Gagal mengubah status survey');
   }
 
   return response.json();

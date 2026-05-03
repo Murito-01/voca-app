@@ -23,11 +23,14 @@ export default function SurveyCard({ survey: s }: SurveyCardProps) {
                     {s.title || 'Untitled Survey'}
                 </h2>
                 <span className={`ml-3 shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    s.status === 'active'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-100 text-gray-600'
+                    s.status === 'active' ? 'bg-green-100 text-green-800' :
+                    s.status === 'paused' ? 'bg-yellow-100 text-yellow-800' :
+                    s.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                    'bg-gray-100 text-gray-600'
                 }`}>
-                    {s.status === 'active' ? 'Aktif' : s.status || 'Unknown'}
+                    {s.status === 'active' ? 'Aktif' : 
+                     s.status === 'paused' ? 'Paused' :
+                     s.status === 'completed' ? 'Completed' : 'Draft'}
                 </span>
             </div>
 

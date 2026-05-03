@@ -35,8 +35,8 @@ export async function DELETE(
             return Response.json({ error: 'Survey not found or unauthorized' }, { status: 403 });
         }
 
-        if (survey.status === 'active') {
-            return Response.json({ error: 'Survey sudah aktif, tidak bisa menghapus pertanyaan' }, { status: 403 });
+        if (survey.status !== 'draft') {
+            return Response.json({ error: 'Hanya survey draft yang bisa menghapus pertanyaan' }, { status: 403 });
         }
 
         // Delete question (assuming CASCADE handles options, or we can manually delete options first if needed)
@@ -93,8 +93,8 @@ export async function PUT(
             return Response.json({ error: 'Survey not found or unauthorized' }, { status: 403 });
         }
 
-        if (survey.status === 'active') {
-            return Response.json({ error: 'Survey sudah aktif, tidak bisa mengedit pertanyaan' }, { status: 403 });
+        if (survey.status !== 'draft') {
+            return Response.json({ error: 'Hanya survey draft yang bisa mengedit pertanyaan' }, { status: 403 });
         }
 
         const { question_text, question_type, options } = body;
