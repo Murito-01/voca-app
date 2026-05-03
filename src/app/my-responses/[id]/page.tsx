@@ -53,6 +53,20 @@ export default function ResponseDetail() {
         )
     }
 
+    const groupedAnswers = Object.values(
+        (data?.answers || []).reduce((acc: any, current: any) => {
+            if (!acc[current.question_id]) {
+                acc[current.question_id] = {
+                    ...current,
+                    options: current.option_text ? [current.option_text] : []
+                }
+            } else if (current.option_text) {
+                acc[current.question_id].options.push(current.option_text)
+            }
+            return acc
+        }, {})
+    ) as any[];
+
     return (
         <div className="min-h-screen bg-gray-100 p-6">
             <div className="max-w-3xl mx-auto">
@@ -111,15 +125,15 @@ export default function ResponseDetail() {
                 {/* Answers Section */}
                 <h2 className="text-lg font-bold text-gray-900 mb-4">Jawaban Anda</h2>
                 <div className="space-y-4">
-                    {data.answers && data.answers.length > 0 ? (
-                        data.answers.map((answer: any, index: number) => (
-                            <div key={answer.answer_id} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                    {groupedAnswers.length > 0 ? (
+                        groupedAnswers.map((answer: any, index: number) => (
+                            <div key={answer.question_id} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
                                 <p className="text-sm font-medium text-gray-900 mb-2">
                                     {index + 1}. {answer.question_text}
                                 </p>
                                 <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 text-sm text-gray-700">
                                     {answer.question_type === 'radio' || answer.question_type === 'checkbox' 
-                                        ? answer.option_text || answer.answer_text 
+                                        ? (answer.options?.length > 0 ? answer.options.join(', ') : answer.answer_text)
                                         : answer.answer_text}
                                 </div>
                             </div>
