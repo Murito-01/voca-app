@@ -1,23 +1,54 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { createSurveyQuestion } from '@/services/survey.service'
+import { getSurveyQuestions, updateSurveyQuestion } from '@/services/survey.service'
 
-export default function AddQuestionPage() {
+export default function EditQuestionPage() {
     const params = useParams()
     const router = useRouter()
     const surveyId = params.id as string
+    const questionId = params.questionId as string
 
     const [questionText, setQuestionText] = useState('')
     const [questionType, setQuestionType] = useState('text')
-    const [options, setOptions] = useState<string[]>(['', '']) // Default 2 options for radio/checkbox
+    const [options, setOptions] = useState<string[]>(['', ''])
     
     const [loading, setLoading] = useState(false)
+    const [initialLoading, setInitialLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
     const isOptionType = questionType === 'radio' || questionType === 'checkbox'
+
+    useEffect(() => {
+        const fetchQuestion = async () => {
+            try {
+                const qJson = await getSurveyQuestions(surveyId);
+                const question = qJson.data?.find((q: any) => q.id === questionId);
+
+                if (!question) {
+                    setError('Pertanyaan tidak ditemukan');
+                    return;
+                }
+
+                setQuestionText(question.question_text);
+                setQuestionType(question.question_type);
+                
+                if (question.options && question.options.length > 0) {
+                    setOptions(question.options.map((o: any) => o.option_text));
+                } else if (question.question_type !== 'text') {
+                    setOptions(['', '']);
+                }
+            } catch (err: any) {
+                setError(err.message || 'Gagal memuat pertanyaan');
+            } finally {
+                setInitialLoading(false);
+            }
+        }
+
+        fetchQuestion();
+    }, [surveyId, questionId]);
 
     const handleAddOption = () => {
         setOptions([...options, ''])
@@ -60,7 +91,7 @@ export default function AddQuestionPage() {
                 options: isOptionType ? options.filter(o => o.trim() !== '') : []
             }
 
-            await createSurveyQuestion(surveyId, payload)
+            await updateSurveyQuestion(surveyId, questionId, payload)
 
             // Success, redirect back
             router.push(`/my-surveys/${surveyId}`)
@@ -72,6 +103,14 @@ export default function AddQuestionPage() {
         }
     }
 
+    if (initialLoading) {
+        return (
+            <div className="min-h-screen bg-gray-100 p-6 flex justify-center items-center">
+                <div className="animate-spin h-10 w-10 border-b-2 border-blue-600 rounded-full"></div>
+            </div>
+        )
+    }
+
     return (
         <div className="min-h-screen bg-gray-100 p-6">
             <div className="max-w-2xl mx-auto">
@@ -80,11 +119,11 @@ export default function AddQuestionPage() {
                     href={`/my-surveys/${surveyId}`}
                     className="text-blue-600 text-sm hover:underline mb-4 inline-block"
                 >
-                    ← Kembali ke Detail Survey
+                    ← Batal Edit
                 </Link>
 
                 <div className="bg-white p-6 rounded-xl border shadow-sm">
-                    <h1 className="text-2xl font-bold text-gray-900 mb-6">Tambah Pertanyaan</h1>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-6">Edit Pertanyaan</h1>
 
                     {error && (
                         <div className="bg-red-50 text-red-700 border border-red-200 p-4 rounded-lg mb-6 text-sm">
@@ -178,7 +217,7 @@ export default function AddQuestionPage() {
                                         : 'bg-blue-600 hover:bg-blue-700'
                                 }`}
                             >
-                                {loading ? 'Menyimpan...' : 'Simpan Pertanyaan'}
+                                {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
                             </button>
                         </div>
                     </form>

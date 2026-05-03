@@ -42,6 +42,47 @@ export async function getSurveyById(id: string) {
   return response.json();
 }
 
+export async function createSurvey(payload: { title: string; description?: string; reward_per_response: number; total_responses: number }) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  const response = await fetch('/api/survey/create', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Gagal membuat survey');
+  }
+
+  return response.json();
+}
+
+export async function getMySurveys() {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  const response = await fetch('/api/survey/my', {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Gagal memuat data survey');
+  }
+
+  return response.json();
+}
+
 export async function getSurveyQuestions(id: string) {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
@@ -58,6 +99,107 @@ export async function getSurveyQuestions(id: string) {
     const errorData = await response.json().catch(() => ({}));
     const errorMessage = errorData.error || response.statusText;
     throw new Error(`Failed to fetch survey questions: ${errorMessage}`);
+  }
+
+  return response.json();
+}
+
+export async function createSurveyQuestion(surveyId: string, payload: { question_text: string; question_type: string; options: string[] }) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  const response = await fetch(`/api/survey/${surveyId}/questions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Gagal menyimpan pertanyaan');
+  }
+
+  return response.json();
+}
+
+export async function updateSurveyQuestion(surveyId: string, questionId: string, payload: { question_text: string; question_type: string; options: string[] }) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  const response = await fetch(`/api/survey/${surveyId}/questions/${questionId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Gagal mengedit pertanyaan');
+  }
+
+  return response.json();
+}
+
+export async function deleteSurveyQuestion(surveyId: string, questionId: string) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  const response = await fetch(`/api/survey/${surveyId}/questions/${questionId}`, {
+    method: 'DELETE',
+    headers: {
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Gagal menghapus pertanyaan');
+  }
+
+  return response.json();
+}
+
+export async function publishSurvey(surveyId: string) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  const response = await fetch(`/api/survey/${surveyId}/publish`, {
+    method: 'POST',
+    headers: {
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Gagal mempublikasikan survey');
+  }
+
+  return response.json();
+}
+
+export async function updateSurveyDetails(surveyId: string, payload: { title: string; description?: string }) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  const response = await fetch(`/api/survey/${surveyId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Gagal mengupdate info survey');
   }
 
   return response.json();

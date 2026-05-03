@@ -34,6 +34,20 @@ export async function POST(req: Request) {
             return Response.json({ error: error.message }, { status: 400 })
         }
 
+        // Force status to draft initially and set description
+        const { error: updateError } = await supabase
+            .from('surveys')
+            .update({ 
+                status: 'draft',
+                description: body.description || null 
+            })
+            .eq('id', data)
+
+        if (updateError) {
+            console.error('Update to draft error:', updateError);
+            return Response.json({ error: 'Failed to set draft status: ' + updateError.message }, { status: 400 })
+        }
+
         return Response.json({
             success: true,
             survey_id: data

@@ -57,7 +57,7 @@ export default function Home() {
             My Responses
           </Link>
 
-          <Link href="/create-survey"
+          <Link href="/my-surveys/create"
             className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md active:scale-95 w-full"
           >
             Create Survey
