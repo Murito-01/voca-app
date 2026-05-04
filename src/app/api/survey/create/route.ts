@@ -39,7 +39,8 @@ export async function POST(req: Request) {
             .from('surveys')
             .update({ 
                 status: 'draft',
-                description: body.description || null 
+                description: body.description || null,
+                allow_extended_responses: body.allow_extended_responses ?? false
             })
             .eq('id', data)
 

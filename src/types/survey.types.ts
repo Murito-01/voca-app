@@ -8,6 +8,7 @@ export interface Survey {
     remaining_responses: number;
     status: 'draft' | 'active' | 'completed' | 'paused';
     created_at: string;
+    allow_extended_responses: boolean;
 }
 
 export interface Question {
