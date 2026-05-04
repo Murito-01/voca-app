@@ -140,28 +140,28 @@ export default function ResponseDetail() {
                                         <span>+ Base Score</span>
                                         <span>{data.score_breakdown.base || 0}</span>
                                     </div>
-                                    {data.score_breakdown.time_penalty > 0 && (
+                                    {(data.score_breakdown.time_penalty || 0) !== 0 && (
                                         <div className="flex justify-between text-red-600">
                                             <span>- Time Penalty</span>
-                                            <span>{data.score_breakdown.time_penalty}</span>
+                                            <span>{Math.abs(data.score_breakdown.time_penalty)}</span>
                                         </div>
                                     )}
-                                    {data.score_breakdown.essay_penalty > 0 && (
+                                    {(data.score_breakdown.essay_penalty || 0) !== 0 && (
                                         <div className="flex justify-between text-red-600">
                                             <span>- Essay Penalty</span>
-                                            <span>{data.score_breakdown.essay_penalty}</span>
+                                            <span>{Math.abs(data.score_breakdown.essay_penalty)}</span>
                                         </div>
                                     )}
-                                    {data.score_breakdown.reputation_bonus > 0 && (
+                                    {(data.score_breakdown.reputation_bonus || 0) !== 0 && (
                                         <div className="flex justify-between text-green-600">
                                             <span>+ Reputation Bonus</span>
                                             <span>{data.score_breakdown.reputation_bonus}</span>
                                         </div>
                                     )}
-                                    {data.score_breakdown.reputation_penalty > 0 && (
+                                    {(data.score_breakdown.reputation_penalty || 0) !== 0 && (
                                         <div className="flex justify-between text-red-600">
                                             <span>- Reputation Penalty</span>
-                                            <span>{data.score_breakdown.reputation_penalty}</span>
+                                            <span>{Math.abs(data.score_breakdown.reputation_penalty)}</span>
                                         </div>
                                     )}
                                     <div className="pt-2 mt-2 border-t border-gray-300 flex justify-between font-bold text-gray-900">

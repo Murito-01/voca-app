@@ -13,6 +13,8 @@
 # testing
 /coverage
 test-query.*
+submit_response_func.sql
+submit_response2_func.sql
 
 # next.js
 /.next/
