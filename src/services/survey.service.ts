@@ -225,3 +225,22 @@ export async function updateSurveyStatus(surveyId: string, status: 'paused' | 'a
 
   return response.json();
 }
+
+export async function deleteSurvey(surveyId: string) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  const response = await fetch(`/api/survey/${surveyId}`, {
+    method: 'DELETE',
+    headers: {
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Gagal menghapus survey');
+  }
+
+  return response.json();
+}

@@ -22,6 +22,7 @@ export default function SurveyDetailPage() {
     const [editDescription, setEditDescription] = useState('')
     const [isSavingInfo, setIsSavingInfo] = useState(false)
     const [isChangingStatus, setIsChangingStatus] = useState(false)
+    const [isDeleting, setIsDeleting] = useState(false)
 
 
     useEffect(() => {
@@ -129,6 +130,21 @@ export default function SurveyDetailPage() {
         }
     }
 
+    const handleDeleteSurvey = async () => {
+        if (!confirm('Apakah Anda yakin ingin MENGHAPUS survey ini secara permanen? Tindakan ini tidak bisa dibatalkan.')) return;
+
+        setIsDeleting(true);
+        try {
+            const { deleteSurvey } = await import('@/services/survey.service');
+            await deleteSurvey(surveyId);
+            router.push('/my-surveys');
+            router.refresh();
+        } catch (err: any) {
+            alert(err.message || 'Gagal menghapus survey');
+            setIsDeleting(false);
+        }
+    }
+
     return (
         <div className="min-h-screen bg-gray-100 p-6">
             <div className="max-w-2xl mx-auto">
@@ -221,17 +237,30 @@ export default function SurveyDetailPage() {
                             )}
 
                             {survey.status === 'draft' && !isEditingInfo && (
-                                <button
-                                    onClick={handlePublish}
-                                    disabled={isPublishing || questions.length === 0}
-                                    className={`px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors shrink-0 ${
-                                        isPublishing || questions.length === 0
-                                            ? 'bg-gray-400 cursor-not-allowed'
-                                            : 'bg-green-600 hover:bg-green-700'
-                                    }`}
-                                >
-                                    {isPublishing ? 'Publishing...' : '🚀 Publish Survey'}
-                                </button>
+                                <div className="flex gap-2 shrink-0">
+                                    <button
+                                        onClick={handlePublish}
+                                        disabled={isPublishing || questions.length === 0}
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors ${
+                                            isPublishing || questions.length === 0
+                                                ? 'bg-gray-400 cursor-not-allowed'
+                                                : 'bg-green-600 hover:bg-green-700'
+                                        }`}
+                                    >
+                                        {isPublishing ? 'Publishing...' : '🚀 Publish Survey'}
+                                    </button>
+                                    <button
+                                        onClick={handleDeleteSurvey}
+                                        disabled={isDeleting}
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium text-red-600 border border-red-300 transition-colors ${
+                                            isDeleting
+                                                ? 'opacity-50 cursor-not-allowed'
+                                                : 'hover:bg-red-50'
+                                        }`}
+                                    >
+                                        {isDeleting ? 'Menghapus...' : '🗑️ Hapus Survey'}
+                                    </button>
+                                </div>
                             )}
 
                             {survey.status === 'active' && !isEditingInfo && (
