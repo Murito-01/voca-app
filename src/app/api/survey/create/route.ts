@@ -16,7 +16,6 @@ export async function POST(req: Request) {
             process.env.SUPABASE_SERVICE_ROLE_KEY!
         )
 
-        // Verifikasi token dan ambil user secara eksplisit
         const { data: { user }, error: authError } = await supabase.auth.getUser(token)
 
         if (authError || !user) {
@@ -26,27 +25,14 @@ export async function POST(req: Request) {
         const { data, error } = await supabase.rpc('create_survey', {
             p_creator_id: user.id,
             p_title: body.title,
+            p_description: body.description || null,
             p_reward_per_response: body.reward_per_response,
-            p_total_responses: body.total_responses
+            p_total_responses: body.total_responses,
+            p_allow_extended_responses: body.allow_extended_responses ?? false,
         })
 
         if (error) {
             return Response.json({ error: error.message }, { status: 400 })
-        }
-
-        // Force status to draft initially and set description
-        const { error: updateError } = await supabase
-            .from('surveys')
-            .update({ 
-                status: 'draft',
-                description: body.description || null,
-                allow_extended_responses: body.allow_extended_responses ?? false
-            })
-            .eq('id', data)
-
-        if (updateError) {
-            console.error('Update to draft error:', updateError);
-            return Response.json({ error: 'Failed to set draft status: ' + updateError.message }, { status: 400 })
         }
 
         return Response.json({

@@ -23,44 +23,19 @@ export async function POST(
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Verify survey ownership
-        const { data: survey, error: surveyError } = await supabase
-            .from('surveys')
-            .select('id, status')
-            .eq('id', id)
-            .eq('creator_id', user.id)
-            .single();
+        const { error: rpcError } = await supabase.rpc('publish_survey', {
+            p_survey_id: id,
+            p_creator_id: user.id,
+        });
 
-        if (surveyError || !survey) {
-            return Response.json({ error: 'Survey not found or unauthorized' }, { status: 403 });
-        }
-
-        if (survey.status === 'active') {
-            return Response.json({ error: 'Survey is already active' }, { status: 400 });
-        }
-
-        // Verify survey has questions before publishing
-        const { count, error: countError } = await supabase
-            .from('questions')
-            .select('*', { count: 'exact', head: true })
-            .eq('survey_id', id);
-
-        if (countError || count === 0) {
-            return Response.json({ error: 'Cannot publish survey without any questions' }, { status: 400 });
-        }
-
-        // Update status to active
-        const { error: updateError } = await supabase
-            .from('surveys')
-            .update({ status: 'active' })
-            .eq('id', id);
-
-        if (updateError) {
-            return Response.json({ error: updateError.message }, { status: 400 });
+        if (rpcError) {
+            return Response.json({ error: rpcError.message }, { status: 400 });
         }
 
         return Response.json({ success: true, message: 'Survey published successfully' });
+
     } catch (err) {
+        console.error(err);
         return Response.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

@@ -23,6 +23,7 @@ export default function SurveyDetailPage() {
     const [isSavingInfo, setIsSavingInfo] = useState(false)
     const [isChangingStatus, setIsChangingStatus] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
+    const [showPublishModal, setShowPublishModal] = useState(false)
 
 
     useEffect(() => {
@@ -74,15 +75,17 @@ export default function SurveyDetailPage() {
         router.push(`/my-surveys/${surveyId}/edit-question/${questionId}`);
     }
 
-    const handlePublish = async () => {
-        if (!confirm('Apakah Anda yakin ingin mem-publish survey ini? Setelah di-publish, Anda tidak bisa lagi menambah, mengedit, atau menghapus pertanyaan.')) return;
-        
+    const handlePublish = () => {
+        setShowPublishModal(true)
+    }
+
+    const handleConfirmPublish = async () => {
+        setShowPublishModal(false)
         setIsPublishing(true)
         try {
             const { publishSurvey } = await import('@/services/survey.service')
             await publishSurvey(surveyId)
             setSurvey({ ...survey, status: 'active' })
-            alert('Survey berhasil di-publish!')
         } catch (err: any) {
             alert(err.message || 'Gagal mem-publish survey')
         } finally {
@@ -146,6 +149,7 @@ export default function SurveyDetailPage() {
     }
 
     return (
+        <>
         <div className="min-h-screen bg-gray-100 p-6">
             <div className="max-w-2xl mx-auto">
 
@@ -433,5 +437,79 @@ export default function SurveyDetailPage() {
                 )}
             </div>
         </div>
+
+        {/* ===== PUBLISH CONFIRMATION MODAL ===== */}
+        {showPublishModal && survey && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div
+                    className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                    onClick={() => setShowPublishModal(false)}
+                />
+                <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 z-10">
+                    <div className="flex items-center gap-3 mb-5">
+                        <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center text-xl shrink-0">🚀</div>
+                        <div>
+                            <h2 className="text-lg font-bold text-gray-900">Konfirmasi Publish Survey</h2>
+                            <p className="text-xs text-gray-500">Tinjau detail sebelum melanjutkan</p>
+                        </div>
+                    </div>
+
+                    <div className="bg-gray-50 rounded-xl p-4 space-y-3 mb-5">
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-500">Judul Survey</span>
+                            <span className="font-semibold text-gray-800 text-right max-w-[55%] truncate">{survey.title}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-500">Jumlah Pertanyaan</span>
+                            <span className={`font-semibold ${questions.length === 0 ? 'text-red-600' : 'text-gray-800'}`}>
+                                {questions.length} pertanyaan {questions.length === 0 && '⚠️'}
+                            </span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-500">Target Responden</span>
+                            <span className="font-semibold text-gray-800">{survey.total_responses} orang</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-500">Reward / Responden</span>
+                            <span className="font-semibold text-blue-600">
+                                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(survey.reward_per_response)}
+                            </span>
+                        </div>
+                        <div className="border-t pt-3 flex justify-between items-center">
+                            <span className="text-sm font-semibold text-gray-700">Total Budget Dikunci</span>
+                            <span className="text-lg font-bold text-green-700">
+                                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(survey.reward_per_response * survey.total_responses)}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5 flex gap-2">
+                        <span className="text-amber-500 text-base shrink-0 mt-0.5">⚠️</span>
+                        <p className="text-xs text-amber-700 leading-relaxed">
+                            Budget akan <strong>dikunci dari saldo kamu</strong> saat publish. Setelah aktif, pertanyaan tidak bisa diubah lagi.
+                        </p>
+                    </div>
+
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => setShowPublishModal(false)}
+                            className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            onClick={handleConfirmPublish}
+                            disabled={questions.length === 0}
+                            className={`flex-1 py-2.5 rounded-xl text-white text-sm font-semibold transition-colors ${
+                                questions.length === 0 ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
+                            }`}
+                        >
+                            ✅ Ya, Publish Sekarang
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+        </>
     )
 }
