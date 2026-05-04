@@ -22,16 +22,25 @@ export default function SurveyCard({ survey: s }: SurveyCardProps) {
                 <h2 className="text-lg font-semibold text-gray-900 leading-tight">
                     {s.title || 'Untitled Survey'}
                 </h2>
-                <span className={`ml-3 shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    s.status === 'active' ? 'bg-green-100 text-green-800' :
-                    s.status === 'paused' ? 'bg-yellow-100 text-yellow-800' :
-                    s.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                    'bg-gray-100 text-gray-600'
-                }`}>
-                    {s.status === 'active' ? 'Aktif' : 
-                     s.status === 'paused' ? 'Paused' :
-                     s.status === 'completed' ? 'Completed' : 'Draft'}
-                </span>
+                <div className="flex flex-col items-end gap-1 ml-3 shrink-0">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        s.status === 'active' ? 'bg-green-100 text-green-800' :
+                        s.status === 'paused' ? 'bg-yellow-100 text-yellow-800' :
+                        s.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                        'bg-gray-100 text-gray-600'
+                    }`}>
+                        {s.status === 'active' ? 'Aktif' : 
+                         s.status === 'paused' ? 'Paused' :
+                         s.status === 'completed' ? 'Completed' : 'Draft'}
+                    </span>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                        s.allow_extended_responses
+                            ? 'bg-purple-100 text-purple-700'
+                            : 'bg-slate-100 text-slate-500'
+                    }`}>
+                        {s.allow_extended_responses ? '🚀 Extended' : '🔒 Fixed'}
+                    </span>
+                </div>
             </div>
 
             {/* Progress */}

@@ -300,17 +300,26 @@ export default function SurveyDetailPage() {
 
                         </div>
 
-                        {/* Status */}
-                        <span className={`inline-block mt-2 px-3 py-1 text-xs rounded-full ${
-                            survey.status === 'active' ? 'bg-green-100 text-green-700' : 
-                            survey.status === 'paused' ? 'bg-yellow-100 text-yellow-800' :
-                            survey.status === 'completed' ? 'bg-blue-100 text-blue-700' :
-                            'bg-gray-100 text-gray-600'
-                        }`}>
-                            {survey.status === 'active' ? 'Active' :
-                             survey.status === 'paused' ? 'Paused' :
-                             survey.status === 'completed' ? 'Completed' : 'Draft'}
-                        </span>
+                        {/* Status + Mode Badge */}
+                        <div className="flex items-center gap-2 mt-2 flex-wrap">
+                            <span className={`inline-block px-3 py-1 text-xs rounded-full ${
+                                survey.status === 'active' ? 'bg-green-100 text-green-700' : 
+                                survey.status === 'paused' ? 'bg-yellow-100 text-yellow-800' :
+                                survey.status === 'completed' ? 'bg-blue-100 text-blue-700' :
+                                'bg-gray-100 text-gray-600'
+                            }`}>
+                                {survey.status === 'active' ? 'Active' :
+                                 survey.status === 'paused' ? 'Paused' :
+                                 survey.status === 'completed' ? 'Completed' : 'Draft'}
+                            </span>
+                            <span className={`inline-block px-3 py-1 text-xs rounded-full font-medium ${
+                                survey.allow_extended_responses
+                                    ? 'bg-purple-100 text-purple-700'
+                                    : 'bg-slate-100 text-slate-600'
+                            }`} title={survey.allow_extended_responses ? 'Budget dipakai untuk mendapat respon sebanyak mungkin.' : 'Jumlah responden tetap, sisa budget dikembalikan.'}>
+                                {survey.allow_extended_responses ? '🚀 Maksimalkan Respon' : '🔒 Jumlah Tetap'}
+                            </span>
+                        </div>
 
                         {/* Stats */}
                         <div className="mt-6 space-y-2 text-sm text-gray-700">
