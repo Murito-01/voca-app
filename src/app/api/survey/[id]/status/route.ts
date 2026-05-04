@@ -47,10 +47,20 @@ export async function PUT(
             return Response.json({ error: 'Akses ditolak' }, { status: 403 });
         }
 
-        // Only allow transitions between active, paused, and completed from this endpoint
-        // Draft to active is handled by the publish endpoint
         if (survey.status === 'draft') {
-             return Response.json({ error: 'Survey draft harus di-publish terlebih dahulu' }, { status: 400 });
+            return Response.json({ error: 'Survey draft harus di-publish terlebih dahulu' }, { status: 400 });
+        }
+
+        if (status === 'completed') {
+            const { error: rpcError } = await supabase.rpc('complete_survey', {
+                p_survey_id: id,
+            });
+
+            if (rpcError) {
+                return Response.json({ error: rpcError.message }, { status: 400 });
+            }
+
+            return Response.json({ success: true, status: 'completed' });
         }
 
         const { error: updateError } = await supabase
