@@ -364,6 +364,27 @@ export default function SurveyDetailPage() {
                             </div>
                         </div>
 
+                        {/* Tombol Lihat Responses */}
+                        {(survey.status === 'paused' || survey.status === 'completed') && (
+                            <div className="mt-6 pt-5 border-t">
+                                <Link
+                                    href={`/my-surveys/${surveyId}/responses`}
+                                    className="flex items-center justify-between w-full px-4 py-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition-colors group"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-2xl">📊</span>
+                                        <div>
+                                            <p className="font-semibold text-blue-800 text-sm">Lihat Data Responses</p>
+                                            <p className="text-xs text-blue-600">
+                                                {survey.total_responses - survey.remaining_responses} dari {survey.total_responses} responden telah mengisi
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <span className="text-blue-400 group-hover:text-blue-600 transition-colors">→</span>
+                                </Link>
+                            </div>
+                        )}
+
                         {/* Questions Section */}
                         <div className="mt-8 border-t pt-6">
                             <div className="flex justify-between items-center mb-4">

@@ -244,3 +244,23 @@ export async function deleteSurvey(surveyId: string) {
 
   return response.json();
 }
+
+export async function getSurveyResponses(surveyId: string) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  const response = await fetch(`/api/survey/${surveyId}/responses`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Gagal memuat data responses');
+  }
+
+  return response.json();
+}
