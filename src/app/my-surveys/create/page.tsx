@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createSurvey } from '@/services/survey.service'
 
+type ResponseMode = 'fixed' | 'extended'
+
 export default function CreateSurvey() {
     const router = useRouter()
 
@@ -12,6 +14,7 @@ export default function CreateSurvey() {
     const [description, setDescription] = useState('')
     const [reward, setReward] = useState(0)
     const [total, setTotal] = useState(0)
+    const [responseMode, setResponseMode] = useState<ResponseMode>('fixed')
     const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState('')
     const [isError, setIsError] = useState(false)
@@ -34,7 +37,8 @@ export default function CreateSurvey() {
                 title,
                 description: description || undefined,
                 reward_per_response: reward,
-                total_responses: total
+                total_responses: total,
+                allow_extended_responses: responseMode === 'extended',
             })
 
             setIsError(false)
@@ -136,19 +140,103 @@ export default function CreateSurvey() {
                             />
                         </div>
 
+                        {/* ============================= */}
+                        {/* MODE PICKER                   */}
+                        {/* ============================= */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Mode Pengumpulan Responden <span className="text-red-500">*</span>
+                            </label>
+                            <p className="text-xs text-gray-400 mb-3">
+                                Tentukan bagaimana budget kamu digunakan jika ada responden kualitas rendah.
+                            </p>
+
+                            <div className="grid grid-cols-1 gap-3">
+                                {/* Opsi 1: Fixed */}
+                                <button
+                                    type="button"
+                                    onClick={() => setResponseMode('fixed')}
+                                    className={`relative text-left p-4 rounded-xl border-2 transition-all ${
+                                        responseMode === 'fixed'
+                                            ? 'border-blue-500 bg-blue-50'
+                                            : 'border-gray-200 hover:border-gray-300 bg-white'
+                                    }`}
+                                >
+                                    {responseMode === 'fixed' && (
+                                        <span className="absolute top-3 right-3 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        </span>
+                                    )}
+                                    <div className="flex items-start gap-3">
+                                        <span className="text-xl mt-0.5">🔒</span>
+                                        <div>
+                                            <p className={`font-semibold text-sm ${responseMode === 'fixed' ? 'text-blue-800' : 'text-gray-800'}`}>
+                                                Jumlah Respon Tetap
+                                            </p>
+                                            <p className={`text-xs mt-1 leading-relaxed ${responseMode === 'fixed' ? 'text-blue-600' : 'text-gray-500'}`}>
+                                                Kamu akan mendapat maksimal{' '}
+                                                <span className="font-semibold">{total > 0 ? total : 'X'} responden</span>.
+                                                Sisa budget akan dikembalikan jika ada respon kualitas rendah.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </button>
+
+                                {/* Opsi 2: Extended */}
+                                <button
+                                    type="button"
+                                    onClick={() => setResponseMode('extended')}
+                                    className={`relative text-left p-4 rounded-xl border-2 transition-all ${
+                                        responseMode === 'extended'
+                                            ? 'border-purple-500 bg-purple-50'
+                                            : 'border-gray-200 hover:border-gray-300 bg-white'
+                                    }`}
+                                >
+                                    {responseMode === 'extended' && (
+                                        <span className="absolute top-3 right-3 w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center">
+                                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        </span>
+                                    )}
+                                    <div className="flex items-start gap-3">
+                                        <span className="text-xl mt-0.5">🚀</span>
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <p className={`font-semibold text-sm ${responseMode === 'extended' ? 'text-purple-800' : 'text-gray-800'}`}>
+                                                    Maksimalkan Jumlah Respon
+                                                </p>
+                                                <span className="text-xs font-medium px-1.5 py-0.5 bg-purple-100 text-purple-600 rounded">
+                                                    Direkomendasikan
+                                                </span>
+                                            </div>
+                                            <p className={`text-xs mt-1 leading-relaxed ${responseMode === 'extended' ? 'text-purple-600' : 'text-gray-500'}`}>
+                                                Budget digunakan untuk mendapat respon sebanyak mungkin.
+                                                Respon kualitas rendah diganti dengan responden tambahan secara otomatis.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+
                         {/* Total Budget Info */}
-                        <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-                            <p className="text-sm text-blue-700 font-medium">Total Budget yang Dibutuhkan</p>
-                            <p className="text-2xl font-bold text-blue-800 mt-1">
+                        <div className={`border rounded-lg p-4 ${responseMode === 'extended' ? 'bg-purple-50 border-purple-100' : 'bg-blue-50 border-blue-100'}`}>
+                            <p className={`text-sm font-medium ${responseMode === 'extended' ? 'text-purple-700' : 'text-blue-700'}`}>
+                                Total Budget yang Dibutuhkan
+                            </p>
+                            <p className={`text-2xl font-bold mt-1 ${responseMode === 'extended' ? 'text-purple-800' : 'text-blue-800'}`}>
                                 {new Intl.NumberFormat('id-ID', {
                                     style: 'currency',
                                     currency: 'IDR',
                                     minimumFractionDigits: 0
                                 }).format(totalBudget)}
                             </p>
-                            <p className="text-xs text-blue-600 mt-1">
+                            <p className={`text-xs mt-1 ${responseMode === 'extended' ? 'text-purple-600' : 'text-blue-600'}`}>
                                 {reward > 0 && total > 0
-                                    ? `Rp${reward.toLocaleString('id-ID')} × ${total} responden`
+                                    ? `Rp${reward.toLocaleString('id-ID')} × ${total} responden${responseMode === 'extended' ? ' (bisa bertambah otomatis)' : ''}`
                                     : 'Isi reward dan jumlah responden untuk melihat total'}
                             </p>
                         </div>

@@ -22,6 +22,7 @@ export default function SurveyDetailPage() {
     const [editDescription, setEditDescription] = useState('')
     const [isSavingInfo, setIsSavingInfo] = useState(false)
     const [isChangingStatus, setIsChangingStatus] = useState(false)
+    const [isDeleting, setIsDeleting] = useState(false)
 
 
     useEffect(() => {
@@ -129,6 +130,21 @@ export default function SurveyDetailPage() {
         }
     }
 
+    const handleDeleteSurvey = async () => {
+        if (!confirm('Apakah Anda yakin ingin MENGHAPUS survey ini secara permanen? Tindakan ini tidak bisa dibatalkan.')) return;
+
+        setIsDeleting(true);
+        try {
+            const { deleteSurvey } = await import('@/services/survey.service');
+            await deleteSurvey(surveyId);
+            router.push('/my-surveys');
+            router.refresh();
+        } catch (err: any) {
+            alert(err.message || 'Gagal menghapus survey');
+            setIsDeleting(false);
+        }
+    }
+
     return (
         <div className="min-h-screen bg-gray-100 p-6">
             <div className="max-w-2xl mx-auto">
@@ -221,17 +237,30 @@ export default function SurveyDetailPage() {
                             )}
 
                             {survey.status === 'draft' && !isEditingInfo && (
-                                <button
-                                    onClick={handlePublish}
-                                    disabled={isPublishing || questions.length === 0}
-                                    className={`px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors shrink-0 ${
-                                        isPublishing || questions.length === 0
-                                            ? 'bg-gray-400 cursor-not-allowed'
-                                            : 'bg-green-600 hover:bg-green-700'
-                                    }`}
-                                >
-                                    {isPublishing ? 'Publishing...' : '🚀 Publish Survey'}
-                                </button>
+                                <div className="flex gap-2 shrink-0">
+                                    <button
+                                        onClick={handlePublish}
+                                        disabled={isPublishing || questions.length === 0}
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors ${
+                                            isPublishing || questions.length === 0
+                                                ? 'bg-gray-400 cursor-not-allowed'
+                                                : 'bg-green-600 hover:bg-green-700'
+                                        }`}
+                                    >
+                                        {isPublishing ? 'Publishing...' : '🚀 Publish Survey'}
+                                    </button>
+                                    <button
+                                        onClick={handleDeleteSurvey}
+                                        disabled={isDeleting}
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium text-red-600 border border-red-300 transition-colors ${
+                                            isDeleting
+                                                ? 'opacity-50 cursor-not-allowed'
+                                                : 'hover:bg-red-50'
+                                        }`}
+                                    >
+                                        {isDeleting ? 'Menghapus...' : '🗑️ Hapus Survey'}
+                                    </button>
+                                </div>
                             )}
 
                             {survey.status === 'active' && !isEditingInfo && (
@@ -271,17 +300,26 @@ export default function SurveyDetailPage() {
 
                         </div>
 
-                        {/* Status */}
-                        <span className={`inline-block mt-2 px-3 py-1 text-xs rounded-full ${
-                            survey.status === 'active' ? 'bg-green-100 text-green-700' : 
-                            survey.status === 'paused' ? 'bg-yellow-100 text-yellow-800' :
-                            survey.status === 'completed' ? 'bg-blue-100 text-blue-700' :
-                            'bg-gray-100 text-gray-600'
-                        }`}>
-                            {survey.status === 'active' ? 'Active' :
-                             survey.status === 'paused' ? 'Paused' :
-                             survey.status === 'completed' ? 'Completed' : 'Draft'}
-                        </span>
+                        {/* Status + Mode Badge */}
+                        <div className="flex items-center gap-2 mt-2 flex-wrap">
+                            <span className={`inline-block px-3 py-1 text-xs rounded-full ${
+                                survey.status === 'active' ? 'bg-green-100 text-green-700' : 
+                                survey.status === 'paused' ? 'bg-yellow-100 text-yellow-800' :
+                                survey.status === 'completed' ? 'bg-blue-100 text-blue-700' :
+                                'bg-gray-100 text-gray-600'
+                            }`}>
+                                {survey.status === 'active' ? 'Active' :
+                                 survey.status === 'paused' ? 'Paused' :
+                                 survey.status === 'completed' ? 'Completed' : 'Draft'}
+                            </span>
+                            <span className={`inline-block px-3 py-1 text-xs rounded-full font-medium ${
+                                survey.allow_extended_responses
+                                    ? 'bg-purple-100 text-purple-700'
+                                    : 'bg-slate-100 text-slate-600'
+                            }`} title={survey.allow_extended_responses ? 'Budget dipakai untuk mendapat respon sebanyak mungkin.' : 'Jumlah responden tetap, sisa budget dikembalikan.'}>
+                                {survey.allow_extended_responses ? '🚀 Maksimalkan Respon' : '🔒 Jumlah Tetap'}
+                            </span>
+                        </div>
 
                         {/* Stats */}
                         <div className="mt-6 space-y-2 text-sm text-gray-700">
@@ -334,6 +372,27 @@ export default function SurveyDetailPage() {
                                 />
                             </div>
                         </div>
+
+                        {/* Tombol Lihat Responses */}
+                        {(survey.status === 'paused' || survey.status === 'completed') && (
+                            <div className="mt-6 pt-5 border-t">
+                                <Link
+                                    href={`/my-surveys/${surveyId}/responses`}
+                                    className="flex items-center justify-between w-full px-4 py-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition-colors group"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-2xl">📊</span>
+                                        <div>
+                                            <p className="font-semibold text-blue-800 text-sm">Lihat Data Responses</p>
+                                            <p className="text-xs text-blue-600">
+                                                {survey.total_responses - survey.remaining_responses} dari {survey.total_responses} responden telah mengisi
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <span className="text-blue-400 group-hover:text-blue-600 transition-colors">→</span>
+                                </Link>
+                            </div>
+                        )}
 
                         {/* Questions Section */}
                         <div className="mt-8 border-t pt-6">
