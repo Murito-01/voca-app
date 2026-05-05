@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+test-query.*
+submit_response.sql
 
 # next.js
 /.next/
