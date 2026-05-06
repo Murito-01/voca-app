@@ -33,5 +33,19 @@ export async function POST(req: Request) {
     return Response.json({ error: error.message }, { status: 400 })
   }
 
-  return Response.json({ success: true })
+  // Fetch the newly created response to return its ID
+  const { data: response } = await supabase
+    .from('responses')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('survey_id', body.survey_id)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single()
+
+  if (!response) {
+    return Response.json({ success: true })
+  }
+
+  return Response.json({ success: true, response: { id: response.id } })
 }

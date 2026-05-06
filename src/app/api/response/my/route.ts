@@ -51,7 +51,7 @@ export async function GET(req: Request) {
       if (item.status === 'valid') {
         reward_final = item.surveys?.reward_per_response || 0
       } else if (item.status === 'low_quality') {
-        reward_final = item.surveys?.reward_per_response || 0
+        reward_final = (item.surveys?.reward_per_response || 0) * 0.5
       } else {
         reward_final = 0
       }

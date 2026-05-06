@@ -2,8 +2,10 @@
 
 import { useEffect, useState, use } from "react";
 import { getSurveyById, getSurveyQuestions } from "@/services/survey.service";
+import { getResponseById } from "@/services/response.service";
 import Link from "next/link";
-import SubmitResponseButton from "@/components/ui/SubmitResponseButton";
+import SubmitResponseButton, { type SubmitResponseResult } from "@/components/ui/SubmitResponseButton";
+import SubmissionFeedback from "@/components/ui/SubmissionFeedback";
 
 export default function SurveyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -15,6 +17,7 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [startedAt, setStartedAt] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionResult, setSubmissionResult] = useState<SubmitResponseResult | null>(null);
 
   const handleStartSurvey = () => {
     setStartedAt(new Date().toISOString());
@@ -256,7 +259,21 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
                 startedAt={startedAt}
                 onSubmitStart={() => setIsSubmitting(true)}
                 onSubmitError={() => setIsSubmitting(false)}
-                onSuccessCallback={() => {
+                onSuccessCallback={async (result) => {
+                  try {
+                    // Fetch the full rich data from the detail API
+                    const detailRes = await getResponseById(result.id);
+                    if (detailRes && detailRes.data) {
+                      setSubmissionResult(detailRes.data);
+                    } else {
+                      // Fallback to basic result if detail fetch fails
+                      setSubmissionResult(result);
+                    }
+                  } catch (err) {
+                    console.error("Failed to fetch response details:", err);
+                    setSubmissionResult(result);
+                  }
+                  
                   setIsSubmitting(false);
                   setSurvey((prev: any) => ({
                     ...prev,
@@ -266,6 +283,14 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
                 }} 
               />
             </div>
+
+            {submissionResult && (
+              <SubmissionFeedback 
+                result={submissionResult} 
+                surveyTitle={survey.title} 
+                onClose={() => setSubmissionResult(null)} 
+              />
+            )}
           </>
         )}
       </div>
