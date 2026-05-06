@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use } from "react";
 import { getSurveyById, getSurveyQuestions } from "@/services/survey.service";
+import { getResponseById } from "@/services/response.service";
 import Link from "next/link";
 import SubmitResponseButton, { type SubmitResponseResult } from "@/components/ui/SubmitResponseButton";
 import SubmissionFeedback from "@/components/ui/SubmissionFeedback";
@@ -263,9 +264,22 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
                   startedAt={startedAt}
                   onSubmitStart={() => setIsSubmitting(true)}
                   onSubmitError={() => setIsSubmitting(false)}
-                  onSuccessCallback={(result) => {
+                  onSuccessCallback={async (result) => {
+                    try {
+                      // Fetch the full rich data from the detail API
+                      const detailRes = await getResponseById(result.id);
+                      if (detailRes && detailRes.data) {
+                        setSubmissionResult(detailRes.data);
+                      } else {
+                        // Fallback to basic result if detail fetch fails
+                        setSubmissionResult(result);
+                      }
+                    } catch (err) {
+                      console.error("Failed to fetch response details:", err);
+                      setSubmissionResult(result);
+                    }
+                    
                     setIsSubmitting(false);
-                    setSubmissionResult(result);
                     setSurvey((prev: any) => ({
                       ...prev,
                       remaining_responses: Math.max(0, prev.remaining_responses - 1),

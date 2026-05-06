@@ -33,19 +33,19 @@ export async function POST(req: Request) {
     return Response.json({ error: error.message }, { status: 400 })
   }
 
-  // Fetch the newly created response to return its ID and score info
-  const { data: response, error: fetchError } = await supabase
+  // Fetch the newly created response to return its ID
+  const { data: response } = await supabase
     .from('responses')
-    .select('id, score, score_breakdown, status, reward_final, created_at')
+    .select('id')
     .eq('user_id', user.id)
     .eq('survey_id', body.survey_id)
     .order('created_at', { ascending: false })
     .limit(1)
     .single()
 
-  if (fetchError || !response) {
+  if (!response) {
     return Response.json({ success: true })
   }
 
-  return Response.json({ success: true, response })
+  return Response.json({ success: true, response: { id: response.id } })
 }
