@@ -1,5 +1,22 @@
 import { createClient } from '@supabase/supabase-js'
 
+async function logSurveyStatusHistory(
+    supabase: any,
+    surveyId: string,
+    fromStatus: string,
+    toStatus: string
+) {
+    try {
+        await supabase.from('survey_status_history').insert({
+            survey_id: surveyId,
+            from_status: fromStatus,
+            to_status: toStatus
+        });
+    } catch {
+        
+    }
+}
+
 export async function PUT(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -52,6 +69,7 @@ export async function PUT(
         }
 
         if (status === 'completed') {
+            const previousStatus = survey.status;
             const { error: rpcError } = await supabase.rpc('complete_survey', {
                 p_survey_id: id,
             });
@@ -60,9 +78,11 @@ export async function PUT(
                 return Response.json({ error: rpcError.message }, { status: 400 });
             }
 
+            await logSurveyStatusHistory(supabase, id, previousStatus, 'completed');
             return Response.json({ success: true, status: 'completed' });
         }
 
+        const previousStatus = survey.status;
         const { error: updateError } = await supabase
             .from('surveys')
             .update({ status })
@@ -72,6 +92,7 @@ export async function PUT(
             return Response.json({ error: updateError.message }, { status: 400 });
         }
 
+        await logSurveyStatusHistory(supabase, id, previousStatus, status);
         return Response.json({ success: true, status });
 
     } catch (err) {

@@ -1,5 +1,98 @@
 import { createClient } from '@supabase/supabase-js'
 
+type BurnRateMetrics = {
+    burn_rate_per_sec: number;
+    estimated_minutes_left: number | null;
+};
+
+type SurveyRow = {
+    id: string;
+    status: 'draft' | 'active' | 'paused' | 'completed';
+    created_at: string;
+    locked_budget: number | string | null;
+};
+
+async function getActiveDurationSeconds(supabase: any, survey: SurveyRow): Promise<number> {
+    const now = Date.now();
+    const createdAtMs = new Date(survey.created_at).getTime();
+    const fallback = Math.max((now - createdAtMs) / 1000, 1);
+
+    try {
+        const { data, error } = await supabase
+            .from('survey_status_history')
+            .select('to_status, changed_at')
+            .eq('survey_id', survey.id)
+            .order('changed_at', { ascending: true });
+
+        if (error || !data || data.length === 0) {
+            return fallback;
+        }
+
+        let totalActiveSeconds = 0;
+        let activeStartedAt: number | null = null;
+
+        for (const row of data) {
+            const toStatus = row.to_status;
+            const changedAtMs = new Date(row.changed_at).getTime();
+
+            if (toStatus === 'active') {
+                activeStartedAt = changedAtMs;
+            } else if ((toStatus === 'paused' || toStatus === 'completed') && activeStartedAt !== null) {
+                totalActiveSeconds += (changedAtMs - activeStartedAt) / 1000;
+                activeStartedAt = null;
+            }
+        }
+
+        if (survey.status === 'active' && activeStartedAt !== null) {
+            totalActiveSeconds += (now - activeStartedAt) / 1000;
+        }
+
+        return Math.max(totalActiveSeconds, 1);
+    } catch {
+        return fallback;
+    }
+}
+
+async function getBurnRateMetrics(supabase: any, activeSurveys: SurveyRow[]): Promise<BurnRateMetrics> {
+    if (activeSurveys.length === 0) {
+        return { burn_rate_per_sec: 0, estimated_minutes_left: null };
+    }
+
+    const perSurveyMetrics = await Promise.all(
+        activeSurveys.map(async (survey) => {
+            const { data, error } = await supabase.rpc('get_survey_burn_rate', {
+                p_survey_id: survey.id
+            });
+
+            if (error) throw error;
+
+            const firstRow = Array.isArray(data) ? data[0] : data;
+            const totalSpent = Number(firstRow?.total_spent) || 0;
+            const activeDurationSeconds = await getActiveDurationSeconds(supabase, survey);
+
+            return { totalSpent, activeDurationSeconds };
+        })
+    );
+
+    const totalSpent = perSurveyMetrics.reduce((sum, item) => sum + item.totalSpent, 0);
+    const totalActiveDurationSeconds = perSurveyMetrics.reduce((sum, item) => sum + item.activeDurationSeconds, 0);
+    const totalBurnRatePerSec = totalActiveDurationSeconds > 0 ? totalSpent / totalActiveDurationSeconds : 0;
+
+    if (totalBurnRatePerSec <= 0) {
+        return { burn_rate_per_sec: 0, estimated_minutes_left: null };
+    }
+
+    const activeRemainingBudget = activeSurveys.reduce(
+        (sum, survey) => sum + (Number(survey.locked_budget) || 0),
+        0
+    );
+
+    return {
+        burn_rate_per_sec: totalBurnRatePerSec,
+        estimated_minutes_left: activeRemainingBudget / totalBurnRatePerSec / 60
+    };
+}
+
 export async function GET(req: Request) {
     try {
         const authHeader = req.headers.get('Authorization');
@@ -17,7 +110,7 @@ export async function GET(req: Request) {
         // 1. Fetch Surveys
         const { data: surveys, error: surveysError } = await supabase
             .from('surveys')
-            .select('id, reward_per_response, locked_budget')
+            .select('id, reward_per_response, locked_budget, status, created_at')
             .eq('creator_id', user.id);
 
         if (surveysError) throw surveysError;
@@ -67,6 +160,8 @@ export async function GET(req: Request) {
         total_budget = used_budget + remaining_budget;
         const total_responses = valid + low_quality + rejected;
         const valid_rate = total_responses > 0 ? (valid / total_responses) * 100 : 0;
+        const activeSurveys = surveys.filter((s: SurveyRow) => s.status === 'active');
+        const burnRate = await getBurnRateMetrics(supabase, activeSurveys);
 
         return Response.json({
             data: {
@@ -81,6 +176,10 @@ export async function GET(req: Request) {
                     rejected,
                     total: total_responses,
                     valid_rate
+                },
+                burn_rate: {
+                    burn_rate_per_sec: burnRate.burn_rate_per_sec,
+                    estimated_minutes_left: burnRate.estimated_minutes_left
                 }
             }
         });
