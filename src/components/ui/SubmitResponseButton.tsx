@@ -4,6 +4,15 @@ import { useState, useEffect } from "react";
 import { submitSurveyResponse } from "@/services/response.service";
 import { supabase } from "@/lib/supabase";
 
+export interface SubmitResponseResult {
+  id: string;
+  score: number;
+  score_breakdown: Record<string, any>;
+  status: string;
+  reward_final: number;
+  created_at: string;
+}
+
 export default function SubmitResponseButton({ 
   surveyId: initialSurveyId, 
   onSuccessCallback,
@@ -15,7 +24,7 @@ export default function SubmitResponseButton({
   startedAt
 }: { 
   surveyId?: string, 
-  onSuccessCallback?: () => void,
+  onSuccessCallback?: (result: SubmitResponseResult) => void,
   onSubmitStart?: () => void,
   onSubmitError?: () => void,
   hasSubmitted?: boolean,
@@ -37,7 +46,6 @@ export default function SubmitResponseButton({
   }, [initialHasSubmitted]);
 
   useEffect(() => {
-    // Fetch the logged-in user
     const fetchUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -47,7 +55,6 @@ export default function SubmitResponseButton({
     
     fetchUser();
 
-    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         setUserId(session.user.id);
@@ -71,15 +78,18 @@ export default function SubmitResponseButton({
     setSuccess(false);
 
     try {
-      await submitSurveyResponse({
+      const result = await submitSurveyResponse({
         survey_id: surveyId,
         started_at: startedAt,
         answers: answers || {}
       });
 
       setSuccess(true);
-      if (onSuccessCallback) {
-        onSuccessCallback();
+      if (onSuccessCallback && result?.response) {
+        onSuccessCallback(result.response as SubmitResponseResult);
+      } else if (onSuccessCallback) {
+        // Fallback if response details weren't returned
+        onSuccessCallback({ id: '', score: 0, score_breakdown: {}, status: 'pending', reward_final: 0, created_at: new Date().toISOString() });
       }
     } catch (err) {
       console.error(err);
@@ -106,7 +116,6 @@ export default function SubmitResponseButton({
         </div>
       )}
 
-
       <button 
         onClick={handleSubmit} 
         disabled={isLoading || !userId || success || externalDisabled}
@@ -127,7 +136,7 @@ export default function SubmitResponseButton({
         ) : !userId ? (
           "Please log in to submit"
         ) : success ? (
-          "Response Submitted"
+          "Response Submitted ✓"
         ) : (
           "Submit Response"
         )}
@@ -136,11 +145,6 @@ export default function SubmitResponseButton({
       {error && (
         <div className="text-red-500 bg-red-50 px-4 py-3 rounded-md border border-red-100 text-sm break-words">
           {error}
-        </div>
-      )}
-      {success && (
-        <div className="text-green-600 bg-green-50 px-4 py-3 rounded-md border border-green-100 text-sm">
-          Response submitted successfully!
         </div>
       )}
     </div>

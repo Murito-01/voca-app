@@ -3,7 +3,8 @@
 import { useEffect, useState, use } from "react";
 import { getSurveyById, getSurveyQuestions } from "@/services/survey.service";
 import Link from "next/link";
-import SubmitResponseButton from "@/components/ui/SubmitResponseButton";
+import SubmitResponseButton, { type SubmitResponseResult } from "@/components/ui/SubmitResponseButton";
+import SubmissionFeedback from "@/components/ui/SubmissionFeedback";
 
 export default function SurveyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -15,6 +16,7 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [startedAt, setStartedAt] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionResult, setSubmissionResult] = useState<SubmitResponseResult | null>(null);
 
   const handleStartSurvey = () => {
     setStartedAt(new Date().toISOString());
@@ -239,33 +241,40 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
               </div>
             )}
 
-            <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Submit a Response</h2>
-              
-              {!isFormValid() && !survey.has_submitted && (
-                <p className="text-amber-600 text-sm mb-4 bg-amber-50 p-3 rounded-md border border-amber-100">
-                  Please answer all questions before submitting.
-                </p>
-              )}
+            {submissionResult ? (
+              <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+                <SubmissionFeedback result={submissionResult} surveyTitle={survey.title} />
+              </div>
+            ) : (
+              <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+                <h2 className="text-xl font-bold text-gray-900 mb-6">Submit a Response</h2>
+                
+                {!isFormValid() && !survey.has_submitted && (
+                  <p className="text-amber-600 text-sm mb-4 bg-amber-50 p-3 rounded-md border border-amber-100">
+                    Please answer all questions before submitting.
+                  </p>
+                )}
 
-              <SubmitResponseButton 
-                surveyId={survey.id} 
-                hasSubmitted={survey.has_submitted}
-                disabled={!isFormValid()}
-                answers={answers}
-                startedAt={startedAt}
-                onSubmitStart={() => setIsSubmitting(true)}
-                onSubmitError={() => setIsSubmitting(false)}
-                onSuccessCallback={() => {
-                  setIsSubmitting(false);
-                  setSurvey((prev: any) => ({
-                    ...prev,
-                    remaining_responses: Math.max(0, prev.remaining_responses - 1),
-                    has_submitted: true
-                  }));
-                }} 
-              />
-            </div>
+                <SubmitResponseButton 
+                  surveyId={survey.id} 
+                  hasSubmitted={survey.has_submitted}
+                  disabled={!isFormValid()}
+                  answers={answers}
+                  startedAt={startedAt}
+                  onSubmitStart={() => setIsSubmitting(true)}
+                  onSubmitError={() => setIsSubmitting(false)}
+                  onSuccessCallback={(result) => {
+                    setIsSubmitting(false);
+                    setSubmissionResult(result);
+                    setSurvey((prev: any) => ({
+                      ...prev,
+                      remaining_responses: Math.max(0, prev.remaining_responses - 1),
+                      has_submitted: true
+                    }));
+                  }} 
+                />
+              </div>
+            )}
           </>
         )}
       </div>
