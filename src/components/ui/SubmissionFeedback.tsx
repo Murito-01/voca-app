@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import type { SubmitResponseResult } from "@/components/ui/SubmitResponseButton";
 
@@ -65,6 +66,16 @@ export default function SubmissionFeedback({
   }).format(result.reward_final ?? 0);
 
   const hasBreakdown = Object.keys(bd).length > 0;
+
+  useEffect(() => {
+    // Lock scroll
+    document.body.style.overflow = 'hidden';
+    
+    // Cleanup: restore scroll
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, []);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm overflow-y-auto">
