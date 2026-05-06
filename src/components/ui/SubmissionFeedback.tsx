@@ -49,9 +49,11 @@ function ScoreRing({ score }: { score: number }) {
 export default function SubmissionFeedback({
   result,
   surveyTitle,
+  onClose,
 }: {
   result: SubmitResponseResult;
   surveyTitle?: string;
+  onClose?: () => void;
 }) {
   const status = STATUS_CONFIG[result.status] ?? STATUS_CONFIG.pending;
   const bd = result.score_breakdown ?? {};
@@ -65,9 +67,21 @@ export default function SubmissionFeedback({
   const hasBreakdown = Object.keys(bd).length > 0;
 
   return (
-    <div className="feedback-enter">
-      {/* Top banner */}
-      <div className={`rounded-2xl border-2 ${status.border} ${status.bg} p-6 mb-5 text-center`}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm overflow-y-auto">
+      <div className="feedback-enter relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 m-auto">
+        {onClose && (
+          <button 
+            onClick={onClose} 
+            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 focus:outline-none bg-gray-100 hover:bg-gray-200 rounded-full p-1 transition-colors"
+            aria-label="Close"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
+        {/* Top banner */}
+        <div className={`rounded-2xl border-2 ${status.border} ${status.bg} p-6 mb-5 mt-2 text-center`}>
         <div className="text-4xl mb-2">{status.icon}</div>
         <h2 className={`text-2xl font-extrabold mb-1 ${status.color}`}>
           Response {status.label}
@@ -198,6 +212,7 @@ export default function SubmissionFeedback({
       >
         ← Back to My Responses
       </Link>
+      </div>
     </div>
   );
 }
