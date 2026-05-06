@@ -19,8 +19,8 @@ function ScoreRing({ score }: { score: number }) {
     clampedScore >= 70 ? "#10b981" : clampedScore >= 50 ? "#f59e0b" : "#ef4444";
 
   return (
-    <div className="relative flex items-center justify-center w-28 h-28">
-      <svg className="w-28 h-28 -rotate-90" viewBox="0 0 100 100">
+    <div className="relative flex items-center justify-center w-20 h-20">
+      <svg className="w-20 h-20 -rotate-90" viewBox="0 0 100 100">
         <circle
           cx="50" cy="50" r={radius}
           fill="none" stroke="#e5e7eb" strokeWidth="10"
@@ -37,7 +37,7 @@ function ScoreRing({ score }: { score: number }) {
         />
       </svg>
       <span
-        className="absolute text-2xl font-extrabold"
+        className="absolute text-xl font-extrabold"
         style={{ color }}
       >
         {clampedScore}
@@ -68,7 +68,7 @@ export default function SubmissionFeedback({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm overflow-y-auto">
-      <div className="feedback-enter relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 m-auto">
+      <div className="feedback-enter relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-5 m-auto">
         {onClose && (
           <button 
             onClick={onClose} 
@@ -81,12 +81,12 @@ export default function SubmissionFeedback({
           </button>
         )}
         {/* Top banner */}
-        <div className={`rounded-2xl border-2 ${status.border} ${status.bg} p-6 mb-5 mt-2 text-center`}>
-        <div className="text-4xl mb-2">{status.icon}</div>
-        <h2 className={`text-2xl font-extrabold mb-1 ${status.color}`}>
+        <div className={`rounded-xl border ${status.border} ${status.bg} p-4 mb-4 mt-2 text-center flex flex-col items-center justify-center`}>
+        <div className="text-3xl mb-1">{status.icon}</div>
+        <h2 className={`text-xl font-extrabold mb-0.5 ${status.color}`}>
           Response {status.label}
         </h2>
-        <p className="text-sm text-gray-500">
+        <p className="text-xs text-gray-500">
           {surveyTitle ? `"${surveyTitle}" — ` : ""}
           {result.status === "valid"
             ? "Great job! Your response passed quality checks."
@@ -99,34 +99,33 @@ export default function SubmissionFeedback({
       </div>
 
       {/* Score + Reward row */}
-      <div className="grid grid-cols-2 gap-4 mb-5">
+      <div className="grid grid-cols-2 gap-3 mb-4">
         {/* Score ring */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col items-center justify-center shadow-sm">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Score</p>
+        <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col items-center justify-center shadow-sm">
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Score</p>
           <ScoreRing score={result.score} />
-          <p className="text-xs text-gray-400 mt-2">out of 100</p>
         </div>
 
         {/* Reward */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col items-center justify-center shadow-sm">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Reward Earned</p>
-          <p className={`text-2xl font-extrabold ${(result.reward_final ?? 0) > 0 ? "text-emerald-600" : "text-gray-400"}`}>
+        <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col items-center justify-center shadow-sm text-center">
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Reward Earned</p>
+          <p className={`text-xl font-extrabold ${(result.reward_final ?? 0) > 0 ? "text-emerald-600" : "text-gray-400"}`}>
             {rewardFormatted}
           </p>
           {(result.reward_final ?? 0) === 0 && (
-            <p className="text-xs text-gray-400 mt-1">No reward for this response</p>
+            <p className="text-[10px] text-gray-400 mt-1 leading-tight">No reward for this response</p>
           )}
         </div>
       </div>
 
       {/* Score Breakdown */}
       {hasBreakdown && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm mb-5">
-          <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm mb-4">
+          <h3 className="text-xs font-bold text-gray-700 mb-2 flex items-center gap-1.5">
             <span>🧮</span> Score Breakdown
           </h3>
 
-          <div className="space-y-2 text-sm font-mono text-gray-600 mb-4">
+          <div className="space-y-1.5 text-xs font-mono text-gray-600 mb-3">
             <div className="flex justify-between items-center">
               <span className="text-gray-700">+ Base Score</span>
               <span className="font-bold">{bd.base ?? 100}</span>
@@ -157,7 +156,7 @@ export default function SubmissionFeedback({
               </div>
             )}
 
-            <div className="border-t border-gray-200 pt-2 flex justify-between items-center font-bold text-gray-900 text-base">
+            <div className="border-t border-gray-200 pt-1.5 flex justify-between items-center font-bold text-gray-900 text-sm">
               <span>Final Score</span>
               <span>{bd.final_score ?? result.score}</span>
             </div>
@@ -201,14 +200,14 @@ export default function SubmissionFeedback({
       {result.id && (
         <Link
           href={`/my-responses/${result.id}`}
-          className="block w-full text-center bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-semibold py-3 px-6 rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
+          className="block w-full text-center bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-semibold py-2.5 px-4 rounded-xl shadow-sm hover:shadow transition-all duration-200 text-sm"
         >
           View Full Details →
         </Link>
       )}
       <Link
         href="/my-responses"
-        className="block w-full text-center text-sm text-gray-500 hover:text-gray-700 mt-3 transition-colors"
+        className="block w-full text-center text-xs text-gray-500 hover:text-gray-700 mt-2.5 transition-colors"
       >
         ← Back to My Responses
       </Link>
