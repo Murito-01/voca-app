@@ -12,6 +12,32 @@ type SurveyRow = {
     locked_budget: number | string | null;
 };
 
+async function getSurveyTotalSpent(supabase: any, surveyId: string): Promise<number> {
+    const { data, error } = await supabase.rpc('get_survey_burn_rate', {
+        p_survey_id: surveyId
+    });
+
+    if (!error) {
+        const firstRow = Array.isArray(data) ? data[0] : data;
+        return Number(firstRow?.total_spent) || 0;
+    }
+
+    // Fallback when RPC has database-side issues (ex: ambiguous reference).
+    const { data: transactions, error: txError } = await supabase
+        .from('transactions')
+        .select('amount')
+        .eq('type', 'spend')
+        .eq('metadata->>survey_id', surveyId);
+
+    if (txError || !transactions) {
+        return 0;
+    }
+
+    return transactions.reduce((sum: number, row: { amount: number | string | null }) => {
+        return sum + (Number(row.amount) || 0);
+    }, 0);
+}
+
 async function getActiveDurationSeconds(supabase: any, survey: SurveyRow): Promise<number> {
     const now = Date.now();
     const createdAtMs = new Date(survey.created_at).getTime();
@@ -60,14 +86,7 @@ async function getBurnRateMetrics(supabase: any, activeSurveys: SurveyRow[]): Pr
 
     const perSurveyMetrics = await Promise.all(
         activeSurveys.map(async (survey) => {
-            const { data, error } = await supabase.rpc('get_survey_burn_rate', {
-                p_survey_id: survey.id
-            });
-
-            if (error) throw error;
-
-            const firstRow = Array.isArray(data) ? data[0] : data;
-            const totalSpent = Number(firstRow?.total_spent) || 0;
+            const totalSpent = await getSurveyTotalSpent(supabase, survey.id);
             const activeDurationSeconds = await getActiveDurationSeconds(supabase, survey);
 
             return { totalSpent, activeDurationSeconds };
