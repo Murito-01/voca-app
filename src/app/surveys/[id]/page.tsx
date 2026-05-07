@@ -114,6 +114,15 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
               <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{survey.description}</p>
             </div>
           )}
+
+          <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
+            <svg className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <p className="text-sm text-amber-800">
+              <strong>Penting:</strong> Berikan jawaban yang jujur dan berkualitas. Respons yang buruk atau asal-asalan akan mengakibatkan pengurangan jumlah reward yang kamu terima.
+            </p>
+          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-gray-100 pt-6">
             <div>
@@ -158,15 +167,15 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Ready to begin?</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">Siap untuk memulai?</h2>
             <p className="text-gray-500 mb-8 max-w-md text-sm leading-relaxed">
-              Take a moment to read the survey details above. Once you are ready, click start. The timer will begin, and rushing through the questions may affect your score and reputation!
+              Luangkan waktu sejenak untuk membaca detail survey di atas. Setelah kamu siap, klik tombol mulai. Timer akan berjalan, dan menjawab pertanyaan secara terburu-buru dapat memengaruhi skor dan reputasi kamu!
             </p>
             <button 
               onClick={handleStartSurvey}
               className="px-8 py-3 font-semibold text-white bg-blue-600 hover:bg-blue-700 active:scale-95 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
             >
-              Yes, Start Survey
+              Ya, Mulai Survey
             </button>
           </div>
         ) : (
@@ -175,7 +184,7 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
             {questions && questions.length > 0 && (
               <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200 mb-8">
                 <fieldset disabled={survey.has_submitted || isSubmitting} className="group">
-                  <h2 className="text-xl font-bold text-gray-900 mb-6 group-disabled:opacity-70">Questions</h2>
+                  <h2 className="text-xl font-bold text-gray-900 mb-6 group-disabled:opacity-70">Pertanyaan</h2>
                   <div className="space-y-6 group-disabled:opacity-70">
                   {questions.map((q: any, index: number) => (
                     <div key={q.id} className="p-5 border border-gray-100 rounded-lg bg-gray-50">
@@ -186,7 +195,7 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
                       {q.question_type === 'text' && (
                         <input 
                           type="text" 
-                          placeholder="Your answer..."
+                          placeholder="Jawaban kamu..."
                           value={(answers[q.id] as string) || ''}
                           onChange={(e) => setAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
                           className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none"
@@ -243,11 +252,11 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
             )}
 
             <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Submit a Response</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-6">Kirim Respons</h2>
               
               {!isFormValid() && !survey.has_submitted && (
                 <p className="text-amber-600 text-sm mb-4 bg-amber-50 p-3 rounded-md border border-amber-100">
-                  Please answer all questions before submitting.
+                  Harap jawab semua pertanyaan sebelum mengirim.
                 </p>
               )}
 
