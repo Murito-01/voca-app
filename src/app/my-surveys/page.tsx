@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { getMySurveys } from '@/services/survey.service'
 import SurveyCard from '@/components/creator/SurveyCard'
-import CreatorDashboard from '@/components/creator/CreatorDashboard'
 import { Survey } from '@/types/survey.types'
 
 export default function MySurveys() {
@@ -56,9 +55,6 @@ export default function MySurveys() {
                         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
                     </div>
                 )}
-
-                {/* Dashboard Metrics */}
-                {!loading && !error && <CreatorDashboard />}
 
                 {/* Error State */}
                 {!loading && error && (
