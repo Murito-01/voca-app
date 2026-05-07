@@ -16,6 +16,10 @@ interface DashboardMetrics {
         total: number;
         valid_rate: number;
     };
+    burn_rate: {
+        burn_rate_per_sec: number;
+        estimated_minutes_left: number | null;
+    };
 }
 
 export default function CreatorDashboard() {
@@ -68,6 +72,20 @@ export default function CreatorDashboard() {
             minimumFractionDigits: 0
         }).format(amount);
     };
+
+    const formatDuration = (minutes: number) => {
+        if (minutes < 60) return `${Math.ceil(minutes)} menit`;
+        const hours = Math.floor(minutes / 60);
+        const remainingMinutes = Math.ceil(minutes % 60);
+        if (remainingMinutes === 0) return `${hours} jam`;
+        return `${hours} jam ${remainingMinutes} menit`;
+    };
+
+    const burnRatePerSec = Number(metrics.burn_rate?.burn_rate_per_sec || 0);
+    const burnRatePerMinute = burnRatePerSec * 60;
+    const estimatedMinutesLeft = metrics.burn_rate?.estimated_minutes_left;
+    const hasNoSpendingActivity = burnRatePerSec === 0;
+    const cannotPredictTimeLeft = estimatedMinutesLeft === null;
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
@@ -136,6 +154,46 @@ export default function CreatorDashboard() {
                         }`}>
                             {metrics.responses.valid_rate.toFixed(1)}%
                         </span>
+                    </div>
+                </div>
+            </div>
+
+            <div className="border-t border-gray-100 mt-6 pt-5">
+                <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                    <span>🔥</span> Burn Rate
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                        <p className="text-orange-700 text-xs font-medium mb-1">Kecepatan Pengeluaran</p>
+                        {hasNoSpendingActivity ? (
+                            <p className="text-sm font-semibold text-orange-800">Belum ada aktivitas</p>
+                        ) : (
+                            <>
+                                <p className="text-xl font-bold text-orange-900">
+                                    {formatCurrency(burnRatePerMinute)} / menit
+                                </p>
+                                <p className="text-[11px] text-orange-700 mt-1">
+                                    Burn rate dihitung dari spending aktual
+                                </p>
+                            </>
+                        )}
+                    </div>
+
+                    <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                        <p className="text-purple-700 text-xs font-medium mb-1">Estimasi Budget Habis</p>
+                        {cannotPredictTimeLeft ? (
+                            <p className="text-sm font-semibold text-purple-800">Tidak bisa diprediksi</p>
+                        ) : (
+                            <>
+                                <p className="text-xl font-bold text-purple-900">
+                                    {formatDuration(Number(estimatedMinutesLeft))}
+                                </p>
+                                <p className="text-[11px] text-purple-700 mt-1">
+                                    Berdasarkan burn rate saat ini
+                                </p>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
