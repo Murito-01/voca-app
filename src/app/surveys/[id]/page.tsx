@@ -248,11 +248,9 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
                   ))}
                   </div>
                 </fieldset>
-              </div>
-            )}
 
-            <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Kirim Respons</h2>
+                <div className="mt-10 pt-8 border-t border-gray-100">
+                  <h2 className="text-xl font-bold text-gray-900 mb-6">Kirim Respons</h2>
               
               {!isFormValid() && !survey.has_submitted && (
                 <p className="text-amber-600 text-sm mb-4 bg-amber-50 p-3 rounded-md border border-amber-100">
@@ -292,8 +290,10 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
                 }} 
               />
             </div>
+          </div>
+        )}
 
-            {submissionResult && (
+        {submissionResult && (
               <SubmissionFeedback 
                 result={submissionResult} 
                 surveyTitle={survey.title} 
