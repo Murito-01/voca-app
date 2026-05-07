@@ -264,3 +264,23 @@ export async function getSurveyResponses(surveyId: string) {
 
   return response.json();
 }
+
+export async function getCreatorDashboardMetrics() {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  const response = await fetch('/api/creator/dashboard', {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Gagal memuat metrik dashboard');
+  }
+
+  return response.json();
+}
