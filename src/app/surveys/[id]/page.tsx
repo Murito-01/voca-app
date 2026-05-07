@@ -249,14 +249,13 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
                   </div>
                 </fieldset>
 
-                <div className="mt-10 pt-8 border-t border-gray-100">
-                  <h2 className="text-xl font-bold text-gray-900 mb-6">Kirim Respons</h2>
+                <div className="mt-10 pt-8 border-t border-gray-100 flex flex-col items-center">
               
-              {!isFormValid() && !survey.has_submitted && (
-                <p className="text-amber-600 text-sm mb-4 bg-amber-50 p-3 rounded-md border border-amber-100">
-                  Harap jawab semua pertanyaan sebelum mengirim.
-                </p>
-              )}
+                  {!isFormValid() && !survey.has_submitted && (
+                    <p className="text-amber-600 text-sm mb-6 bg-amber-50 p-3 rounded-md border border-amber-100 w-full max-w-sm text-center">
+                      Harap jawab semua pertanyaan sebelum mengirim.
+                    </p>
+                  )}
 
               <SubmitResponseButton 
                 surveyId={survey.id} 
