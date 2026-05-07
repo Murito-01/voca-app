@@ -1,22 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 
-async function logSurveyStatusHistory(
-    supabase: any,
-    surveyId: string,
-    fromStatus: string,
-    toStatus: string
-) {
-    try {
-        await supabase.from('survey_status_history').insert({
-            survey_id: surveyId,
-            from_status: fromStatus,
-            to_status: toStatus
-        });
-    } catch {
-        
-    }
-}
-
 export async function POST(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -40,14 +23,6 @@ export async function POST(
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { data: survey } = await supabase
-            .from('surveys')
-            .select('status')
-            .eq('id', id)
-            .single();
-
-        const previousStatus = survey?.status || 'draft';
-
         const { error: rpcError } = await supabase.rpc('publish_survey', {
             p_survey_id: id,
             p_creator_id: user.id,
@@ -56,8 +31,6 @@ export async function POST(
         if (rpcError) {
             return Response.json({ error: rpcError.message }, { status: 400 });
         }
-
-        await logSurveyStatusHistory(supabase, id, previousStatus, 'active');
 
         return Response.json({ success: true, message: 'Survey published successfully' });
 

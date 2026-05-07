@@ -30,54 +30,40 @@ export async function GET(
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    let data = null;
-    let error = null;
-
-    // Retry loop to wait for scoring to finish if status is pending
-    for (let i = 0; i < 3; i++) {
-      const result = await supabase
-        .from('responses')
-        .select(`
+    const { data, error } = await supabase
+      .from('responses')
+      .select(`
+        id,
+        created_at,
+        score,
+        status,
+        score_breakdown,
+        surveys (
+          title,
+          description,
+          reward_per_response
+        ),
+        answers (
           id,
-          created_at,
-          score,
-          status,
-          score_breakdown,
-          surveys (
-            title,
-            description,
-            reward_per_response
-          ),
-          answers (
+          answer_text,
+          option_id,
+          questions (
             id,
-            answer_text,
-            option_id,
-            questions (
-              id,
-              question_text,
-              question_type
-            ),
-            options (
-              id,
-              option_text
-            )
+            question_text,
+            question_type
+          ),
+          options (
+            id,
+            option_text
           )
-        `)
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .single()
-      
-      data = result.data;
-      error = result.error;
+        )
+      `)
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .single()
 
-      if (error || (data && data.status !== 'pending')) break;
-      
-      // Wait 500ms before retry
-      await new Promise(resolve => setTimeout(resolve, 500));
-    }
-
-    if (error || !data) {
-      return Response.json({ error: error?.message || 'Data not found' }, { status: 400 })
+    if (error) {
+      return Response.json({ error: error.message }, { status: 400 })
     }
 
     // =========================
@@ -105,7 +91,7 @@ export async function GET(
     if (data.status === 'valid') {
       reward_final = survey.reward_per_response || 0
     } else if (data.status === 'low_quality') {
-      reward_final = (survey.reward_per_response || 0) * 0.5
+      reward_final = survey.reward_per_response || 0
     }
 
     return Response.json({

@@ -123,15 +123,6 @@ export default function ResponseDetail() {
                                     minimumFractionDigits: 0
                                 }).format(data.reward_final || 0)}
                             </p>
-                            {data.reward_final !== data.survey?.reward && data.survey?.reward > 0 && (
-                                <p className="text-[10px] text-gray-400 line-through">
-                                    {new Intl.NumberFormat('id-ID', {
-                                        style: 'currency',
-                                        currency: 'IDR',
-                                        minimumFractionDigits: 0
-                                    }).format(data.survey.reward)}
-                                </p>
-                            )}
                         </div>
                     </div>
 
