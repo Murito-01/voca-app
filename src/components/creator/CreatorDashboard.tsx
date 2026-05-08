@@ -174,7 +174,7 @@ export default function CreatorDashboard() {
                                     {formatCurrency(burnRatePerMinute)} / menit
                                 </p>
                                 <p className="text-[11px] text-orange-700 mt-1">
-                                    Burn rate dihitung dari spending aktual
+                                    Burn rate dihitung dari spending dan waktu aktif survey
                                 </p>
                             </>
                         )}

@@ -22,7 +22,6 @@ async function getSurveyTotalSpent(supabase: any, surveyId: string): Promise<num
         return Number(firstRow?.total_spent) || 0;
     }
 
-    // Fallback when RPC has database-side issues (ex: ambiguous reference).
     const { data: transactions, error: txError } = await supabase
         .from('transactions')
         .select('amount')
@@ -45,10 +44,10 @@ async function getActiveDurationSeconds(supabase: any, survey: SurveyRow): Promi
 
     try {
         const { data, error } = await supabase
-            .from('survey_status_history')
-            .select('to_status, changed_at')
+            .from('survey_events')
+            .select('event_type, created_at')
             .eq('survey_id', survey.id)
-            .order('changed_at', { ascending: true });
+            .order('created_at', { ascending: true });
 
         if (error || !data || data.length === 0) {
             return fallback;
@@ -58,13 +57,13 @@ async function getActiveDurationSeconds(supabase: any, survey: SurveyRow): Promi
         let activeStartedAt: number | null = null;
 
         for (const row of data) {
-            const toStatus = row.to_status;
-            const changedAtMs = new Date(row.changed_at).getTime();
+            const eventType = row.event_type;
+            const eventAtMs = new Date(row.created_at).getTime();
 
-            if (toStatus === 'active') {
-                activeStartedAt = changedAtMs;
-            } else if ((toStatus === 'paused' || toStatus === 'completed') && activeStartedAt !== null) {
-                totalActiveSeconds += (changedAtMs - activeStartedAt) / 1000;
+            if (eventType === 'resumed' && activeStartedAt === null) {
+                activeStartedAt = eventAtMs;
+            } else if ((eventType === 'paused' || eventType === 'completed') && activeStartedAt !== null) {
+                totalActiveSeconds += (eventAtMs - activeStartedAt) / 1000;
                 activeStartedAt = null;
             }
         }
