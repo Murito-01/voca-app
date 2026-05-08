@@ -8,21 +8,28 @@ type BurnRateMetrics = {
 type SurveyRow = {
     id: string;
     status: 'draft' | 'active' | 'paused' | 'completed';
-    created_at: string;
     locked_budget: number | string | null;
 };
 
-async function getSurveyTotalSpent(supabase: any, surveyId: string): Promise<number> {
+type SurveyBurnRateSnapshot = {
+    total_spent: number;
+    active_duration_seconds: number;
+};
+
+async function getSurveyBurnRateSnapshot(supabase: any, surveyId: string): Promise<SurveyBurnRateSnapshot> {
     const { data, error } = await supabase.rpc('get_survey_burn_rate', {
         p_survey_id: surveyId
     });
 
     if (!error) {
         const firstRow = Array.isArray(data) ? data[0] : data;
-        return Number(firstRow?.total_spent) || 0;
+        return {
+            total_spent: Number(firstRow?.total_spent) || 0,
+            active_duration_seconds: Number(firstRow?.active_duration_seconds) || 0
+        };
     }
 
-    // Fallback when RPC has database-side issues (ex: ambiguous reference).
+    // Fallback when RPC has database-side issues.
     const { data: transactions, error: txError } = await supabase
         .from('transactions')
         .select('amount')
@@ -30,53 +37,14 @@ async function getSurveyTotalSpent(supabase: any, surveyId: string): Promise<num
         .eq('metadata->>survey_id', surveyId);
 
     if (txError || !transactions) {
-        return 0;
+        return { total_spent: 0, active_duration_seconds: 0 };
     }
 
-    return transactions.reduce((sum: number, row: { amount: number | string | null }) => {
+    const totalSpent = transactions.reduce((sum: number, row: { amount: number | string | null }) => {
         return sum + (Number(row.amount) || 0);
     }, 0);
-}
 
-async function getActiveDurationSeconds(supabase: any, survey: SurveyRow): Promise<number> {
-    const now = Date.now();
-    const createdAtMs = new Date(survey.created_at).getTime();
-    const fallback = Math.max((now - createdAtMs) / 1000, 1);
-
-    try {
-        const { data, error } = await supabase
-            .from('survey_status_history')
-            .select('to_status, changed_at')
-            .eq('survey_id', survey.id)
-            .order('changed_at', { ascending: true });
-
-        if (error || !data || data.length === 0) {
-            return fallback;
-        }
-
-        let totalActiveSeconds = 0;
-        let activeStartedAt: number | null = null;
-
-        for (const row of data) {
-            const toStatus = row.to_status;
-            const changedAtMs = new Date(row.changed_at).getTime();
-
-            if (toStatus === 'active') {
-                activeStartedAt = changedAtMs;
-            } else if ((toStatus === 'paused' || toStatus === 'completed') && activeStartedAt !== null) {
-                totalActiveSeconds += (changedAtMs - activeStartedAt) / 1000;
-                activeStartedAt = null;
-            }
-        }
-
-        if (survey.status === 'active' && activeStartedAt !== null) {
-            totalActiveSeconds += (now - activeStartedAt) / 1000;
-        }
-
-        return Math.max(totalActiveSeconds, 1);
-    } catch {
-        return fallback;
-    }
+    return { total_spent: totalSpent, active_duration_seconds: 0 };
 }
 
 async function getBurnRateMetrics(supabase: any, activeSurveys: SurveyRow[]): Promise<BurnRateMetrics> {
@@ -86,10 +54,12 @@ async function getBurnRateMetrics(supabase: any, activeSurveys: SurveyRow[]): Pr
 
     const perSurveyMetrics = await Promise.all(
         activeSurveys.map(async (survey) => {
-            const totalSpent = await getSurveyTotalSpent(supabase, survey.id);
-            const activeDurationSeconds = await getActiveDurationSeconds(supabase, survey);
+            const snapshot = await getSurveyBurnRateSnapshot(supabase, survey.id);
 
-            return { totalSpent, activeDurationSeconds };
+            return {
+                totalSpent: snapshot.total_spent,
+                activeDurationSeconds: snapshot.active_duration_seconds
+            };
         })
     );
 
@@ -129,7 +99,7 @@ export async function GET(req: Request) {
         // 1. Fetch Surveys
         const { data: surveys, error: surveysError } = await supabase
             .from('surveys')
-            .select('id, reward_per_response, locked_budget, status, created_at')
+            .select('id, reward_per_response, locked_budget, status')
             .eq('creator_id', user.id);
 
         if (surveysError) throw surveysError;

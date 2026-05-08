@@ -1,5 +1,20 @@
 import { createClient } from '@supabase/supabase-js'
 
+async function logSurveyEvent(
+    supabase: any,
+    surveyId: string,
+    eventType: 'created' | 'paused' | 'resumed' | 'completed'
+) {
+    try {
+        await supabase.from('survey_events').insert({
+            survey_id: surveyId,
+            event_type: eventType
+        });
+    } catch {
+        // Keep create flow successful even if event logging fails.
+    }
+}
+
 export async function POST(req: Request) {
     try {
         const body = await req.json()
@@ -35,9 +50,14 @@ export async function POST(req: Request) {
             return Response.json({ error: error.message }, { status: 400 })
         }
 
+        const surveyId = Array.isArray(data) ? data[0] : data;
+        if (surveyId) {
+            await logSurveyEvent(supabase, surveyId, 'created');
+        }
+
         return Response.json({
             success: true,
-            survey_id: data
+            survey_id: surveyId
         })
 
     } catch (err) {
