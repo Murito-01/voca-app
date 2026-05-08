@@ -1,16 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 
-async function logSurveyStatusHistory(
+async function logSurveyEvent(
     supabase: any,
     surveyId: string,
-    fromStatus: string,
-    toStatus: string
+    eventType: 'created' | 'paused' | 'resumed' | 'completed'
 ) {
     try {
-        await supabase.from('survey_status_history').insert({
+        await supabase.from('survey_events').insert({
             survey_id: surveyId,
-            from_status: fromStatus,
-            to_status: toStatus
+            event_type: eventType
         });
     } catch {
         
@@ -46,8 +44,6 @@ export async function POST(
             .eq('id', id)
             .single();
 
-        const previousStatus = survey?.status || 'draft';
-
         const { error: rpcError } = await supabase.rpc('publish_survey', {
             p_survey_id: id,
             p_creator_id: user.id,
@@ -57,7 +53,7 @@ export async function POST(
             return Response.json({ error: rpcError.message }, { status: 400 });
         }
 
-        await logSurveyStatusHistory(supabase, id, previousStatus, 'active');
+        await logSurveyEvent(supabase, id, 'resumed');
 
         return Response.json({ success: true, message: 'Survey published successfully' });
 
