@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { createSurvey } from '@/services/survey.service'
+import { createSurvey, getRewardThresholdConfig } from '@/services/survey.service'
 
 type ResponseMode = 'fixed' | 'extended'
 
@@ -18,6 +18,30 @@ export default function CreateSurvey() {
     const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState('')
     const [isError, setIsError] = useState(false)
+    const [rewardHint, setRewardHint] = useState<{
+        min_required: number
+        recommended: number
+    } | null>(null)
+
+    useEffect(() => {
+        let cancelled = false
+        ;(async () => {
+            try {
+                const json = await getRewardThresholdConfig(0)
+                if (!cancelled && json.data) {
+                    setRewardHint({
+                        min_required: json.data.min_required,
+                        recommended: json.data.recommended,
+                    })
+                }
+            } catch {
+                if (!cancelled) setRewardHint(null)
+            }
+        })()
+        return () => {
+            cancelled = true
+        }
+    }, [])
 
     const totalBudget = reward * total
 
@@ -42,7 +66,12 @@ export default function CreateSurvey() {
             })
 
             setIsError(false)
-            setMessage('Survey berhasil dibuat! Mengalihkan ke halaman detail...')
+            const soft = typeof data.reward_warning === 'string' ? data.reward_warning : ''
+            setMessage(
+                soft
+                    ? `Survey berhasil dibuat! Mengalihkan ke halaman detail… ⚠️ ${soft}`
+                    : 'Survey berhasil dibuat! Mengalihkan ke halaman detail...'
+            )
             setTitle('')
             setReward(0)
             setTotal(0)
@@ -123,6 +152,20 @@ export default function CreateSurvey() {
                                     onChange={(e) => setReward(Number(e.target.value))}
                                 />
                             </div>
+                            {rewardHint && (
+                                <p className="mt-2 text-xs text-gray-600 leading-relaxed">
+                                    Minimum reward saat membuat survey:{' '}
+                                    <span className="font-semibold text-gray-800">
+                                        Rp {rewardHint.min_required.toLocaleString('id-ID')}
+                                    </span>
+                                    . Rekomendasi:{' '}
+                                    <span className="font-semibold text-amber-800">
+                                        Rp {rewardHint.recommended.toLocaleString('id-ID')}
+                                    </span>
+                                    . Setelah kamu menambah pertanyaan, minimum wajib naik (lebih banyak soal / estimasi waktu
+                                    mengisi = reward harus lebih adil).
+                                </p>
+                            )}
                         </div>
 
                         {/* Total Responses */}
@@ -269,7 +312,9 @@ export default function CreateSurvey() {
                             <div className={`rounded-lg px-4 py-3 text-sm font-medium ${
                                 isError
                                     ? 'bg-red-50 text-red-700 border border-red-100'
-                                    : 'bg-green-50 text-green-700 border border-green-100'
+                                    : message.includes('⚠️')
+                                        ? 'bg-amber-50 text-amber-900 border border-amber-100'
+                                        : 'bg-green-50 text-green-700 border border-green-100'
                             }`}>
                                 {message}
                             </div>

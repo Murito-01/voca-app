@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { getMySurveys, getSurveyQuestions } from '@/services/survey.service'
+import { getMySurveys, getSurveyQuestions, getSurveyRewardValidation } from '@/services/survey.service'
 import QuestionItem from '@/components/creator/QuestionItem'
 import { Question } from '@/types/survey.types'
 
@@ -25,7 +25,17 @@ export default function SurveyDetailPage() {
     const [isDeleting, setIsDeleting] = useState(false)
     const [showPublishModal, setShowPublishModal] = useState(false)
     const [showCloseModal, setShowCloseModal] = useState(false)
-
+    const [rewardEval, setRewardEval] = useState<{
+        hardOk: boolean
+        softOk: boolean
+        minRequired: number
+        recommended: number
+        rewardPerResponse: number
+        questionCount: number
+        estimatedMinutesTotal: number
+        hardMessage?: string
+        softWarning?: string
+    } | null>(null)
 
     useEffect(() => {
         const fetchSurvey = async () => {
@@ -57,6 +67,37 @@ export default function SurveyDetailPage() {
         fetchSurvey()
     }, [surveyId])
 
+    useEffect(() => {
+        if (!surveyId || survey?.status !== 'draft') {
+            setRewardEval(null)
+            return
+        }
+        let cancelled = false
+        ;(async () => {
+            try {
+                const json = await getSurveyRewardValidation(surveyId)
+                if (!cancelled && json.data) {
+                    setRewardEval({
+                        hardOk: json.data.hardOk,
+                        softOk: json.data.softOk,
+                        minRequired: json.data.minRequired,
+                        recommended: json.data.recommended,
+                        rewardPerResponse: json.data.rewardPerResponse,
+                        questionCount: json.data.questionCount,
+                        estimatedMinutesTotal: json.data.estimatedMinutesTotal,
+                        hardMessage: json.data.hardMessage,
+                        softWarning: json.data.softWarning,
+                    })
+                }
+            } catch {
+                if (!cancelled) setRewardEval(null)
+            }
+        })()
+        return () => {
+            cancelled = true
+        }
+    }, [surveyId, survey?.status, survey?.reward_per_response, questions.length])
+
     const handleDeleteQuestion = async (questionId: string) => {
         if (!confirm('Apakah Anda yakin ingin menghapus pertanyaan ini?')) return;
 
@@ -83,14 +124,19 @@ export default function SurveyDetailPage() {
         setIsPublishing(true)
         try {
             const { publishSurvey } = await import('@/services/survey.service')
-            await publishSurvey(surveyId)
+            const result = await publishSurvey(surveyId)
             setSurvey({ ...survey, status: 'active' })
+            if (result?.reward_warning) {
+                alert(result.reward_warning)
+            }
         } catch (err: any) {
             alert(err.message || 'Gagal mem-publish survey')
         } finally {
             setIsPublishing(false)
         }
     }
+
+    const publishBlockedByReward = Boolean(rewardEval && !rewardEval.hardOk)
 
     const handleStatusChange = async (newStatus: 'paused' | 'active' | 'completed') => {
         if (newStatus === 'completed') {
@@ -260,8 +306,8 @@ export default function SurveyDetailPage() {
                                     <div className="flex gap-2 shrink-0">
                                         <button
                                             onClick={handlePublish}
-                                            disabled={isPublishing || questions.length === 0}
-                                            className={`px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors ${isPublishing || questions.length === 0
+                                            disabled={isPublishing || questions.length === 0 || publishBlockedByReward}
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors ${isPublishing || questions.length === 0 || publishBlockedByReward
                                                 ? 'bg-gray-400 cursor-not-allowed'
                                                 : 'bg-green-600 hover:bg-green-700'
                                                 }`}
@@ -333,6 +379,33 @@ export default function SurveyDetailPage() {
                                     {survey.allow_extended_responses ? '🚀 Maksimalkan Respon' : '🔒 Jumlah Tetap'}
                                 </span>
                             </div>
+
+                            {survey.status === 'draft' && rewardEval && !rewardEval.hardOk && rewardEval.hardMessage && (
+                                <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                                    <p className="font-semibold flex items-center gap-2">
+                                        <span>🔒</span> Reward terlalu rendah
+                                    </p>
+                                    <p className="mt-1 text-red-700">{rewardEval.hardMessage}</p>
+                                    <p className="mt-2 text-xs text-red-600">
+                                        Reward di-set saat survey dibuat. Jika perlu nilai lebih tinggi, buat survey baru
+                                        dengan reward yang memenuhi syarat.
+                                    </p>
+                                </div>
+                            )}
+
+                            {survey.status === 'draft' && rewardEval && rewardEval.hardOk && rewardEval.softWarning && (
+                                <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                                    <p className="font-semibold flex items-center gap-2">
+                                        <span>⚠️</span> Insight reward
+                                    </p>
+                                    <p className="mt-1 text-amber-800">{rewardEval.softWarning}</p>
+                                    <p className="mt-1 text-xs text-amber-700">
+                                        Minimum wajib: Rp {rewardEval.minRequired.toLocaleString('id-ID')} · Rekomendasi: Rp{' '}
+                                        {rewardEval.recommended.toLocaleString('id-ID')} ({rewardEval.questionCount}{' '}
+                                        pertanyaan, ~{Math.ceil(rewardEval.estimatedMinutesTotal)} menit estimasi mengisi).
+                                    </p>
+                                </div>
+                            )}
 
                             {/* Stats */}
                             <div className="mt-6 space-y-2 text-sm text-gray-700">
@@ -552,7 +625,37 @@ export default function SurveyDetailPage() {
                                     {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(survey.reward_per_response * survey.total_responses)}
                                 </span>
                             </div>
+                            {rewardEval && (
+                                <>
+                                    <div className="border-t pt-3 flex justify-between items-center text-sm">
+                                        <span className="text-gray-500">Minimum reward (wajib)</span>
+                                        <span className="font-semibold text-gray-800">
+                                            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(rewardEval.minRequired)}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-gray-500">Rekomendasi platform</span>
+                                        <span className="font-semibold text-amber-800">
+                                            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(rewardEval.recommended)}
+                                        </span>
+                                    </div>
+                                </>
+                            )}
                         </div>
+
+                        {rewardEval && !rewardEval.hardOk && rewardEval.hardMessage && (
+                            <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-5 text-xs text-red-800">
+                                <p className="font-semibold">🔒 Publish diblokir</p>
+                                <p className="mt-1">{rewardEval.hardMessage}</p>
+                            </div>
+                        )}
+
+                        {rewardEval && rewardEval.hardOk && rewardEval.softWarning && (
+                            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5 text-xs text-amber-900">
+                                <p className="font-semibold">⚠️ Insight</p>
+                                <p className="mt-1">{rewardEval.softWarning}</p>
+                            </div>
+                        )}
 
                         <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5 flex gap-2">
                             <span className="text-amber-500 text-base shrink-0 mt-0.5">⚠️</span>
@@ -570,8 +673,8 @@ export default function SurveyDetailPage() {
                             </button>
                             <button
                                 onClick={handleConfirmPublish}
-                                disabled={questions.length === 0}
-                                className={`flex-1 py-2.5 rounded-xl text-white text-sm font-semibold transition-colors ${questions.length === 0 ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
+                                disabled={questions.length === 0 || publishBlockedByReward}
+                                className={`flex-1 py-2.5 rounded-xl text-white text-sm font-semibold transition-colors ${questions.length === 0 || publishBlockedByReward ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
                                     }`}
                             >
                                 ✅ Ya, Publish Sekarang
