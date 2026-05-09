@@ -1,4 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
+import {
+    getRewardThresholdParamsFromEnv,
+    mergeRewardParamsFromAppConfig,
+    evaluateRewardThresholds,
+    assertRewardMeetsHardRule
+} from '@/lib/reward-thresholds';
 
 async function logSurveyEvent(
     supabase: any,
@@ -38,11 +44,48 @@ export async function POST(
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { data: survey } = await supabase
+        const { data: survey, error: surveyFetchError } = await supabase
             .from('surveys')
-            .select('status')
+            .select('status, reward_per_response, creator_id')
             .eq('id', id)
             .single();
+
+        if (surveyFetchError || !survey) {
+            return Response.json({ error: 'Survey tidak ditemukan' }, { status: 404 });
+        }
+
+        if (survey.creator_id !== user.id) {
+            return Response.json({ error: 'Akses ditolak' }, { status: 403 });
+        }
+
+        const { count: questionCount, error: countError } = await supabase
+            .from('questions')
+            .select('*', { count: 'exact', head: true })
+            .eq('survey_id', id);
+
+        if (countError) {
+            return Response.json({ error: countError.message }, { status: 400 });
+        }
+
+        if (!questionCount || questionCount < 1) {
+            return Response.json(
+                { error: 'Tambahkan minimal satu pertanyaan sebelum publish.' },
+                { status: 400 }
+            );
+        }
+
+        let p = getRewardThresholdParamsFromEnv();
+        p = await mergeRewardParamsFromAppConfig(supabase, p);
+        const rewardCheck = evaluateRewardThresholds(
+            Number(survey.reward_per_response) || 0,
+            questionCount,
+            p
+        );
+        try {
+            assertRewardMeetsHardRule(rewardCheck);
+        } catch (e: any) {
+            return Response.json({ error: e.message }, { status: 400 });
+        }
 
         const { error: rpcError } = await supabase.rpc('publish_survey', {
             p_survey_id: id,
@@ -55,7 +98,11 @@ export async function POST(
 
         await logSurveyEvent(supabase, id, 'resumed');
 
-        return Response.json({ success: true, message: 'Survey published successfully' });
+        return Response.json({
+            success: true,
+            message: 'Survey published successfully',
+            ...(rewardCheck.softWarning ? { reward_warning: rewardCheck.softWarning } : {})
+        });
 
     } catch (err) {
         console.error(err);
