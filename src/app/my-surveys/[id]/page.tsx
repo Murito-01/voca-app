@@ -21,6 +21,9 @@ export default function SurveyDetailPage() {
     const [editTitle, setEditTitle] = useState('')
     const [editDescription, setEditDescription] = useState('')
     const [isSavingInfo, setIsSavingInfo] = useState(false)
+    const [isEditingReward, setIsEditingReward] = useState(false)
+    const [editReward, setEditReward] = useState<number | ''>('')
+    const [isSavingReward, setIsSavingReward] = useState(false)
     const [isChangingStatus, setIsChangingStatus] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
     const [showPublishModal, setShowPublishModal] = useState(false)
@@ -193,6 +196,26 @@ export default function SurveyDetailPage() {
             alert(err.message || 'Gagal menyimpan perubahan');
         } finally {
             setIsSavingInfo(false);
+        }
+    }
+
+    const handleSaveReward = async () => {
+        const rewardValue = Number(editReward);
+        if (isNaN(rewardValue) || rewardValue <= 0) {
+            alert('Reward harus berupa angka lebih dari 0');
+            return;
+        }
+
+        setIsSavingReward(true);
+        try {
+            const { updateSurveyDetails } = await import('@/services/survey.service');
+            await updateSurveyDetails(surveyId, { reward_per_response: rewardValue });
+            setSurvey({ ...survey, reward_per_response: rewardValue });
+            setIsEditingReward(false);
+        } catch (err: any) {
+            alert(err.message || 'Gagal menyimpan reward');
+        } finally {
+            setIsSavingReward(false);
         }
     }
 
@@ -387,10 +410,18 @@ export default function SurveyDetailPage() {
                                         <span>🔒</span> Reward terlalu rendah
                                     </p>
                                     <p className="mt-1 text-red-700">{rewardEval.hardMessage}</p>
-                                    <p className="mt-2 text-xs text-red-600">
-                                        Reward di-set saat survey dibuat. Jika perlu nilai lebih tinggi, buat survey baru
-                                        dengan reward yang memenuhi syarat.
-                                    </p>
+                                    <div className="mt-3">
+                                        <button 
+                                            onClick={() => {
+                                                setEditReward(rewardEval.recommended);
+                                                setIsEditingReward(true);
+                                                window.scrollTo({ top: document.getElementById('reward-section')?.offsetTop, behavior: 'smooth' });
+                                            }}
+                                            className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-800 text-xs font-semibold rounded-lg transition-colors border border-red-300"
+                                        >
+                                            ✨ Update Reward ke Rp {rewardEval.recommended.toLocaleString('id-ID')}
+                                        </button>
+                                    </div>
                                 </div>
                             )}
 
@@ -426,17 +457,57 @@ export default function SurveyDetailPage() {
                             )}
 
                             {/* Stats */}
-                            <div className="mt-6 space-y-2 text-sm text-gray-700">
-                                <p>
-                                    Reward / Response:{' '}
-                                    <span className="font-semibold text-blue-600">
-                                        {new Intl.NumberFormat('id-ID', {
-                                            style: 'currency',
-                                            currency: 'IDR',
-                                            minimumFractionDigits: 0
-                                        }).format(survey.reward_per_response)}
-                                    </span>
-                                </p>
+                            <div id="reward-section" className="mt-6 space-y-2 text-sm text-gray-700">
+                                <div className="flex items-center gap-2">
+                                    <span>Reward / Response:</span>
+                                    {isEditingReward ? (
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                value={editReward}
+                                                onChange={(e) => setEditReward(e.target.value === '' ? '' : Number(e.target.value))}
+                                                className="w-24 px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                            />
+                                            <button
+                                                onClick={handleSaveReward}
+                                                disabled={isSavingReward || editReward === '' || editReward <= 0}
+                                                className="px-2 py-1 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 disabled:bg-gray-400"
+                                            >
+                                                {isSavingReward ? '⏳' : 'Simpan'}
+                                            </button>
+                                            <button
+                                                onClick={() => setIsEditingReward(false)}
+                                                disabled={isSavingReward}
+                                                className="px-2 py-1 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300 disabled:bg-gray-100"
+                                            >
+                                                Batal
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-2 group">
+                                            <span className="font-semibold text-blue-600">
+                                                {new Intl.NumberFormat('id-ID', {
+                                                    style: 'currency',
+                                                    currency: 'IDR',
+                                                    minimumFractionDigits: 0
+                                                }).format(survey.reward_per_response)}
+                                            </span>
+                                            {survey.status === 'draft' && (
+                                                <button
+                                                    onClick={() => {
+                                                        setEditReward(survey.reward_per_response);
+                                                        setIsEditingReward(true);
+                                                    }}
+                                                    className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-blue-600 transition-opacity rounded hover:bg-blue-50"
+                                                    title="Edit Reward"
+                                                >
+                                                    ✏️
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
 
                                 <p>
                                     Total Responses:{' '}

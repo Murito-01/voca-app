@@ -220,7 +220,7 @@ export async function publishSurvey(surveyId: string) {
   return response.json();
 }
 
-export async function updateSurveyDetails(surveyId: string, payload: { title: string; description?: string }) {
+export async function updateSurveyDetails(surveyId: string, payload: { title?: string; description?: string; reward_per_response?: number }) {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
 
