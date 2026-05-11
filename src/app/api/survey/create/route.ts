@@ -78,6 +78,8 @@ export async function POST(req: Request) {
         return Response.json({
             success: true,
             survey_id: surveyId,
+            min_required: rewardCheck.minRequired,
+            recommended: rewardCheck.recommended,
             ...(rewardCheck.softWarning
                 ? { reward_warning: rewardCheck.softWarning }
                 : {})

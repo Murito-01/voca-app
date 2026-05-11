@@ -101,6 +101,8 @@ export async function POST(
         return Response.json({
             success: true,
             message: 'Survey published successfully',
+            min_required: rewardCheck.minRequired,
+            recommended: rewardCheck.recommended,
             ...(rewardCheck.softWarning ? { reward_warning: rewardCheck.softWarning } : {})
         });
 
