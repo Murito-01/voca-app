@@ -25,6 +25,7 @@ export default function SurveyDetailPage() {
     const [isDeleting, setIsDeleting] = useState(false)
     const [showPublishModal, setShowPublishModal] = useState(false)
     const [showCloseModal, setShowCloseModal] = useState(false)
+    const [publishSuccessWarning, setPublishSuccessWarning] = useState<string | null>(null)
     const [rewardEval, setRewardEval] = useState<{
         hardOk: boolean
         softOk: boolean
@@ -127,7 +128,7 @@ export default function SurveyDetailPage() {
             const result = await publishSurvey(surveyId)
             setSurvey({ ...survey, status: 'active' })
             if (result?.reward_warning) {
-                alert(result.reward_warning)
+                setPublishSuccessWarning(result.reward_warning)
             }
         } catch (err: any) {
             alert(err.message || 'Gagal mem-publish survey')
@@ -404,6 +405,23 @@ export default function SurveyDetailPage() {
                                         {rewardEval.recommended.toLocaleString('id-ID')} ({rewardEval.questionCount}{' '}
                                         pertanyaan, ~{Math.ceil(rewardEval.estimatedMinutesTotal)} menit estimasi mengisi).
                                     </p>
+                                </div>
+                            )}
+
+                            {/* Banner reward warning setelah publish berhasil */}
+                            {survey.status === 'active' && publishSuccessWarning && (
+                                <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 flex gap-2">
+                                    <span className="shrink-0 mt-0.5">⚠️</span>
+                                    <div>
+                                        <p className="font-semibold">Insight Reward</p>
+                                        <p className="mt-0.5">{publishSuccessWarning}</p>
+                                        <button
+                                            onClick={() => setPublishSuccessWarning(null)}
+                                            className="mt-1 text-xs text-amber-600 hover:underline"
+                                        >
+                                            Tutup
+                                        </button>
+                                    </div>
                                 </div>
                             )}
 

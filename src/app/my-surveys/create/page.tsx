@@ -18,6 +18,7 @@ export default function CreateSurvey() {
     const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState('')
     const [isError, setIsError] = useState(false)
+    const [rewardWarning, setRewardWarning] = useState<string | null>(null)
     const [rewardHint, setRewardHint] = useState<{
         min_required: number
         recommended: number
@@ -66,12 +67,8 @@ export default function CreateSurvey() {
             })
 
             setIsError(false)
-            const soft = typeof data.reward_warning === 'string' ? data.reward_warning : ''
-            setMessage(
-                soft
-                    ? `Survey berhasil dibuat! Mengalihkan ke halaman detail… ⚠️ ${soft}`
-                    : 'Survey berhasil dibuat! Mengalihkan ke halaman detail...'
-            )
+            setRewardWarning(typeof data.reward_warning === 'string' ? data.reward_warning : null)
+            setMessage('Survey berhasil dibuat! Mengalihkan ke halaman detail...')
             setTitle('')
             setReward(0)
             setTotal(0)
@@ -152,19 +149,29 @@ export default function CreateSurvey() {
                                     onChange={(e) => setReward(Number(e.target.value))}
                                 />
                             </div>
-                            {rewardHint && (
-                                <p className="mt-2 text-xs text-gray-600 leading-relaxed">
-                                    Minimum reward saat membuat survey:{' '}
-                                    <span className="font-semibold text-gray-800">
-                                        Rp {rewardHint.min_required.toLocaleString('id-ID')}
-                                    </span>
-                                    . Rekomendasi:{' '}
-                                    <span className="font-semibold text-amber-800">
-                                        Rp {rewardHint.recommended.toLocaleString('id-ID')}
-                                    </span>
-                                    . Setelah kamu menambah pertanyaan, minimum wajib naik (lebih banyak soal / estimasi waktu
-                                    mengisi = reward harus lebih adil).
-                                </p>
+                             {rewardHint && (
+                                <div className="mt-2 space-y-1.5">
+                                    <p className="text-xs text-gray-600 leading-relaxed">
+                                        Minimum reward:{' '}
+                                        <span className="font-semibold text-gray-800">
+                                            Rp {rewardHint.min_required.toLocaleString('id-ID')}
+                                        </span>
+                                        {' '}· Rekomendasi:{' '}
+                                        <span className="font-semibold text-amber-800">
+                                            Rp {rewardHint.recommended.toLocaleString('id-ID')}
+                                        </span>
+                                    </p>
+                                    <p className="text-[11px] text-gray-400">
+                                        Setelah kamu menambah pertanyaan, minimum wajib naik.
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => setReward(rewardHint.recommended)}
+                                        className="text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-lg hover:bg-amber-100 transition-colors"
+                                    >
+                                        ✨ Gunakan rekomendasi (Rp {rewardHint.recommended.toLocaleString('id-ID')})
+                                    </button>
+                                </div>
                             )}
                         </div>
 
@@ -307,14 +314,23 @@ export default function CreateSurvey() {
                             )}
                         </button>
 
+                        {/* Soft Warning Banner */}
+                        {rewardWarning && (
+                            <div className="rounded-lg px-4 py-3 text-sm font-medium bg-amber-50 text-amber-900 border border-amber-200 flex gap-2">
+                                <span className="shrink-0">⚠️</span>
+                                <div>
+                                    <p className="font-semibold">Insight Reward</p>
+                                    <p className="mt-0.5 font-normal">{rewardWarning}</p>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Feedback Message */}
                         {message && (
                             <div className={`rounded-lg px-4 py-3 text-sm font-medium ${
                                 isError
                                     ? 'bg-red-50 text-red-700 border border-red-100'
-                                    : message.includes('⚠️')
-                                        ? 'bg-amber-50 text-amber-900 border border-amber-100'
-                                        : 'bg-green-50 text-green-700 border border-green-100'
+                                    : 'bg-green-50 text-green-700 border border-green-100'
                             }`}>
                                 {message}
                             </div>
