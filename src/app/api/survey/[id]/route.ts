@@ -44,18 +44,30 @@ export async function PUT(
             return Response.json({ error: 'Hanya survey berstatus draft yang bisa diedit' }, { status: 403 });
         }
 
-        const { title, description } = body;
+        const { title, description, reward_per_response } = body;
 
-        if (!title || title.trim() === '') {
+        if (title !== undefined && (!title || title.trim() === '')) {
             return Response.json({ error: 'Judul tidak boleh kosong' }, { status: 400 });
+        }
+
+        const updates: any = {};
+        if (title !== undefined) updates.title = title.trim();
+        if (description !== undefined) updates.description = description ? description.trim() : null;
+        if (reward_per_response !== undefined) {
+             const reward = Number(reward_per_response);
+             if (!Number.isFinite(reward) || reward <= 0) {
+                 return Response.json({ error: 'Reward harus lebih dari 0' }, { status: 400 });
+             }
+             updates.reward_per_response = reward;
+        }
+
+        if (Object.keys(updates).length === 0) {
+             return Response.json({ success: true });
         }
 
         const { error: updateError } = await supabase
             .from('surveys')
-            .update({ 
-                title: title.trim(),
-                description: description ? description.trim() : null
-            })
+            .update(updates)
             .eq('id', id);
 
         if (updateError) {

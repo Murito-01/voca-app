@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { createSurvey } from '@/services/survey.service'
+import { createSurvey, getRewardThresholdConfig } from '@/services/survey.service'
 
 type ResponseMode = 'fixed' | 'extended'
 
@@ -18,6 +18,31 @@ export default function CreateSurvey() {
     const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState('')
     const [isError, setIsError] = useState(false)
+    const [rewardWarning, setRewardWarning] = useState<string | null>(null)
+    const [rewardHint, setRewardHint] = useState<{
+        min_required: number
+        recommended: number
+    } | null>(null)
+
+    useEffect(() => {
+        let cancelled = false
+        ;(async () => {
+            try {
+                const json = await getRewardThresholdConfig(0)
+                if (!cancelled && json.data) {
+                    setRewardHint({
+                        min_required: json.data.min_required,
+                        recommended: json.data.recommended,
+                    })
+                }
+            } catch {
+                if (!cancelled) setRewardHint(null)
+            }
+        })()
+        return () => {
+            cancelled = true
+        }
+    }, [])
 
     const totalBudget = reward * total
 
@@ -42,6 +67,7 @@ export default function CreateSurvey() {
             })
 
             setIsError(false)
+            setRewardWarning(typeof data.reward_warning === 'string' ? data.reward_warning : null)
             setMessage('Survey berhasil dibuat! Mengalihkan ke halaman detail...')
             setTitle('')
             setReward(0)
@@ -123,6 +149,30 @@ export default function CreateSurvey() {
                                     onChange={(e) => setReward(Number(e.target.value))}
                                 />
                             </div>
+                             {rewardHint && (
+                                <div className="mt-2 space-y-1.5">
+                                    <p className="text-xs text-gray-600 leading-relaxed">
+                                        Minimum reward:{' '}
+                                        <span className="font-semibold text-gray-800">
+                                            Rp {rewardHint.min_required.toLocaleString('id-ID')}
+                                        </span>
+                                        {' '}· Rekomendasi:{' '}
+                                        <span className="font-semibold text-amber-800">
+                                            Rp {rewardHint.recommended.toLocaleString('id-ID')}
+                                        </span>
+                                    </p>
+                                    <p className="text-[11px] text-gray-400">
+                                        Setelah kamu menambah pertanyaan, minimum wajib naik.
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => setReward(rewardHint.recommended)}
+                                        className="text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-lg hover:bg-amber-100 transition-colors"
+                                    >
+                                        ✨ Gunakan rekomendasi (Rp {rewardHint.recommended.toLocaleString('id-ID')})
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         {/* Total Responses */}
@@ -263,6 +313,17 @@ export default function CreateSurvey() {
                                 'Buat Survey'
                             )}
                         </button>
+
+                        {/* Soft Warning Banner */}
+                        {rewardWarning && (
+                            <div className="rounded-lg px-4 py-3 text-sm font-medium bg-amber-50 text-amber-900 border border-amber-200 flex gap-2">
+                                <span className="shrink-0">⚠️</span>
+                                <div>
+                                    <p className="font-semibold">Insight Reward</p>
+                                    <p className="mt-0.5 font-normal">{rewardWarning}</p>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Feedback Message */}
                         {message && (
