@@ -13,7 +13,7 @@
 # testing
 /coverage
 test-query.*
-submit_response.sql
+/src/sql
 
 # next.js
 /.next/
