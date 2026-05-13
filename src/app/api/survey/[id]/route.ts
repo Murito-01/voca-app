@@ -118,20 +118,36 @@ export async function GET(
     }
 
     let has_submitted = false;
+    let draft_response_id: string | null = null;
+
     if (user_id) {
       const { data: existingResponse } = await supabase
         .from('responses')
         .select('id')
         .eq('survey_id', id)
         .eq('user_id', user_id)
+        .neq('status', 'draft')   // drafts don't count as submitted
         .maybeSingle()
       
       if (existingResponse) {
         has_submitted = true;
       }
+
+      // Check for an existing draft to allow resuming
+      const { data: draftResponse } = await supabase
+        .from('responses')
+        .select('id')
+        .eq('survey_id', id)
+        .eq('user_id', user_id)
+        .eq('status', 'draft')
+        .maybeSingle()
+
+      if (draftResponse) {
+        draft_response_id = draftResponse.id;
+      }
     }
 
-    return Response.json({ data: { ...survey, has_submitted } })
+    return Response.json({ data: { ...survey, has_submitted, draft_response_id } })
 
   } catch (err) {
     return Response.json(
