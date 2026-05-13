@@ -124,6 +124,7 @@ export async function GET(
         .select('id')
         .eq('survey_id', id)
         .eq('user_id', user_id)
+        .neq('status', 'draft')   // drafts don't count as submitted
         .maybeSingle()
       
       if (existingResponse) {
