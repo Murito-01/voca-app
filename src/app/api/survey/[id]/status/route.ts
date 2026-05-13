@@ -15,6 +15,46 @@ async function logSurveyEvent(
     }
 }
 
+/**
+ * Snapshot survey metrics into survey_analytics for future ML training.
+ */
+async function saveSurveyAnalytics(supabase: any, surveyId: string) {
+    try {
+        const { data: survey } = await supabase
+            .from('surveys')
+            .select('reward_per_response, total_responses, remaining_responses, avg_score, avg_duration, category')
+            .eq('id', surveyId)
+            .single();
+
+        if (!survey) return;
+
+        const completedResponses = (survey.total_responses || 0) - (survey.remaining_responses || 0);
+        const completionRate = survey.total_responses > 0
+            ? completedResponses / survey.total_responses
+            : 0;
+
+        // Update completion_rate on the survey itself
+        await supabase
+            .from('surveys')
+            .update({ completion_rate: completionRate })
+            .eq('id', surveyId);
+
+        // Insert analytics snapshot
+        await supabase.from('survey_analytics').insert({
+            survey_id: surveyId,
+            reward: survey.reward_per_response,
+            category: survey.category || null,
+            total_responses: survey.total_responses || 0,
+            completed_responses: completedResponses,
+            avg_score: survey.avg_score || 0,
+            avg_duration: survey.avg_duration || 0,
+            completion_rate: completionRate,
+        });
+    } catch {
+        // Analytics save should never block the completion flow
+    }
+}
+
 export async function PUT(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -76,6 +116,7 @@ export async function PUT(
             }
 
             await logSurveyEvent(supabase, id, 'completed');
+            await saveSurveyAnalytics(supabase, id);
             return Response.json({ success: true, status: 'completed' });
         }
 
