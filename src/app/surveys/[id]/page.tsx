@@ -33,8 +33,36 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
           getSurveyQuestions(id)
         ]);
 
-        if (surveyResult?.data) setSurvey(surveyResult.data);
-        if (questionsResult?.data) setQuestions(questionsResult.data);
+        const surveyData = surveyResult?.data ?? null;
+        const questionsData = questionsResult?.data ?? [];
+
+        if (surveyData) setSurvey(surveyData);
+        if (questionsData) setQuestions(questionsData);
+
+        // Auto-restore draft if user has already started this survey
+        if (surveyData?.draft_response_id) {
+          setResponseId(surveyData.draft_response_id);
+
+          // Restore saved answers from the draft
+          const draft = await getDraftResponse(id);
+          if (draft.length > 0) {
+            const restored: Record<string, string | string[]> = {};
+            for (const row of draft) {
+              if (row.option_id) {
+                const q = questionsData.find((q: any) => q.id === row.question_id);
+                if (q?.question_type === 'checkbox') {
+                  const existing = (restored[row.question_id] as string[]) || [];
+                  restored[row.question_id] = [...existing, row.option_id];
+                } else {
+                  restored[row.question_id] = row.option_id;
+                }
+              } else if (row.answer_text) {
+                restored[row.question_id] = row.answer_text;
+              }
+            }
+            setAnswers(restored);
+          }
+        }
       } catch (err: any) {
         setError(err.message);
       } finally {
