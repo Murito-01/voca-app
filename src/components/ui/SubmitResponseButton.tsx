@@ -13,24 +13,20 @@ export interface SubmitResponseResult {
   created_at: string;
 }
 
-export default function SubmitResponseButton({ 
-  surveyId: initialSurveyId, 
+export default function SubmitResponseButton({
+  surveyId: initialSurveyId,
   onSuccessCallback,
   onSubmitStart,
   onSubmitError,
   hasSubmitted: initialHasSubmitted,
   disabled: externalDisabled,
-  answers,
-  startedAt
-}: { 
-  surveyId?: string, 
-  onSuccessCallback?: (result: SubmitResponseResult) => void,
-  onSubmitStart?: () => void,
-  onSubmitError?: () => void,
-  hasSubmitted?: boolean,
-  disabled?: boolean,
-  answers?: Record<string, string | string[]>,
-  startedAt: string
+}: {
+  surveyId?: string;
+  onSuccessCallback?: (result: SubmitResponseResult) => void;
+  onSubmitStart?: () => void;
+  onSubmitError?: () => void;
+  hasSubmitted?: boolean;
+  disabled?: boolean;
 }) {
   const [userId, setUserId] = useState('');
   const [surveyId, setSurveyId] = useState(initialSurveyId || '');
@@ -80,8 +76,6 @@ export default function SubmitResponseButton({
     try {
       const result = await submitSurveyResponse({
         survey_id: surveyId,
-        started_at: startedAt,
-        answers: answers || {}
       });
 
       setSuccess(true);

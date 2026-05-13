@@ -35,6 +35,29 @@ export interface DraftAnswerRow {
   answer_text: string | null;
 }
 
+export interface ResponseDetail {
+  id: string;
+  created_at: string;
+  score: number;
+  status: string;
+  score_breakdown: Record<string, any>;
+  reward_final: number;
+  survey: {
+    title: string;
+    description: string;
+    reward: number;
+  };
+  answers: {
+    answer_id: string;
+    question_id: string;
+    question_text: string;
+    question_type: string;
+    answer_text: string | null;
+    option_id: string | null;
+    option_text: string | null;
+  }[];
+}
+
 export interface SaveAnswerPayload {
   response_id: string;
   question_id: string;
@@ -134,7 +157,7 @@ export async function getMyResponses() {
 // 6. Get response by ID (with retry for pending)
 // ─────────────────────────────────────────────
 
-export async function getResponseById(id: string) {
+export async function getResponseById(id: string): Promise<{ data: ResponseDetail }> {
   const token = await getToken();
 
   const res = await fetch(`/api/response/${id}`, {
@@ -142,5 +165,5 @@ export async function getResponseById(id: string) {
     headers: authHeaders(token),
   });
 
-  return handleResponse(res, 'getResponseById');
+  return handleResponse<{ data: ResponseDetail }>(res, 'getResponseById');
 }
