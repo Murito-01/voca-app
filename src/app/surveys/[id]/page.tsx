@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, useRef } from "react";
 import { getSurveyById, getSurveyQuestions } from "@/services/survey.service";
 import { getResponseById, startSurveyResponse, getDraftResponse, saveAnswer } from "@/services/response.service";
 import Link from "next/link";
@@ -17,6 +17,7 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
 
   // Local answers for UI rendering only (not sent to server)
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
+  const saveTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
 
   // Response ID from DB (created by start_survey_response)
   const [responseId, setResponseId] = useState<string | null>(null);
@@ -112,7 +113,7 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
   // ─────────────────────────────────────────────
   // Save answer to DB on every change
   // ─────────────────────────────────────────────
-  const handleAnswerChange = async (
+  const handleAnswerChange = (
     questionId: string,
     questionType: string,
     value: string | string[]
@@ -122,31 +123,39 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
 
     if (!responseId) return;
 
-    try {
-      if (questionType === 'checkbox') {
-        await saveAnswer({
-          response_id: responseId,
-          question_id: questionId,
-          option_ids: value as string[],
-        });
-      } else if (questionType === 'radio') {
-        await saveAnswer({
-          response_id: responseId,
-          question_id: questionId,
-          option_id: value as string,
-        });
-      } else {
-        // essay / text
-        await saveAnswer({
-          response_id: responseId,
-          question_id: questionId,
-          answer_text: value as string,
-        });
-      }
-    } catch (err) {
-      // Non-fatal: saving failed silently — user can still interact
-      console.error('Failed to save answer:', err);
+    if (saveTimeoutRef.current[questionId]) {
+      clearTimeout(saveTimeoutRef.current[questionId]);
     }
+
+    const delay = questionType === 'text' ? 800 : 0;
+
+    saveTimeoutRef.current[questionId] = setTimeout(async () => {
+      try {
+        if (questionType === 'checkbox') {
+          await saveAnswer({
+            response_id: responseId,
+            question_id: questionId,
+            option_ids: value as string[],
+          });
+        } else if (questionType === 'radio') {
+          await saveAnswer({
+            response_id: responseId,
+            question_id: questionId,
+            option_id: value as string,
+          });
+        } else {
+          // essay / text
+          await saveAnswer({
+            response_id: responseId,
+            question_id: questionId,
+            answer_text: value as string,
+          });
+        }
+      } catch (err) {
+        // Non-fatal: saving failed silently — user can still interact
+        console.error('Failed to save answer:', err);
+      }
+    }, delay);
   };
 
   const isFormValid = () => {
