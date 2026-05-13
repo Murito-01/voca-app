@@ -341,3 +341,23 @@ export async function getWalletBalance(): Promise<{ balance: number; locked_bala
   const json = await response.json();
   return json.data;
 }
+
+export async function getSurveyInsight(id: string) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  const response = await fetch(`/api/survey/${id}/insight`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Gagal memuat insight');
+  }
+
+  return response.json();
+}
