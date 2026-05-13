@@ -164,7 +164,7 @@ export default function SubmissionFeedback({
 
                   {(bd.time_penalty ?? 0) !== 0 && (
                     <div className="flex justify-between items-center text-red-600">
-                      <span>- Time Penalty</span>
+                      <span>- Time Penalty ({formatDuration(bd.duration)})</span>
                       <span className="font-bold">{Math.abs(bd.time_penalty)}</span>
                     </div>
                   )}
