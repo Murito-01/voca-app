@@ -21,7 +21,7 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
 
   const [responseId, setResponseId] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error' | 'restored'>('idle');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<SubmitResponseResult | null>(null);
@@ -62,6 +62,7 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
               }
             }
             setAnswers(restored);
+            setSaveStatus('restored');
           }
         }
       } catch (err: any) {
@@ -102,6 +103,7 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
           }
         }
         setAnswers(restored);
+        setSaveStatus('restored');
       }
     } catch (err: any) {
       setError(err.message);
@@ -328,6 +330,14 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             Gagal menyimpan
+                          </span>
+                        )}
+                        {saveStatus === 'restored' && (
+                          <span className="text-purple-600 flex items-center gap-1">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Draft dipulihkan
                           </span>
                         )}
                       </div>
