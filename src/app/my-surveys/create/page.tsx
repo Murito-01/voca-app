@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createSurvey, getRewardThresholdConfig } from '@/services/survey.service'
+import { getEstimationSummary, type EstimationSummary } from '@/lib/survey-estimation'
 
 type ResponseMode = 'fixed' | 'extended'
 
@@ -45,6 +46,12 @@ export default function CreateSurvey() {
     }, [])
 
     const totalBudget = reward * total
+
+    // Live estimation — recalculates instantly when reward/total/recommended changes
+    const estimation: EstimationSummary | null = useMemo(() => {
+        if (reward <= 0 || total <= 0 || !rewardHint) return null;
+        return getEstimationSummary(reward, rewardHint.recommended, total);
+    }, [reward, total, rewardHint])
 
     const handleSubmit = async () => {
         if (!title || reward <= 0 || total <= 0) {
@@ -290,6 +297,89 @@ export default function CreateSurvey() {
                                     : 'Isi reward dan jumlah responden untuk melihat total'}
                             </p>
                         </div>
+
+                        {/* Live Estimation Widget */}
+                        {estimation && (
+                            <div className="border border-gray-200 rounded-xl p-5 bg-gradient-to-br from-gray-50 to-white shadow-sm">
+                                <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                    <span>📊</span> Estimasi Hasil Survey
+                                </h3>
+
+                                <div className="space-y-4">
+                                    {/* Completion Rate */}
+                                    <div>
+                                        <div className="flex justify-between items-center mb-1.5">
+                                            <span className="text-xs font-medium text-gray-600 flex items-center gap-1.5">
+                                                ✅ Completion Rate
+                                            </span>
+                                            <span className={`text-sm font-bold ${
+                                                estimation.completion_rate >= 0.8 ? 'text-green-600' :
+                                                estimation.completion_rate >= 0.6 ? 'text-yellow-600' : 'text-red-600'
+                                            }`}>
+                                                {Math.round(estimation.completion_rate * 100)}%
+                                            </span>
+                                        </div>
+                                        <div className="w-full bg-gray-200 h-2.5 rounded-full overflow-hidden">
+                                            <div
+                                                className={`h-full rounded-full transition-all duration-500 ease-out ${
+                                                    estimation.completion_rate >= 0.8 ? 'bg-green-500' :
+                                                    estimation.completion_rate >= 0.6 ? 'bg-yellow-500' : 'bg-red-500'
+                                                }`}
+                                                style={{ width: `${Math.round(estimation.completion_rate * 100)}%` }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {/* Quality */}
+                                        <div className={`p-3 rounded-lg border ${
+                                            estimation.quality_color === 'green' ? 'bg-green-50 border-green-200' :
+                                            estimation.quality_color === 'yellow' ? 'bg-yellow-50 border-yellow-200' :
+                                            'bg-red-50 border-red-200'
+                                        }`}>
+                                            <p className={`text-[10px] font-semibold uppercase tracking-wider mb-1 ${
+                                                estimation.quality_color === 'green' ? 'text-green-600' :
+                                                estimation.quality_color === 'yellow' ? 'text-yellow-600' :
+                                                'text-red-600'
+                                            }`}>⚡ Kualitas</p>
+                                            <p className={`text-lg font-bold capitalize ${
+                                                estimation.quality_color === 'green' ? 'text-green-800' :
+                                                estimation.quality_color === 'yellow' ? 'text-yellow-800' :
+                                                'text-red-800'
+                                            }`}>{estimation.quality}</p>
+                                        </div>
+
+                                        {/* Speed */}
+                                        <div className={`p-3 rounded-lg border ${
+                                            estimation.speed_color === 'green' ? 'bg-green-50 border-green-200' :
+                                            estimation.speed_color === 'yellow' ? 'bg-yellow-50 border-yellow-200' :
+                                            'bg-red-50 border-red-200'
+                                        }`}>
+                                            <p className={`text-[10px] font-semibold uppercase tracking-wider mb-1 ${
+                                                estimation.speed_color === 'green' ? 'text-green-600' :
+                                                estimation.speed_color === 'yellow' ? 'text-yellow-600' :
+                                                'text-red-600'
+                                            }`}>⏳ Waktu</p>
+                                            <p className={`text-lg font-bold capitalize ${
+                                                estimation.speed_color === 'green' ? 'text-green-800' :
+                                                estimation.speed_color === 'yellow' ? 'text-yellow-800' :
+                                                'text-red-800'
+                                            }`}>{estimation.speed}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Recommendation hint */}
+                                    {estimation.ratio < 1.0 && rewardHint && (
+                                        <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                                            <span className="text-amber-500 shrink-0 mt-0.5">💡</span>
+                                            <p className="text-xs text-amber-800 leading-relaxed">
+                                                Tingkatkan reward ke <strong>Rp {rewardHint.recommended.toLocaleString('id-ID')}</strong> untuk estimasi kualitas <strong>bagus</strong> dan completion rate <strong>80%</strong>.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Submit Button */}
                         <button
