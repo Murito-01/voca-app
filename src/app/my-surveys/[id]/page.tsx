@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { getMySurveys, getSurveyQuestions, getSurveyRewardValidation } from '@/services/survey.service'
+import { getMySurveys, getSurveyQuestions, getSurveyRewardValidation, getSurveyInsight } from '@/services/survey.service'
 import QuestionItem from '@/components/creator/QuestionItem'
 import { Question } from '@/types/survey.types'
 
@@ -40,6 +40,7 @@ export default function SurveyDetailPage() {
         hardMessage?: string
         softWarning?: string
     } | null>(null)
+    const [insightData, setInsightData] = useState<any>(null)
 
     useEffect(() => {
         const fetchSurvey = async () => {
@@ -101,6 +102,25 @@ export default function SurveyDetailPage() {
             cancelled = true
         }
     }, [surveyId, survey?.status, survey?.reward_per_response, questions.length])
+
+    useEffect(() => {
+        if (!surveyId || survey?.status !== 'completed') {
+            setInsightData(null)
+            return
+        }
+        let cancelled = false
+        ;(async () => {
+            try {
+                const json = await getSurveyInsight(surveyId)
+                if (!cancelled && json.data) {
+                    setInsightData(json.data)
+                }
+            } catch {
+                if (!cancelled) setInsightData(null)
+            }
+        })()
+        return () => { cancelled = true }
+    }, [surveyId, survey?.status])
 
     const handleDeleteQuestion = async (questionId: string) => {
         if (!confirm('Apakah Anda yakin ingin menghapus pertanyaan ini?')) return;
@@ -566,6 +586,49 @@ export default function SurveyDetailPage() {
                                         </div>
                                         <span className="text-blue-400 group-hover:text-blue-600 transition-colors">→</span>
                                     </Link>
+                                </div>
+                            )}
+
+                            {/* Post-Survey Insight */}
+                            {survey.status === 'completed' && insightData && (
+                                <div className="mt-6 pt-5 border-t">
+                                    <div className="bg-gradient-to-br from-indigo-50 to-white border border-indigo-100 rounded-xl p-5 shadow-sm">
+                                        <h3 className="text-sm font-bold text-indigo-900 mb-3 flex items-center gap-2">
+                                            <span>💡</span> Post-Survey Insight
+                                        </h3>
+                                        
+                                        <div className="grid grid-cols-3 gap-3 mb-4">
+                                            <div className="bg-white p-3 rounded-lg border border-indigo-50 text-center">
+                                                <p className="text-xs text-gray-500 mb-1">Valid Rate</p>
+                                                <p className={`text-lg font-bold ${insightData.rates.valid >= 0.7 ? 'text-green-600' : 'text-amber-600'}`}>
+                                                    {Math.round(insightData.rates.valid * 100)}%
+                                                </p>
+                                            </div>
+                                            <div className="bg-white p-3 rounded-lg border border-indigo-50 text-center">
+                                                <p className="text-xs text-gray-500 mb-1">Low Quality</p>
+                                                <p className={`text-lg font-bold ${insightData.rates.lowQuality > 0.3 ? 'text-red-600' : 'text-gray-700'}`}>
+                                                    {Math.round(insightData.rates.lowQuality * 100)}%
+                                                </p>
+                                            </div>
+                                            <div className="bg-white p-3 rounded-lg border border-indigo-50 text-center">
+                                                <p className="text-xs text-gray-500 mb-1">Rejected</p>
+                                                <p className={`text-lg font-bold ${insightData.rates.rejected > 0.15 ? 'text-red-600' : 'text-gray-700'}`}>
+                                                    {Math.round(insightData.rates.rejected * 100)}%
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-indigo-100/50 rounded-lg p-3 text-sm text-indigo-900">
+                                            <p className="font-medium mb-1">📝 Evaluasi & Saran:</p>
+                                            <p className="text-indigo-800 leading-relaxed">{insightData.suggestion}</p>
+                                            
+                                            <div className="mt-2 text-xs text-indigo-700/80 pt-2 border-t border-indigo-200/50 flex flex-wrap gap-x-4 gap-y-1">
+                                                <span>Reward: Rp {insightData.reward.toLocaleString('id-ID')}</span>
+                                                <span>Recommended: Rp {insightData.recommended.toLocaleString('id-ID')}</span>
+                                                <span>Total Data: {insightData.counts.total}</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
 
