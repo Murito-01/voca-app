@@ -17,6 +17,8 @@ async function logSurveyEvent(
 
 /**
  * Snapshot survey metrics into survey_analytics for future ML training.
+ * Uses upsert because the trigger already creates/updates a row per response.
+ * On survey completion we finalize: completion_rate, reward, category.
  */
 async function saveSurveyAnalytics(supabase: any, surveyId: string) {
     try {
@@ -39,8 +41,8 @@ async function saveSurveyAnalytics(supabase: any, surveyId: string) {
             .update({ completion_rate: completionRate })
             .eq('id', surveyId);
 
-        // Insert analytics snapshot
-        await supabase.from('survey_analytics').insert({
+        // Upsert analytics — trigger may have already created this row
+        await supabase.from('survey_analytics').upsert({
             survey_id: surveyId,
             reward: survey.reward_per_response,
             category: survey.category || null,
@@ -49,7 +51,7 @@ async function saveSurveyAnalytics(supabase: any, surveyId: string) {
             avg_score: survey.avg_score || 0,
             avg_duration: survey.avg_duration || 0,
             completion_rate: completionRate,
-        });
+        }, { onConflict: 'survey_id' });
     } catch {
         // Analytics save should never block the completion flow
     }

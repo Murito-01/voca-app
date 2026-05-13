@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { createSurvey, getRewardThresholdConfig } from '@/services/survey.service'
+import { createSurvey, getRewardThresholdConfig, getWalletBalance } from '@/services/survey.service'
 import { getEstimationSummary, type EstimationSummary } from '@/lib/survey-estimation'
 
 type ResponseMode = 'fixed' | 'extended'
@@ -24,25 +24,33 @@ export default function CreateSurvey() {
         min_required: number
         recommended: number
     } | null>(null)
+    const [walletBalance, setWalletBalance] = useState<number | null>(null)
 
     useEffect(() => {
         let cancelled = false
         ;(async () => {
             try {
-                const json = await getRewardThresholdConfig(0)
-                if (!cancelled && json.data) {
-                    setRewardHint({
-                        min_required: json.data.min_required,
-                        recommended: json.data.recommended,
-                    })
+                const [thresholdJson, wallet] = await Promise.all([
+                    getRewardThresholdConfig(0),
+                    getWalletBalance(),
+                ])
+                if (!cancelled) {
+                    if (thresholdJson.data) {
+                        setRewardHint({
+                            min_required: thresholdJson.data.min_required,
+                            recommended: thresholdJson.data.recommended,
+                        })
+                    }
+                    setWalletBalance(wallet.balance)
                 }
             } catch {
-                if (!cancelled) setRewardHint(null)
+                if (!cancelled) {
+                    setRewardHint(null)
+                    setWalletBalance(null)
+                }
             }
         })()
-        return () => {
-            cancelled = true
-        }
+        return () => { cancelled = true }
     }, [])
 
     const totalBudget = reward * total
@@ -52,6 +60,15 @@ export default function CreateSurvey() {
         if (reward <= 0 || total <= 0 || !rewardHint) return null;
         return getEstimationSummary(reward, rewardHint.recommended, total);
     }, [reward, total, rewardHint])
+
+    // Smart budget suggestion
+    const budgetSuggestion = useMemo(() => {
+        if (reward <= 0 || total <= 0 || walletBalance === null) return null
+        const requiredBudget = reward * total
+        const gap = requiredBudget - walletBalance
+        const affordable = reward > 0 ? Math.floor(walletBalance / reward) : 0
+        return { requiredBudget, gap, affordable, sufficient: gap <= 0 }
+    }, [reward, total, walletBalance])
 
     const handleSubmit = async () => {
         if (!title || reward <= 0 || total <= 0) {
@@ -298,7 +315,76 @@ export default function CreateSurvey() {
                             </p>
                         </div>
 
-                        {/* Live Estimation Widget */}
+                        {/* Smart Budget Suggestion */}
+                        {budgetSuggestion && (
+                            <div className={`rounded-xl border p-4 ${
+                                budgetSuggestion.sufficient
+                                    ? 'bg-green-50 border-green-200'
+                                    : 'bg-red-50 border-red-200'
+                            }`}>
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="flex-1">
+                                        <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${
+                                            budgetSuggestion.sufficient ? 'text-green-600' : 'text-red-600'
+                                        }`}>
+                                            {budgetSuggestion.sufficient ? '✅ Budget Mencukupi' : '⚠️ Budget Tidak Cukup'}
+                                        </p>
+
+                                        {budgetSuggestion.sufficient ? (
+                                            <p className="text-sm text-green-800">
+                                                Saldo kamu{' '}
+                                                <span className="font-bold">
+                                                    Rp {walletBalance!.toLocaleString('id-ID')}
+                                                </span>{' '}
+                                                cukup untuk survey ini.{' '}
+                                                {walletBalance! - budgetSuggestion.requiredBudget > 0 && (
+                                                    <span className="text-green-600">
+                                                        Sisa saldo: Rp {(walletBalance! - budgetSuggestion.requiredBudget).toLocaleString('id-ID')}.
+                                                    </span>
+                                                )}
+                                            </p>
+                                        ) : (
+                                            <div className="space-y-1.5">
+                                                <p className="text-sm text-red-800">
+                                                    Saldo kamu{' '}
+                                                    <span className="font-bold">
+                                                        Rp {walletBalance!.toLocaleString('id-ID')}
+                                                    </span>
+                                                    {' '}— kurang{' '}
+                                                    <span className="font-bold">
+                                                        Rp {budgetSuggestion.gap.toLocaleString('id-ID')}
+                                                    </span>{' '}
+                                                    dari yang dibutuhkan.
+                                                </p>
+                                                <p className="text-xs text-red-700">
+                                                    💡 Dengan saldo saat ini, kamu hanya bisa menjangkau{' '}
+                                                    <strong>{budgetSuggestion.affordable} responden</strong>{' '}
+                                                    (bukan {total}).
+                                                </p>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setTotal(budgetSuggestion.affordable)}
+                                                    disabled={budgetSuggestion.affordable <= 0}
+                                                    className="mt-1 text-xs font-semibold text-red-700 bg-red-100 border border-red-300 px-3 py-1 rounded-lg hover:bg-red-200 transition-colors disabled:opacity-40"
+                                                >
+                                                    Sesuaikan target ke {budgetSuggestion.affordable} responden
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="text-right shrink-0">
+                                        <p className="text-[10px] text-gray-500 mb-0.5">Saldo kamu</p>
+                                        <p className={`text-sm font-bold ${
+                                            budgetSuggestion.sufficient ? 'text-green-700' : 'text-red-700'
+                                        }`}>
+                                            Rp {walletBalance!.toLocaleString('id-ID')}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+
                         {estimation && (
                             <div className="border border-gray-200 rounded-xl p-5 bg-gradient-to-br from-gray-50 to-white shadow-sm">
                                 <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">

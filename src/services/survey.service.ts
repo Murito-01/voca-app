@@ -320,3 +320,44 @@ export async function getCreatorDashboardMetrics() {
 
   return response.json();
 }
+
+export async function getWalletBalance(): Promise<{ balance: number; locked_balance: number }> {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  const response = await fetch('/api/wallet', {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Gagal memuat saldo wallet');
+  }
+
+  const json = await response.json();
+  return json.data;
+}
+
+export async function getSurveyInsight(id: string) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  const response = await fetch(`/api/survey/${id}/insight`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Gagal memuat insight');
+  }
+
+  return response.json();
+}
