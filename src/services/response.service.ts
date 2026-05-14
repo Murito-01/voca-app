@@ -150,7 +150,7 @@ export async function getMyResponses() {
     headers: authHeaders(token),
   });
 
-  return handleResponse(res, 'getMyResponses');
+  return handleResponse<{ data: any[] }>(res, 'getMyResponses');
 }
 
 // ─────────────────────────────────────────────
