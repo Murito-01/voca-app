@@ -476,8 +476,8 @@ export default function SurveyDetailPage() {
                                 </div>
                             )}
 
-                            {/* Stats */}
-                            <div id="reward-section" className="mt-6 space-y-2 text-sm text-gray-700">
+                            {/* Reward Edit Section */}
+                            <div id="reward-section" className="mt-6 mb-4 text-sm text-gray-700">
                                 <div className="flex items-center gap-2">
                                     <span>Reward / Response:</span>
                                     {isEditingReward ? (
@@ -528,45 +528,156 @@ export default function SurveyDetailPage() {
                                         </div>
                                     )}
                                 </div>
-
-                                <p>
-                                    Total Responses:{' '}
-                                    <span className="font-semibold">
-                                        {survey.total_responses}
-                                    </span>
-                                </p>
-
-                                <p>
-                                    Remaining:{' '}
-                                    <span className="font-semibold">
-                                        {survey.remaining_responses}
-                                    </span>
-                                </p>
                             </div>
 
-                            {/* Progress */}
-                            <div className="mt-6">
-                                <div className="flex justify-between text-sm mb-1 text-gray-800 font-medium">
-                                    <span>Progress</span>
-                                    <span className="font-semibold text-gray-900">
-                                        {survey.total_responses - survey.remaining_responses} / {survey.total_responses}
-                                    </span>
-                                </div>
+                            {/* Burn Rate Visualization UI */}
+                            {(() => {
+                                const remaining = survey.remaining_responses;
+                                const total = survey.total_responses;
+                                const completed = total - remaining;
+                                const progressPercent = total > 0 ? (completed / total) * 100 : 0;
+                                const progressStr = Math.round(progressPercent);
 
-                                <div className="w-full bg-gray-200 h-2 rounded-full">
-                                    <div
-                                        className="bg-green-500 h-2 rounded-full"
-                                        style={{
-                                            width: `${survey.total_responses > 0
-                                                ? ((survey.total_responses - survey.remaining_responses) /
-                                                    survey.total_responses) *
-                                                100
-                                                : 0
-                                                }%`
-                                        }}
-                                    />
-                                </div>
-                            </div>
+                                const responses_per_minute = 2; 
+                                const minutesToFinish = remaining / responses_per_minute;
+                                const hoursToFinish = minutesToFinish / 60;
+                                
+                                const budgetTerpakai = completed * survey.reward_per_response;
+                                const totalBudget = total * survey.reward_per_response;
+                                const sisaBudget = remaining * survey.reward_per_response;
+                                const budgetTerpakaiPercent = totalBudget > 0 ? (budgetTerpakai / totalBudget) * 100 : 0;
+
+                                const isDataEnough = completed >= 5;
+
+                                return (
+                                    <div className="space-y-4 font-mono mt-8">
+                                        {/* Card 1: Progress */}
+                                        <div>
+                                            <h3 className="text-sm font-bold text-gray-800 mb-2">Card 1: Progress</h3>
+                                            <div className="bg-white border border-slate-200 rounded-xl p-4 text-slate-700 text-sm shadow-sm">
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <p>Progress: {completed} / {total} responses</p>
+                                                    <span className="text-slate-400">📋</span>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex-1 font-bold text-slate-500 tracking-[0.2em] relative h-4 bg-slate-100 rounded flex items-center overflow-hidden">
+                                                        <div 
+                                                            className="absolute top-0 left-0 bottom-0 bg-blue-500" 
+                                                            style={{ width: `${progressPercent}%` }}
+                                                        />
+                                                    </div>
+                                                    <span className="w-10 text-right font-semibold">{progressStr}%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Card 2: Estimasi Waktu */}
+                                        <div>
+                                            <h3 className="text-sm font-bold text-gray-800 mb-2">Card 2: Estimasi waktu</h3>
+                                            <div className="bg-white border border-slate-200 rounded-xl p-4 text-slate-700 text-sm shadow-sm">
+                                                {!isDataEnough ? (
+                                                    <div className="flex items-center gap-2 text-slate-500">
+                                                        <span>⏱️</span> Belum cukup data untuk estimasi (butuh min 5 response)
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
+                                                            <p className="flex items-center gap-2 font-medium">
+                                                                <span>⏱️</span>
+                                                                Estimasi selesai: {hoursToFinish.toFixed(1)} jam lagi
+                                                            </p>
+                                                            <span className="text-slate-400">⏱️</span>
+                                                        </div>
+                                                        <div className="mb-4">
+                                                            <p className="mb-2 font-medium text-slate-500">Status:</p>
+                                                            <div className="space-y-1.5 pl-1">
+                                                                <p className={`flex items-center gap-2 ${hoursToFinish < 2 ? 'text-emerald-700 font-bold bg-emerald-50 py-1 px-2 rounded-md -ml-2' : 'text-slate-500'}`}>
+                                                                    <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block" /> Cepat ( kemungkinan selesai &lt; 2 jam )
+                                                                </p>
+                                                                <p className={`flex items-center gap-2 ${(hoursToFinish >= 2 && hoursToFinish <= 6) ? 'text-amber-700 font-bold bg-amber-50 py-1 px-2 rounded-md -ml-2' : 'text-slate-500'}`}>
+                                                                    <span className="w-3 h-3 rounded-full bg-amber-500 inline-block" /> Normal ( stabil )
+                                                                </p>
+                                                                <p className={`flex items-center gap-2 ${hoursToFinish > 6 ? 'text-rose-700 font-bold bg-rose-50 py-1 px-2 rounded-md -ml-2' : 'text-slate-500'}`}>
+                                                                    <span className="w-3 h-3 rounded-full bg-rose-500 inline-block" /> Lambat ( risiko tidak selesai )
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        {/* Urgency */}
+                                                        <div className="mb-4 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                                            <p className="font-semibold text-slate-800 flex items-center gap-2">
+                                                                {hoursToFinish > 10 ? '⚠️' : '⏳'} Dengan kondisi sekarang:
+                                                            </p>
+                                                            <p className={`mt-1 ${hoursToFinish > 10 ? 'text-red-600 font-bold' : 'text-slate-700'}`}>
+                                                                {hoursToFinish > 10 
+                                                                    ? `Survey kemungkinan butuh > 10 jam` 
+                                                                    : `Survey selesai dalam ~${Math.ceil(hoursToFinish)} jam`}
+                                                            </p>
+                                                        </div>
+
+                                                        {/* Actionable Insight */}
+                                                        <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-3 text-indigo-900">
+                                                            <p className="font-bold flex items-center gap-2 mb-2">
+                                                                <span>💡</span> Insight
+                                                            </p>
+                                                            <div className="space-y-1">
+                                                                {hoursToFinish < 2 ? (
+                                                                    <>
+                                                                        <p>Survey berjalan sangat cepat</p>
+                                                                        <p className="text-indigo-700">→ Reward cukup menarik</p>
+                                                                        <p className="text-indigo-700">→ Tidak perlu perubahan</p>
+                                                                    </>
+                                                                ) : hoursToFinish <= 6 ? (
+                                                                    <>
+                                                                        <p>Survey berjalan stabil</p>
+                                                                        <p className="text-indigo-700">→ Kecepatan wajar</p>
+                                                                        <p className="text-indigo-700">→ Pantau secara berkala</p>
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <p className="text-red-700 font-semibold">Survey berjalan lambat</p>
+                                                                        <p className="text-red-600">→ Risiko tidak selesai</p>
+                                                                        <p className="text-red-600">→ Pertimbangkan untuk menaikkan reward</p>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Card 3: Budget Burn */}
+                                        <div>
+                                            <h3 className="text-sm font-bold text-gray-800 mb-2">Card 3: Budget burn</h3>
+                                            <div className="bg-white border border-slate-200 rounded-xl p-4 text-slate-700 text-sm shadow-sm">
+                                                <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
+                                                    <p className="flex items-center gap-2 font-medium">
+                                                        <span>💰</span>
+                                                        Budget terpakai: {Math.round(budgetTerpakaiPercent)}%
+                                                    </p>
+                                                    <span className="text-slate-400">💰</span>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <div>
+                                                        <p className="text-slate-500 mb-1">Sisa:</p>
+                                                        <p className="font-bold text-slate-800 text-lg">
+                                                            Rp{sisaBudget.toLocaleString('id-ID')}
+                                                        </p>
+                                                        <p className="text-slate-500">
+                                                            ≈ {remaining} respon lagi
+                                                        </p>
+                                                    </div>
+                                                    <div className="pt-2 border-t border-slate-100">
+                                                        <p className="text-slate-600">Burn rate: <span className="font-semibold text-slate-800">~{responses_per_minute} respon / menit</span></p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+
 
                             {/* Tombol Lihat Responses */}
                             {(survey.status === 'paused' || survey.status === 'completed') && (
@@ -750,87 +861,103 @@ export default function SurveyDetailPage() {
                             </div>
                         </div>
 
-                        <div className="bg-gray-50 rounded-xl p-4 space-y-3 mb-5">
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-500">Judul Survey</span>
-                                <span className="font-semibold text-gray-800 text-right max-w-[55%] truncate">{survey.title}</span>
+                        <div className="bg-slate-50 border border-slate-200 text-slate-700 rounded-xl p-4 space-y-3 mb-5">
+                            <div className="flex justify-between items-center text-sm border-b border-slate-200 pb-2">
+                                <span className="text-slate-500">Judul Survey</span>
+                                <span className="font-semibold text-slate-800 text-right max-w-[55%] truncate">{survey.title}</span>
                             </div>
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-500">Jumlah Pertanyaan</span>
-                                <span className={`font-semibold ${questions.length === 0 ? 'text-red-600' : 'text-gray-800'}`}>
+                            <div className="flex justify-between items-center text-sm border-b border-slate-200 pb-2">
+                                <span className="text-slate-500">Jumlah Pertanyaan</span>
+                                <span className={`font-semibold ${questions.length === 0 ? 'text-red-500' : 'text-slate-800'}`}>
                                     {questions.length} pertanyaan {questions.length === 0 && '⚠️'}
                                 </span>
                             </div>
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-500">Target Responden</span>
-                                <span className="font-semibold text-gray-800">{survey.total_responses} orang</span>
+                            <div className="flex justify-between items-center text-sm border-b border-slate-200 pb-2">
+                                <span className="text-slate-500">Target Responden</span>
+                                <span className="font-semibold text-slate-800">{survey.total_responses} orang</span>
                             </div>
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-500">Reward / Responden</span>
+                            <div className="flex justify-between items-center text-sm border-b border-slate-200 pb-2">
+                                <span className="text-slate-500">Reward / Responden</span>
                                 <span className="font-semibold text-blue-600">
                                     {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(survey.reward_per_response)}
                                 </span>
                             </div>
-                            <div className="border-t pt-3 flex justify-between items-center">
-                                <span className="text-sm font-semibold text-gray-700">Total Budget Dikunci</span>
-                                <span className="text-lg font-bold text-green-700">
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-slate-500">Total Budget</span>
+                                <span className="font-semibold text-emerald-600">
                                     {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(survey.reward_per_response * survey.total_responses)}
                                 </span>
                             </div>
-                            {rewardEval && (
-                                <>
-                                    <div className="border-t pt-3 flex justify-between items-center text-sm">
-                                        <span className="text-gray-500">Minimum reward (wajib)</span>
-                                        <span className="font-semibold text-gray-800">
-                                            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(rewardEval.minRequired)}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="text-gray-500">Rekomendasi platform</span>
-                                        <span className="font-semibold text-amber-800">
-                                            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(rewardEval.recommended)}
-                                        </span>
-                                    </div>
-                                </>
-                            )}
                         </div>
 
-                        {rewardEval && !rewardEval.hardOk && rewardEval.hardMessage && (
-                            <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-5 text-xs text-red-800">
-                                <p className="font-semibold">🔒 Publish diblokir</p>
-                                <p className="mt-1">{rewardEval.hardMessage}</p>
+                        {rewardEval && !rewardEval.hardOk && (
+                            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-5 text-sm text-red-800">
+                                <p className="font-bold text-red-600 mb-3 flex items-center gap-2">
+                                    <span>❌</span> Reward terlalu rendah
+                                </p>
+                                <div className="mb-4 space-y-1">
+                                    <p>Minimal: <span className="font-semibold">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(rewardEval.minRequired)}</span></p>
+                                    <p>Disarankan: <span className="font-semibold">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(rewardEval.recommended)}</span></p>
+                                </div>
+                                <button 
+                                    onClick={() => {
+                                        setShowPublishModal(false);
+                                        setEditReward(rewardEval.recommended);
+                                        setIsEditingReward(true);
+                                        window.scrollTo({ top: document.getElementById('reward-section')?.offsetTop, behavior: 'smooth' });
+                                    }}
+                                    className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-semibold rounded-lg transition-colors border border-red-300 w-full"
+                                >
+                                    ✨ Gunakan Reward Rekomendasi
+                                </button>
                             </div>
                         )}
 
-                        {rewardEval && rewardEval.hardOk && rewardEval.softWarning && (
-                            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5 text-xs text-amber-900">
-                                <p className="font-semibold">⚠️ Insight</p>
-                                <p className="mt-1">{rewardEval.softWarning}</p>
+                        {rewardEval && rewardEval.hardOk && !rewardEval.softOk && (
+                            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5 text-sm text-amber-900">
+                                <p className="font-bold text-amber-600 mb-3 flex items-center gap-2">
+                                    <span>⚠️</span> Reward di bawah rekomendasi
+                                </p>
+                                <div className="mb-4">
+                                    <p className="font-medium mb-1">Survey kemungkinan:</p>
+                                    <ul className="list-disc pl-5 space-y-1 text-amber-800">
+                                        <li>Berjalan lambat</li>
+                                        <li>Mendapat banyak respon low quality</li>
+                                    </ul>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <button 
+                                        onClick={() => {
+                                            setShowPublishModal(false);
+                                            setEditReward(rewardEval.recommended);
+                                            setIsEditingReward(true);
+                                            window.scrollTo({ top: document.getElementById('reward-section')?.offsetTop, behavior: 'smooth' });
+                                        }}
+                                        className="px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-800 font-semibold rounded-lg transition-colors border border-amber-300 w-full text-center"
+                                    >
+                                        ✨ Gunakan Rekomendasi
+                                    </button>
+                                </div>
                             </div>
                         )}
 
-                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5 flex gap-2">
-                            <span className="text-amber-500 text-base shrink-0 mt-0.5">⚠️</span>
-                            <p className="text-xs text-amber-700 leading-relaxed">
-                                Budget akan <strong>dikunci dari saldo kamu</strong> saat publish. Setelah aktif, pertanyaan tidak bisa diubah lagi.
-                            </p>
-                        </div>
-
-                        <div className="flex gap-3">
+                        <div className="flex justify-end gap-3 mt-4">
                             <button
                                 onClick={() => setShowPublishModal(false)}
-                                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors"
+                                className="px-4 py-2 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors"
                             >
                                 Batal
                             </button>
-                            <button
-                                onClick={handleConfirmPublish}
-                                disabled={questions.length === 0 || publishBlockedByReward}
-                                className={`flex-1 py-2.5 rounded-xl text-white text-sm font-semibold transition-colors ${questions.length === 0 || publishBlockedByReward ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
-                                    }`}
-                            >
-                                ✅ Ya, Publish Sekarang
-                            </button>
+                            {(!rewardEval || (rewardEval.hardOk && rewardEval.softOk)) && (
+                                <button
+                                    onClick={handleConfirmPublish}
+                                    disabled={questions.length === 0}
+                                    className={`px-4 py-2 rounded-xl text-white text-sm font-semibold transition-colors ${questions.length === 0 ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
+                                        }`}
+                                >
+                                    ✅ Ya, Publish Sekarang
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
