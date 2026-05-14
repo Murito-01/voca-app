@@ -78,26 +78,26 @@ export default function SurveyDetailPage() {
             return
         }
         let cancelled = false
-        ;(async () => {
-            try {
-                const json = await getSurveyRewardValidation(surveyId)
-                if (!cancelled && json.data) {
-                    setRewardEval({
-                        hardOk: json.data.hardOk,
-                        softOk: json.data.softOk,
-                        minRequired: json.data.minRequired,
-                        recommended: json.data.recommended,
-                        rewardPerResponse: json.data.rewardPerResponse,
-                        questionCount: json.data.questionCount,
-                        estimatedMinutesTotal: json.data.estimatedMinutesTotal,
-                        hardMessage: json.data.hardMessage,
-                        softWarning: json.data.softWarning,
-                    })
+            ; (async () => {
+                try {
+                    const json = await getSurveyRewardValidation(surveyId)
+                    if (!cancelled && json.data) {
+                        setRewardEval({
+                            hardOk: json.data.hardOk,
+                            softOk: json.data.softOk,
+                            minRequired: json.data.minRequired,
+                            recommended: json.data.recommended,
+                            rewardPerResponse: json.data.rewardPerResponse,
+                            questionCount: json.data.questionCount,
+                            estimatedMinutesTotal: json.data.estimatedMinutesTotal,
+                            hardMessage: json.data.hardMessage,
+                            softWarning: json.data.softWarning,
+                        })
+                    }
+                } catch {
+                    if (!cancelled) setRewardEval(null)
                 }
-            } catch {
-                if (!cancelled) setRewardEval(null)
-            }
-        })()
+            })()
         return () => {
             cancelled = true
         }
@@ -109,16 +109,16 @@ export default function SurveyDetailPage() {
             return
         }
         let cancelled = false
-        ;(async () => {
-            try {
-                const json = await getSurveyInsight(surveyId)
-                if (!cancelled && json.data) {
-                    setInsightData(json.data)
+            ; (async () => {
+                try {
+                    const json = await getSurveyInsight(surveyId)
+                    if (!cancelled && json.data) {
+                        setInsightData(json.data)
+                    }
+                } catch {
+                    if (!cancelled) setInsightData(null)
                 }
-            } catch {
-                if (!cancelled) setInsightData(null)
-            }
-        })()
+            })()
         return () => { cancelled = true }
     }, [surveyId, survey?.status])
 
@@ -504,10 +504,10 @@ export default function SurveyDetailPage() {
                                 const progressPercent = total > 0 ? (completed / total) * 100 : 0;
                                 const progressStr = Math.round(progressPercent);
 
-                                const responses_per_minute = 2; 
+                                const responses_per_minute = 2;
                                 const minutesToFinish = remaining / responses_per_minute;
                                 const hoursToFinish = minutesToFinish / 60;
-                                
+
                                 const budgetTerpakai = completed * survey.reward_per_response;
                                 const totalBudget = total * survey.reward_per_response;
                                 const sisaBudget = remaining * survey.reward_per_response;
@@ -532,8 +532,8 @@ export default function SurveyDetailPage() {
                                                 ) : (
                                                     <div className="flex items-center gap-3">
                                                         <div className="flex-1 font-bold text-slate-500 tracking-[0.2em] relative h-4 bg-slate-100 rounded flex items-center overflow-hidden">
-                                                            <div 
-                                                                className="absolute top-0 left-0 bottom-0 bg-blue-500" 
+                                                            <div
+                                                                className="absolute top-0 left-0 bottom-0 bg-blue-500"
                                                                 style={{ width: `${progressPercent}%` }}
                                                             />
                                                         </div>
@@ -552,41 +552,71 @@ export default function SurveyDetailPage() {
                                                         <span>⏱️</span> Belum cukup data untuk estimasi (butuh min 5 response)
                                                     </div>
                                                 ) : (
-                                                    <>
-                                                        <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
-                                                            <p className="flex items-center gap-2 font-medium">
-                                                                <span>⏱️</span>
-                                                                Estimasi selesai: {hoursToFinish.toFixed(1)} jam lagi
-                                                            </p>
-                                                            <span className="text-slate-400">⏱️</span>
-                                                        </div>
-                                                        <div className="mb-4">
-                                                            <p className="mb-2 font-medium text-slate-500">Status:</p>
-                                                            <div className="space-y-1.5 pl-1">
-                                                                <p className={`flex items-center gap-2 ${hoursToFinish < 2 ? 'text-emerald-700 font-bold bg-emerald-50 py-1 px-2 rounded-md -ml-2' : 'text-slate-500'}`}>
-                                                                    <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block" /> Cepat ( kemungkinan selesai &lt; 2 jam )
-                                                                </p>
-                                                                <p className={`flex items-center gap-2 ${(hoursToFinish >= 2 && hoursToFinish <= 6) ? 'text-amber-700 font-bold bg-amber-50 py-1 px-2 rounded-md -ml-2' : 'text-slate-500'}`}>
-                                                                    <span className="w-3 h-3 rounded-full bg-amber-500 inline-block" /> Normal ( stabil )
-                                                                </p>
-                                                                <p className={`flex items-center gap-2 ${hoursToFinish > 6 ? 'text-rose-700 font-bold bg-rose-50 py-1 px-2 rounded-md -ml-2' : 'text-slate-500'}`}>
-                                                                    <span className="w-3 h-3 rounded-full bg-rose-500 inline-block" /> Lambat ( risiko tidak selesai )
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                        
-                                                        {/* Urgency */}
-                                                        <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                                                            <p className="font-semibold text-slate-800 flex items-center gap-2">
-                                                                {hoursToFinish > 10 ? '⚠️' : '⏳'} Dengan kondisi sekarang:
-                                                            </p>
-                                                            <p className={`mt-1 ${hoursToFinish > 10 ? 'text-red-600 font-bold' : 'text-slate-700'}`}>
-                                                                {hoursToFinish > 10 
-                                                                    ? `Survey kemungkinan butuh > 10 jam` 
-                                                                    : `Survey selesai dalam ~${Math.ceil(hoursToFinish)} jam`}
-                                                            </p>
-                                                        </div>
-                                                    </>
+                                                    (() => {
+                                                        const formatDynamicTime = (hours: number) => {
+                                                            if (hours >= 24) {
+                                                                const d = Math.floor(hours / 24);
+                                                                const remainingHours = Math.floor(hours % 24);
+                                                                const remainingMinutes = Math.round((hours % 1) * 60);
+                                                                
+                                                                if (remainingHours > 0) {
+                                                                    return `${d} Hari ${remainingHours} Jam`;
+                                                                } else if (remainingMinutes > 0) {
+                                                                    return `${d} Hari ${remainingMinutes} Menit`;
+                                                                } else {
+                                                                    return `${d} Hari`;
+                                                                }
+                                                            } else {
+                                                                const h = Math.floor(hours);
+                                                                const m = Math.round((hours % 1) * 60);
+                                                                if (h > 0) {
+                                                                    if (m > 0) return `${h} Jam ${m} Menit`;
+                                                                    return `${h} Jam`;
+                                                                }
+                                                                return `${m} Menit`;
+                                                            }
+                                                        };
+
+                                                        const timeText = formatDynamicTime(hoursToFinish);
+
+                                                        return (
+                                                            <>
+                                                                <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
+                                                                    <p className="flex items-center gap-2 font-medium">
+                                                                        <span>⏱️</span>
+                                                                        Estimasi selesai: {timeText} lagi
+                                                                    </p>
+                                                                    <span className="text-slate-400">⏱️</span>
+                                                                </div>
+                                                                <div className="mb-4">
+                                                                    <p className="mb-2 font-medium text-slate-500">Status:</p>
+                                                                    <div className="space-y-1.5 pl-1">
+                                                                        <p className={`flex items-center gap-2 ${hoursToFinish < 2 ? 'text-emerald-700 font-bold bg-emerald-50 py-1 px-2 rounded-md -ml-2' : 'text-slate-500'}`}>
+                                                                            <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block" /> Cepat ( kemungkinan selesai &lt; 2 jam )
+                                                                        </p>
+                                                                        <p className={`flex items-center gap-2 ${(hoursToFinish >= 2 && hoursToFinish <= 6) ? 'text-amber-700 font-bold bg-amber-50 py-1 px-2 rounded-md -ml-2' : 'text-slate-500'}`}>
+                                                                            <span className="w-3 h-3 rounded-full bg-amber-500 inline-block" /> Normal ( stabil )
+                                                                        </p>
+                                                                        <p className={`flex items-center gap-2 ${hoursToFinish > 6 ? 'text-rose-700 font-bold bg-rose-50 py-1 px-2 rounded-md -ml-2' : 'text-slate-500'}`}>
+                                                                            <span className="w-3 h-3 rounded-full bg-rose-500 inline-block" /> Lambat ( risiko tidak selesai )
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                {/* Urgency */}
+                                                                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                                                    <p className="font-semibold text-slate-800 flex items-center gap-2">
+                                                                        {hoursToFinish > 10 ? '⚠️' : '⏳'} Dengan kondisi sekarang:
+                                                                    </p>
+                                                                    <p className={`mt-1 ${hoursToFinish > 10 ? 'text-red-600 font-bold' : 'text-slate-700'}`}>
+                                                                        {hoursToFinish > 10 
+                                                                            ? `Survey kemungkinan butuh waktu lama` 
+                                                                            : `Survey selesai dalam ~${timeText}`}
+                                                                    </p>
+                                                                </div>
+                                                            </>
+                                                        );
+                                                    })()
                                                 )}
                                             </div>
                                         </div>
@@ -626,9 +656,9 @@ export default function SurveyDetailPage() {
                                             <h3 className="text-sm font-bold text-gray-800 mb-2">Insight</h3>
                                             <div className="bg-white border border-slate-200 rounded-xl p-4 text-slate-700 text-sm shadow-sm">
                                                 <div className="flex items-center gap-2 font-bold text-indigo-900 mb-3 border-b border-slate-100 pb-2">
-                                                    <span>🧠</span> AI Insight
+                                                    <span>💡</span> Evaluasi & Insight
                                                 </div>
-                                                
+
                                                 {survey.status === 'draft' ? (
                                                     <div className="space-y-3">
                                                         {rewardEval && !rewardEval.softOk ? (
@@ -643,7 +673,7 @@ export default function SurveyDetailPage() {
                                                                 </ul>
                                                                 <div className="mt-3">
                                                                     <p className="text-amber-900 font-semibold mb-1">Saran:</p>
-                                                                    <button 
+                                                                    <button
                                                                         onClick={() => {
                                                                             setEditReward(rewardEval.recommended);
                                                                             setIsEditingReward(true);
@@ -684,24 +714,36 @@ export default function SurveyDetailPage() {
                                                                 <p className="text-blue-700 mt-1">→ Kecepatan wajar</p>
                                                                 <p className="text-blue-700">→ Pantau secara berkala</p>
                                                             </div>
+                                                        ) : survey.status === 'completed' && insightData ? (
+                                                            <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-3">
+                                                                <div className="grid grid-cols-3 gap-3 mb-3">
+                                                                    <div className="bg-white p-2 rounded border border-indigo-50 text-center">
+                                                                        <p className="text-[10px] text-gray-500 mb-0.5">Valid Rate</p>
+                                                                        <p className={`text-sm font-bold ${insightData.rates.valid >= 0.7 ? 'text-green-600' : 'text-amber-600'}`}>
+                                                                            {Math.round(insightData.rates.valid * 100)}%
+                                                                        </p>
+                                                                    </div>
+                                                                    <div className="bg-white p-2 rounded border border-indigo-50 text-center">
+                                                                        <p className="text-[10px] text-gray-500 mb-0.5">Low Quality</p>
+                                                                        <p className={`text-sm font-bold ${insightData.rates.lowQuality > 0.3 ? 'text-red-600' : 'text-gray-700'}`}>
+                                                                            {Math.round(insightData.rates.lowQuality * 100)}%
+                                                                        </p>
+                                                                    </div>
+                                                                    <div className="bg-white p-2 rounded border border-indigo-50 text-center">
+                                                                        <p className="text-[10px] text-gray-500 mb-0.5">Rejected</p>
+                                                                        <p className={`text-sm font-bold ${insightData.rates.rejected > 0.15 ? 'text-red-600' : 'text-gray-700'}`}>
+                                                                            {Math.round(insightData.rates.rejected * 100)}%
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                                <p className="font-semibold text-indigo-900 mb-1">📝 Evaluasi & Saran:</p>
+                                                                <p className="text-indigo-800 text-xs leading-relaxed">{insightData.suggestion}</p>
+                                                            </div>
                                                         ) : (
                                                             <div className="bg-red-50 border border-red-100 rounded-lg p-3">
                                                                 <p className="text-red-900 font-bold">⚠️ Insight</p>
                                                                 <p className="text-red-800 font-semibold">Survey berjalan lambat</p>
-                                                                <p className="text-red-700 mt-1">→ Risiko tidak selesai</p>
-                                                                <p className="text-red-700">→ Pertimbangkan untuk menaikkan reward</p>
-                                                                <div className="mt-3">
-                                                                    <button 
-                                                                        onClick={() => {
-                                                                            setEditReward(survey.reward_per_response + 50);
-                                                                            setIsEditingReward(true);
-                                                                            window.scrollTo({ top: document.getElementById('reward-section')?.offsetTop, behavior: 'smooth' });
-                                                                        }}
-                                                                        className="w-full text-center px-3 py-2 bg-red-200 hover:bg-red-300 text-red-900 text-xs font-semibold rounded-lg transition-colors"
-                                                                    >
-                                                                        ↗️ Tambah Reward +Rp 50
-                                                                    </button>
-                                                                </div>
+                                                                <p className="text-red-700 mt-1">→ Kemungkinan reward kurang menarik</p>
                                                             </div>
                                                         )}
                                                     </div>
@@ -734,48 +776,6 @@ export default function SurveyDetailPage() {
                                 </div>
                             )}
 
-                            {/* Post-Survey Insight */}
-                            {survey.status === 'completed' && insightData && (
-                                <div className="mt-6 pt-5 border-t">
-                                    <div className="bg-gradient-to-br from-indigo-50 to-white border border-indigo-100 rounded-xl p-5 shadow-sm">
-                                        <h3 className="text-sm font-bold text-indigo-900 mb-3 flex items-center gap-2">
-                                            <span>💡</span> Post-Survey Insight
-                                        </h3>
-                                        
-                                        <div className="grid grid-cols-3 gap-3 mb-4">
-                                            <div className="bg-white p-3 rounded-lg border border-indigo-50 text-center">
-                                                <p className="text-xs text-gray-500 mb-1">Valid Rate</p>
-                                                <p className={`text-lg font-bold ${insightData.rates.valid >= 0.7 ? 'text-green-600' : 'text-amber-600'}`}>
-                                                    {Math.round(insightData.rates.valid * 100)}%
-                                                </p>
-                                            </div>
-                                            <div className="bg-white p-3 rounded-lg border border-indigo-50 text-center">
-                                                <p className="text-xs text-gray-500 mb-1">Low Quality</p>
-                                                <p className={`text-lg font-bold ${insightData.rates.lowQuality > 0.3 ? 'text-red-600' : 'text-gray-700'}`}>
-                                                    {Math.round(insightData.rates.lowQuality * 100)}%
-                                                </p>
-                                            </div>
-                                            <div className="bg-white p-3 rounded-lg border border-indigo-50 text-center">
-                                                <p className="text-xs text-gray-500 mb-1">Rejected</p>
-                                                <p className={`text-lg font-bold ${insightData.rates.rejected > 0.15 ? 'text-red-600' : 'text-gray-700'}`}>
-                                                    {Math.round(insightData.rates.rejected * 100)}%
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        <div className="bg-indigo-100/50 rounded-lg p-3 text-sm text-indigo-900">
-                                            <p className="font-medium mb-1">📝 Evaluasi & Saran:</p>
-                                            <p className="text-indigo-800 leading-relaxed">{insightData.suggestion}</p>
-                                            
-                                            <div className="mt-2 text-xs text-indigo-700/80 pt-2 border-t border-indigo-200/50 flex flex-wrap gap-x-4 gap-y-1">
-                                                <span>Reward: Rp {insightData.reward.toLocaleString('id-ID')}</span>
-                                                <span>Recommended: Rp {insightData.recommended.toLocaleString('id-ID')}</span>
-                                                <span>Total Data: {insightData.counts.total}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
 
                             {/* Questions Section */}
                             <div className="mt-8 border-t pt-6">
@@ -933,7 +933,7 @@ export default function SurveyDetailPage() {
                                     <p>Minimal: <span className="font-semibold">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(rewardEval.minRequired)}</span></p>
                                     <p>Disarankan: <span className="font-semibold">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(rewardEval.recommended)}</span></p>
                                 </div>
-                                <button 
+                                <button
                                     onClick={() => {
                                         setShowPublishModal(false);
                                         setEditReward(rewardEval.recommended);
@@ -960,7 +960,7 @@ export default function SurveyDetailPage() {
                                     </ul>
                                 </div>
                                 <div className="flex flex-col gap-2">
-                                    <button 
+                                    <button
                                         onClick={() => {
                                             setShowPublishModal(false);
                                             setEditReward(rewardEval.recommended);
