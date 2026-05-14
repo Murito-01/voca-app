@@ -9,6 +9,18 @@ export default function ResponseDetail() {
     const params = useParams()
     const id = params.id as string
 
+    function formatDuration(seconds: number) {
+        if (!seconds || seconds < 0) return "0s";
+        const sec = Math.floor(seconds);
+        if (sec < 60) return `${sec}s`;
+        const m = Math.floor(sec / 60);
+        const s = sec % 60;
+        if (m < 60) return `${m}m ${s}s`;
+        const h = Math.floor(m / 60);
+        const mm = m % 60;
+        return `${h}h ${mm}m ${s}s`;
+    }
+
     const [data, setData] = useState<any>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -151,7 +163,7 @@ export default function ResponseDetail() {
                                     </div>
                                     {(data.score_breakdown.time_penalty || 0) !== 0 && (
                                         <div className="flex justify-between text-red-600">
-                                            <span>- Time Penalty</span>
+                                            <span>- Time Penalty ({formatDuration(data.score_breakdown.duration)})</span>
                                             <span>{Math.abs(data.score_breakdown.time_penalty)}</span>
                                         </div>
                                     )}
@@ -187,7 +199,7 @@ export default function ResponseDetail() {
                                         <span>⏱️</span> Duration
                                     </h3>
                                     <p className="text-sm text-gray-700 flex items-center gap-2">
-                                        <span>{data.score_breakdown.duration}s (Min: {data.score_breakdown.min_duration}s)</span>
+                                        <span>{formatDuration(data.score_breakdown.duration)} (Min: {formatDuration(data.score_breakdown.min_duration)})</span>
                                         {data.score_breakdown.duration >= data.score_breakdown.min_duration ? (
                                             <span className="text-[10px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">Normal ✅</span>
                                         ) : (

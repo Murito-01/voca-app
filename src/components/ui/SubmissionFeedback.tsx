@@ -11,6 +11,21 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
   pending:     { label: "Pending",     color: "text-gray-600",    bg: "bg-gray-50",     border: "border-gray-200",    icon: "⏳" },
 };
 
+function formatDuration(seconds: number) {
+  if (!seconds || seconds < 0) return "0s";
+  const sec = Math.floor(seconds);
+  if (sec < 60) return `${sec}s`;
+  
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  
+  if (m < 60) return `${m}m ${s}s`;
+  
+  const h = Math.floor(m / 60);
+  const mm = m % 60;
+  return `${h}h ${mm}m ${s}s`;
+}
+
 function ScoreRing({ score }: { score: number }) {
   const radius = 40;
   const circumference = 2 * Math.PI * radius;
@@ -149,7 +164,7 @@ export default function SubmissionFeedback({
 
                   {(bd.time_penalty ?? 0) !== 0 && (
                     <div className="flex justify-between items-center text-red-600">
-                      <span>- Time Penalty</span>
+                      <span>- Time Penalty ({formatDuration(bd.duration)})</span>
                       <span className="font-bold">{Math.abs(bd.time_penalty)}</span>
                     </div>
                   )}
@@ -185,8 +200,8 @@ export default function SubmissionFeedback({
                       <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1.5">⏱ Duration</p>
                       <div className="flex items-center justify-between">
                         <p className="text-sm text-gray-800 font-medium">
-                          {bd.duration}s
-                          <span className="text-gray-400 font-normal"> / {bd.min_duration}s</span>
+                          {formatDuration(bd.duration)}
+                          <span className="text-gray-400 font-normal"> / {formatDuration(bd.min_duration)}</span>
                         </p>
                         {bd.duration >= bd.min_duration ? (
                           <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">Normal ✓</span>
