@@ -424,40 +424,6 @@ export default function SurveyDetailPage() {
                                 </span>
                             </div>
 
-                            {survey.status === 'draft' && rewardEval && !rewardEval.hardOk && rewardEval.hardMessage && (
-                                <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-                                    <p className="font-semibold flex items-center gap-2">
-                                        <span>🔒</span> Reward terlalu rendah
-                                    </p>
-                                    <p className="mt-1 text-red-700">{rewardEval.hardMessage}</p>
-                                    <div className="mt-3">
-                                        <button 
-                                            onClick={() => {
-                                                setEditReward(rewardEval.recommended);
-                                                setIsEditingReward(true);
-                                                window.scrollTo({ top: document.getElementById('reward-section')?.offsetTop, behavior: 'smooth' });
-                                            }}
-                                            className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-800 text-xs font-semibold rounded-lg transition-colors border border-red-300"
-                                        >
-                                            ✨ Update Reward ke Rp {rewardEval.recommended.toLocaleString('id-ID')}
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-
-                            {survey.status === 'draft' && rewardEval && rewardEval.hardOk && rewardEval.softWarning && (
-                                <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                                    <p className="font-semibold flex items-center gap-2">
-                                        <span>⚠️</span> Insight reward
-                                    </p>
-                                    <p className="mt-1 text-amber-800">{rewardEval.softWarning}</p>
-                                    <p className="mt-1 text-xs text-amber-700">
-                                        Minimum wajib: Rp {rewardEval.minRequired.toLocaleString('id-ID')} · Rekomendasi: Rp{' '}
-                                        {rewardEval.recommended.toLocaleString('id-ID')} ({rewardEval.questionCount}{' '}
-                                        pertanyaan, ~{Math.ceil(rewardEval.estimatedMinutesTotal)} menit estimasi mengisi).
-                                    </p>
-                                </div>
-                            )}
 
                             {/* Banner reward warning setelah publish berhasil */}
                             {survey.status === 'active' && publishSuccessWarning && (
@@ -553,27 +519,33 @@ export default function SurveyDetailPage() {
                                     <div className="space-y-4 font-mono mt-8">
                                         {/* Card 1: Progress */}
                                         <div>
-                                            <h3 className="text-sm font-bold text-gray-800 mb-2">Card 1: Progress</h3>
+                                            <h3 className="text-sm font-bold text-gray-800 mb-2">Progress</h3>
                                             <div className="bg-white border border-slate-200 rounded-xl p-4 text-slate-700 text-sm shadow-sm">
                                                 <div className="flex justify-between items-center mb-2">
                                                     <p>Progress: {completed} / {total} responses</p>
                                                     <span className="text-slate-400">📋</span>
                                                 </div>
-                                                <div className="flex items-center gap-3">
-                                                    <div className="flex-1 font-bold text-slate-500 tracking-[0.2em] relative h-4 bg-slate-100 rounded flex items-center overflow-hidden">
-                                                        <div 
-                                                            className="absolute top-0 left-0 bottom-0 bg-blue-500" 
-                                                            style={{ width: `${progressPercent}%` }}
-                                                        />
+                                                {completed === 0 ? (
+                                                    <div className="py-2 text-slate-400 italic text-center border border-dashed border-slate-200 rounded-lg">
+                                                        Belum ada response masuk
                                                     </div>
-                                                    <span className="w-10 text-right font-semibold">{progressStr}%</span>
-                                                </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="flex-1 font-bold text-slate-500 tracking-[0.2em] relative h-4 bg-slate-100 rounded flex items-center overflow-hidden">
+                                                            <div 
+                                                                className="absolute top-0 left-0 bottom-0 bg-blue-500" 
+                                                                style={{ width: `${progressPercent}%` }}
+                                                            />
+                                                        </div>
+                                                        <span className="w-10 text-right font-semibold">{progressStr}%</span>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
 
                                         {/* Card 2: Estimasi Waktu */}
                                         <div>
-                                            <h3 className="text-sm font-bold text-gray-800 mb-2">Card 2: Estimasi waktu</h3>
+                                            <h3 className="text-sm font-bold text-gray-800 mb-2">Estimasi waktu</h3>
                                             <div className="bg-white border border-slate-200 rounded-xl p-4 text-slate-700 text-sm shadow-sm">
                                                 {!isDataEnough ? (
                                                     <div className="flex items-center gap-2 text-slate-500">
@@ -604,7 +576,7 @@ export default function SurveyDetailPage() {
                                                         </div>
                                                         
                                                         {/* Urgency */}
-                                                        <div className="mb-4 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                                        <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
                                                             <p className="font-semibold text-slate-800 flex items-center gap-2">
                                                                 {hoursToFinish > 10 ? '⚠️' : '⏳'} Dengan kondisi sekarang:
                                                             </p>
@@ -614,34 +586,6 @@ export default function SurveyDetailPage() {
                                                                     : `Survey selesai dalam ~${Math.ceil(hoursToFinish)} jam`}
                                                             </p>
                                                         </div>
-
-                                                        {/* Actionable Insight */}
-                                                        <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-3 text-indigo-900">
-                                                            <p className="font-bold flex items-center gap-2 mb-2">
-                                                                <span>💡</span> Insight
-                                                            </p>
-                                                            <div className="space-y-1">
-                                                                {hoursToFinish < 2 ? (
-                                                                    <>
-                                                                        <p>Survey berjalan sangat cepat</p>
-                                                                        <p className="text-indigo-700">→ Reward cukup menarik</p>
-                                                                        <p className="text-indigo-700">→ Tidak perlu perubahan</p>
-                                                                    </>
-                                                                ) : hoursToFinish <= 6 ? (
-                                                                    <>
-                                                                        <p>Survey berjalan stabil</p>
-                                                                        <p className="text-indigo-700">→ Kecepatan wajar</p>
-                                                                        <p className="text-indigo-700">→ Pantau secara berkala</p>
-                                                                    </>
-                                                                ) : (
-                                                                    <>
-                                                                        <p className="text-red-700 font-semibold">Survey berjalan lambat</p>
-                                                                        <p className="text-red-600">→ Risiko tidak selesai</p>
-                                                                        <p className="text-red-600">→ Pertimbangkan untuk menaikkan reward</p>
-                                                                    </>
-                                                                )}
-                                                            </div>
-                                                        </div>
                                                     </>
                                                 )}
                                             </div>
@@ -649,7 +593,7 @@ export default function SurveyDetailPage() {
 
                                         {/* Card 3: Budget Burn */}
                                         <div>
-                                            <h3 className="text-sm font-bold text-gray-800 mb-2">Card 3: Budget burn</h3>
+                                            <h3 className="text-sm font-bold text-gray-800 mb-2">Budget burn</h3>
                                             <div className="bg-white border border-slate-200 rounded-xl p-4 text-slate-700 text-sm shadow-sm">
                                                 <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
                                                     <p className="flex items-center gap-2 font-medium">
@@ -668,10 +612,100 @@ export default function SurveyDetailPage() {
                                                             ≈ {remaining} respon lagi
                                                         </p>
                                                     </div>
-                                                    <div className="pt-2 border-t border-slate-100">
-                                                        <p className="text-slate-600">Burn rate: <span className="font-semibold text-slate-800">~{responses_per_minute} respon / menit</span></p>
-                                                    </div>
+                                                    {isDataEnough && (
+                                                        <div className="pt-2 border-t border-slate-100">
+                                                            <p className="text-slate-600">Burn rate: <span className="font-semibold text-slate-800">~{responses_per_minute} respon / menit</span></p>
+                                                        </div>
+                                                    )}
                                                 </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Card 4: Insight */}
+                                        <div>
+                                            <h3 className="text-sm font-bold text-gray-800 mb-2">Insight</h3>
+                                            <div className="bg-white border border-slate-200 rounded-xl p-4 text-slate-700 text-sm shadow-sm">
+                                                <div className="flex items-center gap-2 font-bold text-indigo-900 mb-3 border-b border-slate-100 pb-2">
+                                                    <span>🧠</span> AI Insight
+                                                </div>
+                                                
+                                                {survey.status === 'draft' ? (
+                                                    <div className="space-y-3">
+                                                        {rewardEval && !rewardEval.softOk ? (
+                                                            <div className="bg-amber-50 border border-amber-100 rounded-lg p-3">
+                                                                <p className="font-semibold text-amber-800">Karena reward &lt; recommended:</p>
+                                                                <p className="text-amber-900 font-bold mt-2">⚠️ Insight</p>
+                                                                <p className="text-amber-800">Reward di bawah rekomendasi</p>
+                                                                <p className="text-amber-800 mt-2">→ Risiko:</p>
+                                                                <ul className="list-disc pl-5 text-amber-700 text-xs">
+                                                                    <li>Response masuk lambat</li>
+                                                                    <li>Kualitas jawaban rendah</li>
+                                                                </ul>
+                                                                <div className="mt-3">
+                                                                    <p className="text-amber-900 font-semibold mb-1">Saran:</p>
+                                                                    <button 
+                                                                        onClick={() => {
+                                                                            setEditReward(rewardEval.recommended);
+                                                                            setIsEditingReward(true);
+                                                                            window.scrollTo({ top: document.getElementById('reward-section')?.offsetTop, behavior: 'smooth' });
+                                                                        }}
+                                                                        className="w-full text-center px-3 py-2 bg-amber-200 hover:bg-amber-300 text-amber-900 text-xs font-semibold rounded-lg transition-colors"
+                                                                    >
+                                                                        ✨ Gunakan reward Rp {rewardEval.recommended.toLocaleString('id-ID')}
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-3">
+                                                                <p className="text-emerald-900 font-bold">💡 Insight</p>
+                                                                <p className="text-emerald-800">Reward sudah optimal</p>
+                                                                <p className="text-emerald-700 mt-1">→ Estimasi response stabil</p>
+                                                                <p className="text-emerald-700">→ Tidak perlu perubahan</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-3">
+                                                        {!isDataEnough ? (
+                                                            <p className="text-slate-500 italic">
+                                                                Menunggu cukup response (min 5) untuk memberikan performa insight...
+                                                            </p>
+                                                        ) : hoursToFinish < 2 ? (
+                                                            <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-3">
+                                                                <p className="text-emerald-900 font-bold">💡 Insight</p>
+                                                                <p className="text-emerald-800">Survey berjalan sangat cepat</p>
+                                                                <p className="text-emerald-700 mt-1">→ Reward cukup menarik</p>
+                                                                <p className="text-emerald-700">→ Tidak perlu perubahan</p>
+                                                            </div>
+                                                        ) : hoursToFinish <= 6 ? (
+                                                            <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
+                                                                <p className="text-blue-900 font-bold">💡 Insight</p>
+                                                                <p className="text-blue-800">Survey berjalan stabil</p>
+                                                                <p className="text-blue-700 mt-1">→ Kecepatan wajar</p>
+                                                                <p className="text-blue-700">→ Pantau secara berkala</p>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="bg-red-50 border border-red-100 rounded-lg p-3">
+                                                                <p className="text-red-900 font-bold">⚠️ Insight</p>
+                                                                <p className="text-red-800 font-semibold">Survey berjalan lambat</p>
+                                                                <p className="text-red-700 mt-1">→ Risiko tidak selesai</p>
+                                                                <p className="text-red-700">→ Pertimbangkan untuk menaikkan reward</p>
+                                                                <div className="mt-3">
+                                                                    <button 
+                                                                        onClick={() => {
+                                                                            setEditReward(survey.reward_per_response + 50);
+                                                                            setIsEditingReward(true);
+                                                                            window.scrollTo({ top: document.getElementById('reward-section')?.offsetTop, behavior: 'smooth' });
+                                                                        }}
+                                                                        className="w-full text-center px-3 py-2 bg-red-200 hover:bg-red-300 text-red-900 text-xs font-semibold rounded-lg transition-colors"
+                                                                    >
+                                                                        ↗️ Tambah Reward +Rp 50
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
