@@ -82,16 +82,29 @@ export default function SurveyDetailPage() {
                 try {
                     const json = await getSurveyRewardValidation(surveyId)
                     if (!cancelled && json.data) {
+                        let calculatedRecommended = 0;
+                        if (questions.length > 0) {
+                            calculatedRecommended = questions.reduce((sum: number, q: any) => {
+                                const isEssay = q.question_type === 'text' || q.question_type === 'textarea';
+                                return sum + (isEssay ? 200 : 100);
+                            }, 0);
+                        } else {
+                            calculatedRecommended = 200; // Base if no questions
+                        }
+                        
+                        const calculatedMin = Math.floor(calculatedRecommended / 2);
+                        const currentReward = survey?.reward_per_response || 0;
+
                         setRewardEval({
-                            hardOk: json.data.hardOk,
-                            softOk: json.data.softOk,
-                            minRequired: json.data.minRequired,
-                            recommended: json.data.recommended,
+                            hardOk: currentReward >= calculatedMin,
+                            softOk: currentReward >= calculatedRecommended,
+                            minRequired: calculatedMin,
+                            recommended: calculatedRecommended,
                             rewardPerResponse: json.data.rewardPerResponse,
-                            questionCount: json.data.questionCount,
+                            questionCount: questions.length,
                             estimatedMinutesTotal: json.data.estimatedMinutesTotal,
-                            hardMessage: json.data.hardMessage,
-                            softWarning: json.data.softWarning,
+                            hardMessage: currentReward < calculatedMin ? 'Reward terlalu rendah' : json.data.hardMessage,
+                            softWarning: currentReward < calculatedRecommended ? 'Reward di bawah rekomendasi' : json.data.softWarning,
                         })
                     }
                 } catch {
@@ -101,7 +114,7 @@ export default function SurveyDetailPage() {
         return () => {
             cancelled = true
         }
-    }, [surveyId, survey?.status, survey?.reward_per_response, questions.length])
+    }, [surveyId, survey?.status, survey?.reward_per_response, questions])
 
     useEffect(() => {
         if (!surveyId || survey?.status !== 'completed') {
@@ -663,16 +676,19 @@ export default function SurveyDetailPage() {
                                                     <div className="space-y-3">
                                                         {rewardEval && !rewardEval.softOk ? (
                                                             <div className="bg-amber-50 border border-amber-100 rounded-lg p-3">
-                                                                <p className="font-semibold text-amber-800">Karena reward &lt; recommended:</p>
+                                                                <p className="font-semibold text-amber-800">Karena reward &lt; rekomendasi final:</p>
                                                                 <p className="text-amber-900 font-bold mt-2">⚠️ Insight</p>
                                                                 <p className="text-amber-800">Reward di bawah rekomendasi</p>
-                                                                <p className="text-amber-800 mt-2">→ Risiko:</p>
+                                                                <p className="text-amber-700 mt-1">→ Risiko:</p>
                                                                 <ul className="list-disc pl-5 text-amber-700 text-xs">
                                                                     <li>Response masuk lambat</li>
                                                                     <li>Kualitas jawaban rendah</li>
                                                                 </ul>
                                                                 <div className="mt-3">
                                                                     <p className="text-amber-900 font-semibold mb-1">Saran:</p>
+                                                                    <p className="text-amber-800 text-xs mb-2">
+                                                                        Berdasarkan {questions.length} pertanyaan dan estimasi waktu pengisian.
+                                                                    </p>
                                                                     <button
                                                                         onClick={() => {
                                                                             setEditReward(rewardEval.recommended);
@@ -681,7 +697,7 @@ export default function SurveyDetailPage() {
                                                                         }}
                                                                         className="w-full text-center px-3 py-2 bg-amber-200 hover:bg-amber-300 text-amber-900 text-xs font-semibold rounded-lg transition-colors"
                                                                     >
-                                                                        ✨ Gunakan reward Rp {rewardEval.recommended.toLocaleString('id-ID')}
+                                                                        ✨ Gunakan rekomendasi final Rp {rewardEval.recommended.toLocaleString('id-ID')}
                                                                     </button>
                                                                 </div>
                                                             </div>
@@ -929,9 +945,10 @@ export default function SurveyDetailPage() {
                                 <p className="font-bold text-red-600 mb-3 flex items-center gap-2">
                                     <span>❌</span> Reward terlalu rendah
                                 </p>
-                                <div className="mb-4 space-y-1">
+                                <div className="mb-4 space-y-1 text-sm">
                                     <p>Minimal: <span className="font-semibold">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(rewardEval.minRequired)}</span></p>
-                                    <p>Disarankan: <span className="font-semibold">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(rewardEval.recommended)}</span></p>
+                                    <p>Rekomendasi final: <span className="font-semibold">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(rewardEval.recommended)}</span></p>
+                                    <p className="text-xs text-red-700 italic mt-1">Berdasarkan {questions.length} pertanyaan dan estimasi waktu pengisian.</p>
                                 </div>
                                 <button
                                     onClick={() => {
@@ -942,7 +959,7 @@ export default function SurveyDetailPage() {
                                     }}
                                     className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-semibold rounded-lg transition-colors border border-red-300 w-full"
                                 >
-                                    ✨ Gunakan Reward Rekomendasi
+                                    ✨ Gunakan Rekomendasi Final
                                 </button>
                             </div>
                         )}
@@ -954,10 +971,11 @@ export default function SurveyDetailPage() {
                                 </p>
                                 <div className="mb-4">
                                     <p className="font-medium mb-1">Survey kemungkinan:</p>
-                                    <ul className="list-disc pl-5 space-y-1 text-amber-800">
+                                    <ul className="list-disc pl-5 space-y-1 text-amber-800 mb-2">
                                         <li>Berjalan lambat</li>
                                         <li>Mendapat banyak respon low quality</li>
                                     </ul>
+                                    <p className="text-xs text-amber-700 italic">Berdasarkan {questions.length} pertanyaan dan estimasi waktu pengisian.</p>
                                 </div>
                                 <div className="flex flex-col gap-2">
                                     <button
@@ -969,7 +987,7 @@ export default function SurveyDetailPage() {
                                         }}
                                         className="px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-800 font-semibold rounded-lg transition-colors border border-amber-300 w-full text-center"
                                     >
-                                        ✨ Gunakan Rekomendasi
+                                        ✨ Gunakan Rekomendasi Final Rp {rewardEval.recommended.toLocaleString('id-ID')}
                                     </button>
                                 </div>
                             </div>

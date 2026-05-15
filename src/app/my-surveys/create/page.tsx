@@ -20,38 +20,32 @@ export default function CreateSurvey() {
     const [message, setMessage] = useState('')
     const [isError, setIsError] = useState(false)
     const [rewardWarning, setRewardWarning] = useState<string | null>(null)
-    const [rewardHint, setRewardHint] = useState<{
-        min_required: number
-        recommended: number
-    } | null>(null)
     const [walletBalance, setWalletBalance] = useState<number | null>(null)
 
     useEffect(() => {
         let cancelled = false
         ;(async () => {
             try {
-                const [thresholdJson, wallet] = await Promise.all([
-                    getRewardThresholdConfig(0),
-                    getWalletBalance(),
-                ])
+                const wallet = await getWalletBalance()
                 if (!cancelled) {
-                    if (thresholdJson.data) {
-                        setRewardHint({
-                            min_required: thresholdJson.data.min_required,
-                            recommended: thresholdJson.data.recommended,
-                        })
-                    }
                     setWalletBalance(wallet.balance)
                 }
             } catch {
                 if (!cancelled) {
-                    setRewardHint(null)
                     setWalletBalance(null)
                 }
             }
         })()
         return () => { cancelled = true }
     }, [])
+
+    const rewardHint = useMemo(() => {
+        const baseTotal = total > 0 ? total : 1;
+        return {
+            min_required: baseTotal * 100,
+            recommended: baseTotal * 200,
+        };
+    }, [total]);
 
     const totalBudget = reward * total
 
@@ -128,7 +122,7 @@ export default function CreateSurvey() {
                     </p>
 
                     {/* Form */}
-                    <div className="space-y-5">
+                    <div className="space-y-5" suppressHydrationWarning>
                         {/* Title */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -180,7 +174,7 @@ export default function CreateSurvey() {
                                         <span className="font-semibold text-gray-800">
                                             Rp {rewardHint.min_required.toLocaleString('id-ID')}
                                         </span>
-                                        {' '}· Rekomendasi:{' '}
+                                        {' '}· Estimasi awal:{' '}
                                         <span className="font-semibold text-amber-800">
                                             Rp {rewardHint.recommended.toLocaleString('id-ID')}
                                         </span>
@@ -193,7 +187,7 @@ export default function CreateSurvey() {
                                         onClick={() => setReward(rewardHint.recommended)}
                                         className="text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-lg hover:bg-amber-100 transition-colors"
                                     >
-                                        ✨ Gunakan rekomendasi (Rp {rewardHint.recommended.toLocaleString('id-ID')})
+                                        ✨ Gunakan estimasi awal (Rp {rewardHint.recommended.toLocaleString('id-ID')})
                                     </button>
                                 </div>
                             )}
