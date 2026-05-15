@@ -39,10 +39,6 @@ export async function POST(req: Request) {
       )
     }
 
-    if (isCheckbox && body.option_ids.length === 0) {
-      return Response.json({ error: 'option_ids must not be empty' }, { status: 400 })
-    }
-
     const token = authHeader.replace('Bearer ', '')
 
     const supabase = createClient(
@@ -61,6 +57,7 @@ export async function POST(req: Request) {
         p_response_id: body.response_id,
         p_question_id: body.question_id,
         p_option_ids:  body.option_ids,
+        p_user_id: user.id,
       })
 
       if (error) return Response.json({ error: error.message }, { status: 400 })
@@ -70,6 +67,7 @@ export async function POST(req: Request) {
         p_question_id: body.question_id,
         p_option_id:   isRadio ? body.option_id   : null,
         p_answer_text: isEssay ? body.answer_text : null,
+        p_user_id: user.id,
       })
 
       if (error) return Response.json({ error: error.message }, { status: 400 })
