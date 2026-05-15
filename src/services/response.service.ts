@@ -126,6 +126,14 @@ export interface SubmitResponsePayload {
   survey_id: string;
 }
 
+export interface SubmitResponseResult {
+  id: string;
+  score: number;
+  status: string;
+  reward_final: number;
+  score_breakdown: Record<string, any>;
+}
+
 export async function submitSurveyResponse(payload: SubmitResponsePayload) {
   const token = await getToken();
 
@@ -135,7 +143,7 @@ export async function submitSurveyResponse(payload: SubmitResponsePayload) {
     body: JSON.stringify(payload),
   });
 
-  return handleResponse<{ success: boolean; response?: { id: string } }>(res, 'submitSurveyResponse');
+  return handleResponse<{ success: boolean; response: SubmitResponseResult }>(res, 'submitSurveyResponse');
 }
 
 // ─────────────────────────────────────────────
