@@ -15,14 +15,13 @@ export async function POST(req: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  // Verify token and get the user securely
   const { data: { user }, error: authError } = await supabase.auth.getUser(token)
 
   if (authError || !user) {
     return Response.json({ error: 'Unauthorized or invalid token' }, { status: 401 })
   }
 
-  const { error } = await supabase.rpc('submit_response', {
+  const { data, error } = await supabase.rpc('submit_response', {
     p_user_id: user.id,
     p_survey_id: body.survey_id,
   })
@@ -31,19 +30,6 @@ export async function POST(req: Request) {
     return Response.json({ error: error.message }, { status: 400 })
   }
 
-  // Fetch the newly created response to return its ID
-  const { data: response } = await supabase
-    .from('responses')
-    .select('id')
-    .eq('user_id', user.id)
-    .eq('survey_id', body.survey_id)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single()
-
-  if (!response) {
-    return Response.json({ success: true })
-  }
-
-  return Response.json({ success: true, response: { id: response.id } })
+  // The RPC now returns all result data directly — no second query needed
+  return Response.json({ success: true, response: data })
 }
