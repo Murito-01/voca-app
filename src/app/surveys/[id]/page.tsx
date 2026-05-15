@@ -416,7 +416,7 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
                   <SubmitResponseButton
                     surveyId={survey.id}
                     hasSubmitted={survey.has_submitted}
-                    disabled={!isFormValid()}
+                    disabled={!isFormValid() || saveStatus === 'saving' || saveStatus === 'error'}
                     onSubmitStart={() => setIsSubmitting(true)}
                     onSubmitError={() => setIsSubmitting(false)}
                     onSuccessCallback={async (result) => {
