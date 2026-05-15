@@ -74,11 +74,28 @@ export default function CreatorDashboard() {
     };
 
     const formatDuration = (minutes: number) => {
-        if (minutes < 60) return `${Math.ceil(minutes)} menit`;
-        const hours = Math.floor(minutes / 60);
-        const remainingMinutes = Math.ceil(minutes % 60);
-        if (remainingMinutes === 0) return `${hours} jam`;
-        return `${hours} jam ${remainingMinutes} menit`;
+        const hours = minutes / 60;
+        if (hours >= 24) {
+            const d = Math.floor(hours / 24);
+            const remainingHours = Math.floor(hours % 24);
+            const remainingMinutes = Math.round((hours % 1) * 60);
+            
+            if (remainingHours > 0) {
+                return `${d} Hari ${remainingHours} Jam`;
+            } else if (remainingMinutes > 0) {
+                return `${d} Hari ${remainingMinutes} Menit`;
+            } else {
+                return `${d} Hari`;
+            }
+        } else {
+            const h = Math.floor(hours);
+            const m = Math.round((hours % 1) * 60);
+            if (h > 0) {
+                if (m > 0) return `${h} Jam ${m} Menit`;
+                return `${h} Jam`;
+            }
+            return `${m} Menit`;
+        }
     };
 
     const burnRatePerSec = Number(metrics.burn_rate?.burn_rate_per_sec || 0);
