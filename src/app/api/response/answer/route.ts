@@ -39,10 +39,6 @@ export async function POST(req: Request) {
       )
     }
 
-    if (isCheckbox && body.option_ids.length === 0) {
-      return Response.json({ error: 'option_ids must not be empty' }, { status: 400 })
-    }
-
     const token = authHeader.replace('Bearer ', '')
 
     const supabase = createClient(
