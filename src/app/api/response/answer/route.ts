@@ -61,6 +61,7 @@ export async function POST(req: Request) {
         p_response_id: body.response_id,
         p_question_id: body.question_id,
         p_option_ids:  body.option_ids,
+        p_user_id: user.id,
       })
 
       if (error) return Response.json({ error: error.message }, { status: 400 })
@@ -70,6 +71,7 @@ export async function POST(req: Request) {
         p_question_id: body.question_id,
         p_option_id:   isRadio ? body.option_id   : null,
         p_answer_text: isEssay ? body.answer_text : null,
+        p_user_id: user.id,
       })
 
       if (error) return Response.json({ error: error.message }, { status: 400 })
