@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getMySurveys, getSurveyQuestions, getSurveyRewardValidation, getSurveyInsight } from '@/services/survey.service'
 import { generateSurveyInsight } from '@/lib/survey-insight'
+import { getEstimationSummary } from '@/lib/survey-estimation'
 import QuestionItem from '@/components/creator/QuestionItem'
 import { Question } from '@/types/survey.types'
 
@@ -685,6 +686,12 @@ export default function SurveyDetailPage() {
                                                         hoursToFinish
                                                     });
 
+                                                    const estimation = survey.status === 'draft' && rewardEval ? getEstimationSummary(
+                                                        survey.reward_per_response,
+                                                        rewardEval.recommended,
+                                                        survey.total_responses
+                                                    ) : null;
+
                                                     if (!insight && !isDataEnough && survey.status !== 'draft') {
                                                         return (
                                                             <p className="text-slate-500 italic">
@@ -710,11 +717,31 @@ export default function SurveyDetailPage() {
 
                                                     return (
                                                         <div className={`border rounded-lg p-3 ${bgColor}`}>
+                                                            {survey.status === 'draft' && estimation && (
+                                                                <div className="mb-4 pb-4 border-b border-black/10">
+                                                                    <div className="flex justify-between items-center mb-3">
+                                                                        <span className={`font-bold text-xs uppercase tracking-wider ${titleColor}`}>Confidence Score</span>
+                                                                        <span className={`text-xl font-extrabold ${titleColor}`}>
+                                                                            {estimation.confidence_score}%
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className={`text-xs space-y-2 ${textColor}`}>
+                                                                        <p className="font-semibold flex items-center gap-1.5">
+                                                                            {estimation.confidence_color === 'green' ? '🟢' : estimation.confidence_color === 'yellow' ? '🟡' : '🔴'} Kemungkinan:
+                                                                        </p>
+                                                                        <ul className="list-disc pl-5 space-y-1">
+                                                                            <li>Selesai {estimation.speed === 'cepat' ? 'sangat cepat' : estimation.speed === 'sedang' ? 'dalam waktu wajar' : 'sangat lambat'}</li>
+                                                                            <li>Kualitas response {estimation.quality}</li>
+                                                                        </ul>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
                                                             {survey.status === 'draft' && rewardEval && !rewardEval.softOk && (
                                                                 <p className={`font-semibold ${textColor} mb-2`}>Karena reward &lt; rekomendasi final:</p>
                                                             )}
-                                                            <p className={`font-bold ${titleColor}`}>
-                                                                {insight.type === 'good' ? '💡' : '⚠️'} {insight.title}
+                                                            <p className={`font-bold text-base ${titleColor}`}>
+                                                                {insight.type === 'good' ? '✅' : '⚠️'} {insight.title}
                                                             </p>
                                                             <p className={`${textColor} mt-1`}>{insight.message}</p>
                                                             {insight.suggestion && (

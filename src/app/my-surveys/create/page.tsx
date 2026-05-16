@@ -386,6 +386,33 @@ export default function CreateSurvey() {
                                 </h3>
 
                                 <div className="space-y-4">
+                                    {/* Confidence Indicator */}
+                                    <div className={`p-4 rounded-xl border ${
+                                        estimation.confidence_color === 'green' ? 'bg-green-50 border-green-200' :
+                                        estimation.confidence_color === 'yellow' ? 'bg-yellow-50 border-yellow-200' :
+                                        'bg-red-50 border-red-200'
+                                    }`}>
+                                        <div className="flex justify-between items-start mb-2">
+                                            <span className="font-bold text-gray-800">Confidence Score</span>
+                                            <span className={`text-xl font-extrabold ${
+                                                estimation.confidence_color === 'green' ? 'text-green-700' :
+                                                estimation.confidence_color === 'yellow' ? 'text-yellow-700' :
+                                                'text-red-700'
+                                            }`}>
+                                                {estimation.confidence_score}%
+                                            </span>
+                                        </div>
+                                        <div className="text-sm space-y-1">
+                                            <p className="font-medium text-gray-700 flex items-center gap-1.5">
+                                                {estimation.confidence_color === 'green' ? '🟢' : estimation.confidence_color === 'yellow' ? '🟡' : '🔴'} Kemungkinan:
+                                            </p>
+                                            <ul className="list-disc pl-6 text-gray-600 text-xs">
+                                                <li>Selesai {estimation.speed === 'cepat' ? 'sangat cepat' : estimation.speed === 'sedang' ? 'dalam waktu wajar' : 'sangat lambat'}</li>
+                                                <li>Kualitas response {estimation.quality}</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+
                                     {/* Completion Rate */}
                                     <div>
                                         <div className="flex justify-between items-center mb-1.5">

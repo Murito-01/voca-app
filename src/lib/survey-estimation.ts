@@ -20,6 +20,8 @@ export interface EstimationSummary {
     estimated_minutes: number;
     ratio: number;
     recommended_reward: number;
+    confidence_score: number;
+    confidence_color: 'green' | 'yellow' | 'red';
 }
 
 /**
@@ -109,6 +111,21 @@ export function getEstimationSummary(
     const speed = estimateTime(totalResponses, speed_factor);
     const estimated_minutes = speed_factor > 0 ? totalResponses / speed_factor : Infinity;
 
+    const ratio = recommended > 0 ? reward / recommended : 0;
+    
+    // Confidence calculation
+    const qualityScoreMap: Record<QualityLevel, number> = {
+        'tinggi': 1.0,
+        'bagus': 0.8,
+        'sedang': 0.6,
+        'rendah': 0.4,
+        'buruk': 0.2
+    };
+    const clampedRatio = Math.min(ratio, 1.2); // avoid exceeding 100 easily if overpaid
+    const rawScore = (clampedRatio * 50) + (completion_rate * 30) + (qualityScoreMap[quality] * 20);
+    const confidence_score = Math.min(100, Math.max(0, Math.round(rawScore)));
+    const confidence_color = confidence_score >= 80 ? 'green' : confidence_score >= 60 ? 'yellow' : 'red';
+
     return {
         completion_rate,
         quality,
@@ -117,7 +134,9 @@ export function getEstimationSummary(
         speed_color: getSpeedColor(speed),
         speed_factor,
         estimated_minutes,
-        ratio: recommended > 0 ? reward / recommended : 0,
+        ratio,
         recommended_reward: recommended,
+        confidence_score,
+        confidence_color,
     };
 }
