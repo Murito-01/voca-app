@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getMySurveys, getSurveyQuestions, getSurveyRewardValidation, getSurveyInsight } from '@/services/survey.service'
+import { generateSurveyInsight } from '@/lib/survey-insight'
 import QuestionItem from '@/components/creator/QuestionItem'
 import { Question } from '@/types/survey.types'
 
@@ -82,16 +83,29 @@ export default function SurveyDetailPage() {
                 try {
                     const json = await getSurveyRewardValidation(surveyId)
                     if (!cancelled && json.data) {
+                        let calculatedRecommended = 0;
+                        if (questions.length > 0) {
+                            calculatedRecommended = questions.reduce((sum: number, q: any) => {
+                                const isEssay = q.question_type === 'text' || q.question_type === 'textarea';
+                                return sum + (isEssay ? 200 : 100);
+                            }, 0);
+                        } else {
+                            calculatedRecommended = 200; // Base if no questions
+                        }
+                        
+                        const calculatedMin = Math.floor(calculatedRecommended / 2);
+                        const currentReward = survey?.reward_per_response || 0;
+
                         setRewardEval({
-                            hardOk: json.data.hardOk,
-                            softOk: json.data.softOk,
-                            minRequired: json.data.minRequired,
-                            recommended: json.data.recommended,
+                            hardOk: currentReward >= calculatedMin,
+                            softOk: currentReward >= calculatedRecommended,
+                            minRequired: calculatedMin,
+                            recommended: calculatedRecommended,
                             rewardPerResponse: json.data.rewardPerResponse,
-                            questionCount: json.data.questionCount,
+                            questionCount: questions.length,
                             estimatedMinutesTotal: json.data.estimatedMinutesTotal,
-                            hardMessage: json.data.hardMessage,
-                            softWarning: json.data.softWarning,
+                            hardMessage: currentReward < calculatedMin ? 'Reward terlalu rendah' : json.data.hardMessage,
+                            softWarning: currentReward < calculatedRecommended ? 'Reward di bawah rekomendasi' : json.data.softWarning,
                         })
                     }
                 } catch {
@@ -101,7 +115,7 @@ export default function SurveyDetailPage() {
         return () => {
             cancelled = true
         }
-    }, [surveyId, survey?.status, survey?.reward_per_response, questions.length])
+    }, [surveyId, survey?.status, survey?.reward_per_response, questions])
 
     useEffect(() => {
         if (!surveyId || survey?.status !== 'completed') {
@@ -659,64 +673,75 @@ export default function SurveyDetailPage() {
                                                     <span>💡</span> Evaluasi & Insight
                                                 </div>
 
-                                                {survey.status === 'draft' ? (
-                                                    <div className="space-y-3">
-                                                        {rewardEval && !rewardEval.softOk ? (
-                                                            <div className="bg-amber-50 border border-amber-100 rounded-lg p-3">
-                                                                <p className="font-semibold text-amber-800">Karena reward &lt; recommended:</p>
-                                                                <p className="text-amber-900 font-bold mt-2">⚠️ Insight</p>
-                                                                <p className="text-amber-800">Reward di bawah rekomendasi</p>
-                                                                <p className="text-amber-800 mt-2">→ Risiko:</p>
-                                                                <ul className="list-disc pl-5 text-amber-700 text-xs">
-                                                                    <li>Response masuk lambat</li>
-                                                                    <li>Kualitas jawaban rendah</li>
-                                                                </ul>
+                                                {(() => {
+                                                    const insight = generateSurveyInsight({
+                                                        status: survey.status,
+                                                        reward: survey.reward_per_response,
+                                                        recommended_reward: rewardEval?.recommended || 0,
+                                                        responses: survey.total_responses - survey.remaining_responses,
+                                                        valid_rate: insightData?.rates?.valid,
+                                                        low_quality_rate: insightData?.rates?.lowQuality,
+                                                        isDataEnough,
+                                                        hoursToFinish
+                                                    });
+
+                                                    if (!insight && !isDataEnough && survey.status !== 'draft') {
+                                                        return (
+                                                            <p className="text-slate-500 italic">
+                                                                Menunggu cukup response (min 5) untuk memberikan performa insight...
+                                                            </p>
+                                                        );
+                                                    }
+
+                                                    if (!insight) return null;
+
+                                                    const bgColor = insight.type === 'good' ? 'bg-emerald-50 border-emerald-100' :
+                                                                    insight.type === 'warning' ? 'bg-amber-50 border-amber-100' :
+                                                                    'bg-red-50 border-red-100';
+                                                    const textColor = insight.type === 'good' ? 'text-emerald-800' :
+                                                                      insight.type === 'warning' ? 'text-amber-800' :
+                                                                      'text-red-800';
+                                                    const titleColor = insight.type === 'good' ? 'text-emerald-900' :
+                                                                       insight.type === 'warning' ? 'text-amber-900' :
+                                                                       'text-red-900';
+                                                    const subTextColor = insight.type === 'good' ? 'text-emerald-700' :
+                                                                         insight.type === 'warning' ? 'text-amber-700' :
+                                                                         'text-red-700';
+
+                                                    return (
+                                                        <div className={`border rounded-lg p-3 ${bgColor}`}>
+                                                            {survey.status === 'draft' && rewardEval && !rewardEval.softOk && (
+                                                                <p className={`font-semibold ${textColor} mb-2`}>Karena reward &lt; rekomendasi final:</p>
+                                                            )}
+                                                            <p className={`font-bold ${titleColor}`}>
+                                                                {insight.type === 'good' ? '💡' : '⚠️'} {insight.title}
+                                                            </p>
+                                                            <p className={`${textColor} mt-1`}>{insight.message}</p>
+                                                            {insight.suggestion && (
+                                                                <p className={`${subTextColor} mt-1`}>→ {insight.suggestion}</p>
+                                                            )}
+
+                                                            {survey.status === 'draft' && insight.type === 'warning' && (
                                                                 <div className="mt-3">
-                                                                    <p className="text-amber-900 font-semibold mb-1">Saran:</p>
+                                                                    <p className={`${titleColor} font-semibold mb-1`}>Saran:</p>
+                                                                    <p className={`${textColor} text-xs mb-2`}>
+                                                                        Berdasarkan {questions.length} pertanyaan dan estimasi waktu pengisian.
+                                                                    </p>
                                                                     <button
                                                                         onClick={() => {
-                                                                            setEditReward(rewardEval.recommended);
+                                                                            setEditReward(rewardEval?.recommended || 0);
                                                                             setIsEditingReward(true);
                                                                             window.scrollTo({ top: document.getElementById('reward-section')?.offsetTop, behavior: 'smooth' });
                                                                         }}
                                                                         className="w-full text-center px-3 py-2 bg-amber-200 hover:bg-amber-300 text-amber-900 text-xs font-semibold rounded-lg transition-colors"
                                                                     >
-                                                                        ✨ Gunakan reward Rp {rewardEval.recommended.toLocaleString('id-ID')}
+                                                                        ✨ Gunakan rekomendasi final Rp {(rewardEval?.recommended || 0).toLocaleString('id-ID')}
                                                                     </button>
                                                                 </div>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-3">
-                                                                <p className="text-emerald-900 font-bold">💡 Insight</p>
-                                                                <p className="text-emerald-800">Reward sudah optimal</p>
-                                                                <p className="text-emerald-700 mt-1">→ Estimasi response stabil</p>
-                                                                <p className="text-emerald-700">→ Tidak perlu perubahan</p>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    <div className="space-y-3">
-                                                        {!isDataEnough ? (
-                                                            <p className="text-slate-500 italic">
-                                                                Menunggu cukup response (min 5) untuk memberikan performa insight...
-                                                            </p>
-                                                        ) : hoursToFinish < 2 ? (
-                                                            <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-3">
-                                                                <p className="text-emerald-900 font-bold">💡 Insight</p>
-                                                                <p className="text-emerald-800">Survey berjalan sangat cepat</p>
-                                                                <p className="text-emerald-700 mt-1">→ Reward cukup menarik</p>
-                                                                <p className="text-emerald-700">→ Tidak perlu perubahan</p>
-                                                            </div>
-                                                        ) : hoursToFinish <= 6 ? (
-                                                            <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
-                                                                <p className="text-blue-900 font-bold">💡 Insight</p>
-                                                                <p className="text-blue-800">Survey berjalan stabil</p>
-                                                                <p className="text-blue-700 mt-1">→ Kecepatan wajar</p>
-                                                                <p className="text-blue-700">→ Pantau secara berkala</p>
-                                                            </div>
-                                                        ) : survey.status === 'completed' && insightData ? (
-                                                            <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-3">
-                                                                <div className="grid grid-cols-3 gap-3 mb-3">
+                                                            )}
+
+                                                            {survey.status === 'completed' && insightData && (
+                                                                <div className="grid grid-cols-3 gap-3 my-3">
                                                                     <div className="bg-white p-2 rounded border border-indigo-50 text-center">
                                                                         <p className="text-[10px] text-gray-500 mb-0.5">Valid Rate</p>
                                                                         <p className={`text-sm font-bold ${insightData.rates.valid >= 0.7 ? 'text-green-600' : 'text-amber-600'}`}>
@@ -736,18 +761,16 @@ export default function SurveyDetailPage() {
                                                                         </p>
                                                                     </div>
                                                                 </div>
-                                                                <p className="font-semibold text-indigo-900 mb-1">📝 Evaluasi & Saran:</p>
-                                                                <p className="text-indigo-800 text-xs leading-relaxed">{insightData.suggestion}</p>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="bg-red-50 border border-red-100 rounded-lg p-3">
-                                                                <p className="text-red-900 font-bold">⚠️ Insight</p>
-                                                                <p className="text-red-800 font-semibold">Survey berjalan lambat</p>
-                                                                <p className="text-red-700 mt-1">→ Kemungkinan reward kurang menarik</p>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
+                                                            )}
+                                                            {survey.status === 'completed' && insightData && insightData.suggestion && (
+                                                                <>
+                                                                    <p className="font-semibold text-indigo-900 mb-1 mt-3">📝 Evaluasi AI:</p>
+                                                                    <p className="text-indigo-800 text-xs leading-relaxed">{insightData.suggestion}</p>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })()}
                                             </div>
                                         </div>
                                     </div>
@@ -929,9 +952,10 @@ export default function SurveyDetailPage() {
                                 <p className="font-bold text-red-600 mb-3 flex items-center gap-2">
                                     <span>❌</span> Reward terlalu rendah
                                 </p>
-                                <div className="mb-4 space-y-1">
+                                <div className="mb-4 space-y-1 text-sm">
                                     <p>Minimal: <span className="font-semibold">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(rewardEval.minRequired)}</span></p>
-                                    <p>Disarankan: <span className="font-semibold">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(rewardEval.recommended)}</span></p>
+                                    <p>Rekomendasi final: <span className="font-semibold">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(rewardEval.recommended)}</span></p>
+                                    <p className="text-xs text-red-700 italic mt-1">Berdasarkan {questions.length} pertanyaan dan estimasi waktu pengisian.</p>
                                 </div>
                                 <button
                                     onClick={() => {
@@ -942,7 +966,7 @@ export default function SurveyDetailPage() {
                                     }}
                                     className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-semibold rounded-lg transition-colors border border-red-300 w-full"
                                 >
-                                    ✨ Gunakan Reward Rekomendasi
+                                    ✨ Gunakan Rekomendasi Final
                                 </button>
                             </div>
                         )}
@@ -954,10 +978,11 @@ export default function SurveyDetailPage() {
                                 </p>
                                 <div className="mb-4">
                                     <p className="font-medium mb-1">Survey kemungkinan:</p>
-                                    <ul className="list-disc pl-5 space-y-1 text-amber-800">
+                                    <ul className="list-disc pl-5 space-y-1 text-amber-800 mb-2">
                                         <li>Berjalan lambat</li>
                                         <li>Mendapat banyak respon low quality</li>
                                     </ul>
+                                    <p className="text-xs text-amber-700 italic">Berdasarkan {questions.length} pertanyaan dan estimasi waktu pengisian.</p>
                                 </div>
                                 <div className="flex flex-col gap-2">
                                     <button
@@ -969,7 +994,7 @@ export default function SurveyDetailPage() {
                                         }}
                                         className="px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-800 font-semibold rounded-lg transition-colors border border-amber-300 w-full text-center"
                                     >
-                                        ✨ Gunakan Rekomendasi
+                                        ✨ Gunakan Rekomendasi Final Rp {rewardEval.recommended.toLocaleString('id-ID')}
                                     </button>
                                 </div>
                             </div>
