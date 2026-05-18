@@ -136,6 +136,7 @@ export async function PUT(
         } else if (status === 'active') {
             await logSurveyEvent(supabase, id, 'resumed');
         }
+
         return Response.json({ success: true, status });
 
     } catch (err) {

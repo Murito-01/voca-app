@@ -300,6 +300,7 @@ export async function getSurveyResponses(surveyId: string) {
 
   return response.json();
 }
+
 export async function getCreatorDashboardMetrics() {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
