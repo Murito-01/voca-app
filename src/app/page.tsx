@@ -34,7 +34,7 @@ export default function Home() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-3">Welcome to Voca App</h1>
           {user && <p className="text-sm text-blue-600 font-medium mb-2">Logged in as {user.email}</p>}
-          <p className="text-gray-500 text-base">Explore available surveys, submit responses, and earn rewards easily.</p>
+          <p className="text-gray-500 text-base">Explore surveys as a respondent or manage your creator workspace.</p>
         </div>
 
         <div className="flex flex-col gap-3 w-full">
@@ -45,22 +45,16 @@ export default function Home() {
             View Surveys
           </Link>
 
-          <Link href="/my-surveys"
+          <Link href="/creator"
             className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md active:scale-95 w-full"
           >
-            My Surveys
+            Creator
           </Link>
 
           <Link href="/my-responses"
             className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md active:scale-95 w-full"
           >
             My Responses
-          </Link>
-
-          <Link href="/my-surveys/create"
-            className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md active:scale-95 w-full"
-          >
-            Create Survey
           </Link>
 
           {!loading && (
@@ -91,4 +85,3 @@ export default function Home() {
     </main>
   );
 }
-
