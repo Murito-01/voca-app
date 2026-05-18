@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { createSurvey } from '@/services/survey.service'
+import { createSurvey, getRewardThresholdConfig, getWalletBalance } from '@/services/survey.service'
+import { getEstimationSummary, type EstimationSummary } from '@/lib/survey-estimation'
 
 type ResponseMode = 'fixed' | 'extended'
 
@@ -18,8 +19,50 @@ export default function CreateSurvey() {
     const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState('')
     const [isError, setIsError] = useState(false)
+    const [rewardWarning, setRewardWarning] = useState<string | null>(null)
+    const [walletBalance, setWalletBalance] = useState<number | null>(null)
+
+    useEffect(() => {
+        let cancelled = false
+        ;(async () => {
+            try {
+                const wallet = await getWalletBalance()
+                if (!cancelled) {
+                    setWalletBalance(wallet.balance)
+                }
+            } catch {
+                if (!cancelled) {
+                    setWalletBalance(null)
+                }
+            }
+        })()
+        return () => { cancelled = true }
+    }, [])
+
+    const rewardHint = useMemo(() => {
+        const baseTotal = total > 0 ? total : 1;
+        return {
+            min_required: baseTotal * 100,
+            recommended: baseTotal * 200,
+        };
+    }, [total]);
 
     const totalBudget = reward * total
+
+    // Live estimation — recalculates instantly when reward/total/recommended changes
+    const estimation: EstimationSummary | null = useMemo(() => {
+        if (reward <= 0 || total <= 0 || !rewardHint) return null;
+        return getEstimationSummary(reward, rewardHint.recommended, total);
+    }, [reward, total, rewardHint])
+
+    // Smart budget suggestion
+    const budgetSuggestion = useMemo(() => {
+        if (reward <= 0 || total <= 0 || walletBalance === null) return null
+        const requiredBudget = reward * total
+        const gap = requiredBudget - walletBalance
+        const affordable = reward > 0 ? Math.floor(walletBalance / reward) : 0
+        return { requiredBudget, gap, affordable, sufficient: gap <= 0 }
+    }, [reward, total, walletBalance])
 
     const handleSubmit = async () => {
         if (!title || reward <= 0 || total <= 0) {
@@ -42,6 +85,7 @@ export default function CreateSurvey() {
             })
 
             setIsError(false)
+            setRewardWarning(typeof data.reward_warning === 'string' ? data.reward_warning : null)
             setMessage('Survey berhasil dibuat! Mengalihkan ke halaman detail...')
             setTitle('')
             setReward(0)
@@ -78,7 +122,7 @@ export default function CreateSurvey() {
                     </p>
 
                     {/* Form */}
-                    <div className="space-y-5">
+                    <div className="space-y-5" suppressHydrationWarning>
                         {/* Title */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -123,6 +167,30 @@ export default function CreateSurvey() {
                                     onChange={(e) => setReward(Number(e.target.value))}
                                 />
                             </div>
+                             {rewardHint && (
+                                <div className="mt-2 space-y-1.5">
+                                    <p className="text-xs text-gray-600 leading-relaxed">
+                                        Minimum reward:{' '}
+                                        <span className="font-semibold text-gray-800">
+                                            Rp {rewardHint.min_required.toLocaleString('id-ID')}
+                                        </span>
+                                        {' '}· Estimasi awal:{' '}
+                                        <span className="font-semibold text-amber-800">
+                                            Rp {rewardHint.recommended.toLocaleString('id-ID')}
+                                        </span>
+                                    </p>
+                                    <p className="text-[11px] text-gray-400">
+                                        Setelah kamu menambah pertanyaan, minimum wajib naik.
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => setReward(rewardHint.recommended)}
+                                        className="text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-lg hover:bg-amber-100 transition-colors"
+                                    >
+                                        ✨ Gunakan estimasi awal (Rp {rewardHint.recommended.toLocaleString('id-ID')})
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         {/* Total Responses */}
@@ -241,6 +309,185 @@ export default function CreateSurvey() {
                             </p>
                         </div>
 
+                        {/* Smart Budget Suggestion */}
+                        {budgetSuggestion && (
+                            <div className={`rounded-xl border p-4 ${
+                                budgetSuggestion.sufficient
+                                    ? 'bg-green-50 border-green-200'
+                                    : 'bg-red-50 border-red-200'
+                            }`}>
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="flex-1">
+                                        <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${
+                                            budgetSuggestion.sufficient ? 'text-green-600' : 'text-red-600'
+                                        }`}>
+                                            {budgetSuggestion.sufficient ? '✅ Budget Mencukupi' : '⚠️ Budget Tidak Cukup'}
+                                        </p>
+
+                                        {budgetSuggestion.sufficient ? (
+                                            <p className="text-sm text-green-800">
+                                                Saldo kamu{' '}
+                                                <span className="font-bold">
+                                                    Rp {walletBalance!.toLocaleString('id-ID')}
+                                                </span>{' '}
+                                                cukup untuk survey ini.{' '}
+                                                {walletBalance! - budgetSuggestion.requiredBudget > 0 && (
+                                                    <span className="text-green-600">
+                                                        Sisa saldo: Rp {(walletBalance! - budgetSuggestion.requiredBudget).toLocaleString('id-ID')}.
+                                                    </span>
+                                                )}
+                                            </p>
+                                        ) : (
+                                            <div className="space-y-1.5">
+                                                <p className="text-sm text-red-800">
+                                                    Saldo kamu{' '}
+                                                    <span className="font-bold">
+                                                        Rp {walletBalance!.toLocaleString('id-ID')}
+                                                    </span>
+                                                    {' '}— kurang{' '}
+                                                    <span className="font-bold">
+                                                        Rp {budgetSuggestion.gap.toLocaleString('id-ID')}
+                                                    </span>{' '}
+                                                    dari yang dibutuhkan.
+                                                </p>
+                                                <p className="text-xs text-red-700">
+                                                    💡 Dengan saldo saat ini, kamu hanya bisa menjangkau{' '}
+                                                    <strong>{budgetSuggestion.affordable} responden</strong>{' '}
+                                                    (bukan {total}).
+                                                </p>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setTotal(budgetSuggestion.affordable)}
+                                                    disabled={budgetSuggestion.affordable <= 0}
+                                                    className="mt-1 text-xs font-semibold text-red-700 bg-red-100 border border-red-300 px-3 py-1 rounded-lg hover:bg-red-200 transition-colors disabled:opacity-40"
+                                                >
+                                                    Sesuaikan target ke {budgetSuggestion.affordable} responden
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="text-right shrink-0">
+                                        <p className="text-[10px] text-gray-500 mb-0.5">Saldo kamu</p>
+                                        <p className={`text-sm font-bold ${
+                                            budgetSuggestion.sufficient ? 'text-green-700' : 'text-red-700'
+                                        }`}>
+                                            Rp {walletBalance!.toLocaleString('id-ID')}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+
+                        {estimation && (
+                            <div className="border border-gray-200 rounded-xl p-5 bg-gradient-to-br from-gray-50 to-white shadow-sm">
+                                <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                    <span>📊</span> Estimasi Hasil Survey
+                                </h3>
+
+                                <div className="space-y-4">
+                                    {/* Confidence Indicator */}
+                                    <div className={`p-4 rounded-xl border ${
+                                        estimation.confidence_color === 'green' ? 'bg-green-50 border-green-200' :
+                                        estimation.confidence_color === 'yellow' ? 'bg-yellow-50 border-yellow-200' :
+                                        'bg-red-50 border-red-200'
+                                    }`}>
+                                        <div className="flex justify-between items-start mb-2">
+                                            <span className="font-bold text-gray-800">Confidence Score</span>
+                                            <span className={`text-xl font-extrabold ${
+                                                estimation.confidence_color === 'green' ? 'text-green-700' :
+                                                estimation.confidence_color === 'yellow' ? 'text-yellow-700' :
+                                                'text-red-700'
+                                            }`}>
+                                                {estimation.confidence_score}%
+                                            </span>
+                                        </div>
+                                        <div className="text-sm space-y-1">
+                                            <p className="font-medium text-gray-700 flex items-center gap-1.5">
+                                                {estimation.confidence_color === 'green' ? '🟢' : estimation.confidence_color === 'yellow' ? '🟡' : '🔴'} Kemungkinan:
+                                            </p>
+                                            <ul className="list-disc pl-6 text-gray-600 text-xs">
+                                                <li>Selesai {estimation.speed === 'cepat' ? 'sangat cepat' : estimation.speed === 'sedang' ? 'dalam waktu wajar' : 'sangat lambat'}</li>
+                                                <li>Kualitas response {estimation.quality}</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    {/* Completion Rate */}
+                                    <div>
+                                        <div className="flex justify-between items-center mb-1.5">
+                                            <span className="text-xs font-medium text-gray-600 flex items-center gap-1.5">
+                                                ✅ Completion Rate
+                                            </span>
+                                            <span className={`text-sm font-bold ${
+                                                estimation.completion_rate >= 0.8 ? 'text-green-600' :
+                                                estimation.completion_rate >= 0.6 ? 'text-yellow-600' : 'text-red-600'
+                                            }`}>
+                                                {Math.round(estimation.completion_rate * 100)}%
+                                            </span>
+                                        </div>
+                                        <div className="w-full bg-gray-200 h-2.5 rounded-full overflow-hidden">
+                                            <div
+                                                className={`h-full rounded-full transition-all duration-500 ease-out ${
+                                                    estimation.completion_rate >= 0.8 ? 'bg-green-500' :
+                                                    estimation.completion_rate >= 0.6 ? 'bg-yellow-500' : 'bg-red-500'
+                                                }`}
+                                                style={{ width: `${Math.round(estimation.completion_rate * 100)}%` }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {/* Quality */}
+                                        <div className={`p-3 rounded-lg border ${
+                                            estimation.quality_color === 'green' ? 'bg-green-50 border-green-200' :
+                                            estimation.quality_color === 'yellow' ? 'bg-yellow-50 border-yellow-200' :
+                                            'bg-red-50 border-red-200'
+                                        }`}>
+                                            <p className={`text-[10px] font-semibold uppercase tracking-wider mb-1 ${
+                                                estimation.quality_color === 'green' ? 'text-green-600' :
+                                                estimation.quality_color === 'yellow' ? 'text-yellow-600' :
+                                                'text-red-600'
+                                            }`}>⚡ Kualitas</p>
+                                            <p className={`text-lg font-bold capitalize ${
+                                                estimation.quality_color === 'green' ? 'text-green-800' :
+                                                estimation.quality_color === 'yellow' ? 'text-yellow-800' :
+                                                'text-red-800'
+                                            }`}>{estimation.quality}</p>
+                                        </div>
+
+                                        {/* Speed */}
+                                        <div className={`p-3 rounded-lg border ${
+                                            estimation.speed_color === 'green' ? 'bg-green-50 border-green-200' :
+                                            estimation.speed_color === 'yellow' ? 'bg-yellow-50 border-yellow-200' :
+                                            'bg-red-50 border-red-200'
+                                        }`}>
+                                            <p className={`text-[10px] font-semibold uppercase tracking-wider mb-1 ${
+                                                estimation.speed_color === 'green' ? 'text-green-600' :
+                                                estimation.speed_color === 'yellow' ? 'text-yellow-600' :
+                                                'text-red-600'
+                                            }`}>⏳ Waktu</p>
+                                            <p className={`text-lg font-bold capitalize ${
+                                                estimation.speed_color === 'green' ? 'text-green-800' :
+                                                estimation.speed_color === 'yellow' ? 'text-yellow-800' :
+                                                'text-red-800'
+                                            }`}>{estimation.speed}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Recommendation hint */}
+                                    {estimation.ratio < 1.0 && rewardHint && (
+                                        <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                                            <span className="text-amber-500 shrink-0 mt-0.5">💡</span>
+                                            <p className="text-xs text-amber-800 leading-relaxed">
+                                                Tingkatkan reward ke <strong>Rp {rewardHint.recommended.toLocaleString('id-ID')}</strong> untuk estimasi kualitas <strong>bagus</strong> dan completion rate <strong>80%</strong>.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Submit Button */}
                         <button
                             onClick={handleSubmit}
@@ -263,6 +510,17 @@ export default function CreateSurvey() {
                                 'Buat Survey'
                             )}
                         </button>
+
+                        {/* Soft Warning Banner */}
+                        {rewardWarning && (
+                            <div className="rounded-lg px-4 py-3 text-sm font-medium bg-amber-50 text-amber-900 border border-amber-200 flex gap-2">
+                                <span className="shrink-0">⚠️</span>
+                                <div>
+                                    <p className="font-semibold">Insight Reward</p>
+                                    <p className="mt-0.5 font-normal">{rewardWarning}</p>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Feedback Message */}
                         {message && (

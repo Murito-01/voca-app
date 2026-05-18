@@ -42,7 +42,8 @@ export async function GET(req: Request) {
       const { data: responses } = await supabase
         .from('responses')
         .select('survey_id')
-        .eq('user_id', user_id);
+        .eq('user_id', user_id)
+        .neq('status', 'draft');  // drafts don't count as "already responded"
 
       if (responses && responses.length > 0) {
         const respondedIds = new Set(responses.map(r => r.survey_id));

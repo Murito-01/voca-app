@@ -165,6 +165,42 @@ export async function deleteSurveyQuestion(surveyId: string, questionId: string)
   return response.json();
 }
 
+/** Publik: hint ambang reward untuk form creator (tanpa auth). */
+export async function getRewardThresholdConfig(questionCount = 0) {
+  const q = Math.max(0, Math.floor(questionCount));
+  const response = await fetch(`/api/config/reward-thresholds?questions=${q}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Gagal memuat konfigurasi reward');
+  }
+
+  return response.json();
+}
+
+export async function getSurveyRewardValidation(surveyId: string) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  const response = await fetch(`/api/survey/${surveyId}/reward-validation`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Gagal memvalidasi reward');
+  }
+
+  return response.json();
+}
+
 export async function publishSurvey(surveyId: string) {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
@@ -184,7 +220,7 @@ export async function publishSurvey(surveyId: string) {
   return response.json();
 }
 
-export async function updateSurveyDetails(surveyId: string, payload: { title: string; description?: string }) {
+export async function updateSurveyDetails(surveyId: string, payload: { title?: string; description?: string; reward_per_response?: number }) {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
 
@@ -260,6 +296,67 @@ export async function getSurveyResponses(surveyId: string) {
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.error || 'Gagal memuat data responses');
+  }
+
+  return response.json();
+}
+
+export async function getCreatorDashboardMetrics() {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  const response = await fetch('/api/creator/dashboard', {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Gagal memuat metrik dashboard');
+  }
+
+  return response.json();
+}
+
+export async function getWalletBalance(): Promise<{ balance: number; locked_balance: number }> {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  const response = await fetch('/api/wallet', {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Gagal memuat saldo wallet');
+  }
+
+  const json = await response.json();
+  return json.data;
+}
+
+export async function getSurveyInsight(id: string) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  const response = await fetch(`/api/survey/${id}/insight`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Gagal memuat insight');
   }
 
   return response.json();

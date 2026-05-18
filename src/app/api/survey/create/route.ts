@@ -1,4 +1,25 @@
 import { createClient } from '@supabase/supabase-js'
+import {
+    getRewardThresholdParamsFromEnv,
+    mergeRewardParamsFromAppConfig,
+    evaluateRewardThresholds,
+    assertRewardMeetsHardRule
+} from '@/lib/reward-thresholds'
+
+async function logSurveyEvent(
+    supabase: any,
+    surveyId: string,
+    eventType: 'created' | 'paused' | 'resumed' | 'completed'
+) {
+    try {
+        await supabase.from('survey_events').insert({
+            survey_id: surveyId,
+            event_type: eventType
+        });
+    } catch {
+        // Keep create flow successful even if event logging fails.
+    }
+}
 
 export async function POST(req: Request) {
     try {
@@ -22,11 +43,25 @@ export async function POST(req: Request) {
             return Response.json({ error: 'Unauthorized or invalid token' }, { status: 401 })
         }
 
+        const rewardPerResponse = Number(body.reward_per_response)
+        if (!Number.isFinite(rewardPerResponse) || rewardPerResponse <= 0) {
+            return Response.json({ error: 'Reward harus lebih dari 0' }, { status: 400 })
+        }
+
+        let p = getRewardThresholdParamsFromEnv()
+        p = await mergeRewardParamsFromAppConfig(supabase, p)
+        const rewardCheck = evaluateRewardThresholds(rewardPerResponse, 0, p)
+        try {
+            assertRewardMeetsHardRule(rewardCheck)
+        } catch (e: any) {
+            return Response.json({ error: e.message }, { status: 400 })
+        }
+
         const { data, error } = await supabase.rpc('create_survey', {
             p_creator_id: user.id,
             p_title: body.title,
             p_description: body.description || null,
-            p_reward_per_response: body.reward_per_response,
+            p_reward_per_response: rewardPerResponse,
             p_total_responses: body.total_responses,
             p_allow_extended_responses: body.allow_extended_responses ?? false,
         })
@@ -35,9 +70,19 @@ export async function POST(req: Request) {
             return Response.json({ error: error.message }, { status: 400 })
         }
 
+        const surveyId = Array.isArray(data) ? data[0] : data;
+        if (surveyId) {
+            await logSurveyEvent(supabase, surveyId, 'created');
+        }
+
         return Response.json({
             success: true,
-            survey_id: data
+            survey_id: surveyId,
+            min_required: rewardCheck.minRequired,
+            recommended: rewardCheck.recommended,
+            ...(rewardCheck.softWarning
+                ? { reward_warning: rewardCheck.softWarning }
+                : {})
         })
 
     } catch (err) {

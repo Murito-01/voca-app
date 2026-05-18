@@ -1,5 +1,62 @@
 import { createClient } from '@supabase/supabase-js'
 
+async function logSurveyEvent(
+    supabase: any,
+    surveyId: string,
+    eventType: 'created' | 'paused' | 'resumed' | 'completed'
+) {
+    try {
+        await supabase.from('survey_events').insert({
+            survey_id: surveyId,
+            event_type: eventType
+        });
+    } catch {
+        
+    }
+}
+
+/**
+ * Snapshot survey metrics into survey_analytics for future ML training.
+ * Uses upsert because the trigger already creates/updates a row per response.
+ * On survey completion we finalize: completion_rate, reward, category.
+ */
+async function saveSurveyAnalytics(supabase: any, surveyId: string) {
+    try {
+        const { data: survey } = await supabase
+            .from('surveys')
+            .select('reward_per_response, total_responses, remaining_responses, avg_score, avg_duration, category')
+            .eq('id', surveyId)
+            .single();
+
+        if (!survey) return;
+
+        const completedResponses = (survey.total_responses || 0) - (survey.remaining_responses || 0);
+        const completionRate = survey.total_responses > 0
+            ? completedResponses / survey.total_responses
+            : 0;
+
+        // Update completion_rate on the survey itself
+        await supabase
+            .from('surveys')
+            .update({ completion_rate: completionRate })
+            .eq('id', surveyId);
+
+        // Upsert analytics — trigger may have already created this row
+        await supabase.from('survey_analytics').upsert({
+            survey_id: surveyId,
+            reward: survey.reward_per_response,
+            category: survey.category || null,
+            total_responses: survey.total_responses || 0,
+            completed_responses: completedResponses,
+            avg_score: survey.avg_score || 0,
+            avg_duration: survey.avg_duration || 0,
+            completion_rate: completionRate,
+        }, { onConflict: 'survey_id' });
+    } catch {
+        // Analytics save should never block the completion flow
+    }
+}
+
 export async function PUT(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -60,6 +117,8 @@ export async function PUT(
                 return Response.json({ error: rpcError.message }, { status: 400 });
             }
 
+            await logSurveyEvent(supabase, id, 'completed');
+            await saveSurveyAnalytics(supabase, id);
             return Response.json({ success: true, status: 'completed' });
         }
 
@@ -70,6 +129,12 @@ export async function PUT(
 
         if (updateError) {
             return Response.json({ error: updateError.message }, { status: 400 });
+        }
+
+        if (status === 'paused') {
+            await logSurveyEvent(supabase, id, 'paused');
+        } else if (status === 'active') {
+            await logSurveyEvent(supabase, id, 'resumed');
         }
 
         return Response.json({ success: true, status });
