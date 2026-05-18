@@ -23,6 +23,21 @@ function formatCurrency(value: number) {
   }).format(value)
 }
 
+function CreatorTopBar({ walletBalance }: { walletBalance: number | null }) {
+  return (
+    <header className="sticky top-0 z-20 flex min-h-16 items-center gap-4 border-b border-gray-200 bg-white px-4 shadow-sm md:px-6">
+      <div className="h-10 w-10 rounded border border-gray-300 bg-white" aria-label="Logo placeholder" />
+      <p className="text-xl font-bold text-gray-900">Voca</p>
+
+      <div className="ml-auto rounded border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-900">
+        Balance: {walletBalance === null ? '-' : formatCurrency(walletBalance)}
+      </div>
+
+      <div className="h-10 w-10 rounded-full border border-gray-300 bg-white" aria-label="Profile placeholder" />
+    </header>
+  )
+}
+
 function CreatorSidebar({
   activeTab,
   setActiveTab,
@@ -38,17 +53,7 @@ function CreatorSidebar({
     }`
 
   return (
-    <aside className="w-full border-b border-gray-200 bg-white px-4 py-4 md:min-h-screen md:w-64 md:border-b-0 md:border-r md:px-5">
-      <div className="mb-6 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-sm font-bold text-blue-600">
-          V
-        </div>
-        <div>
-          <p className="text-sm font-bold text-gray-900">Voca Creator</p>
-          <p className="text-xs text-gray-500">Survey workspace</p>
-        </div>
-      </div>
-
+    <aside className="w-full border-b border-gray-200 bg-white px-4 py-4 md:min-h-[calc(100vh-4rem)] md:w-64 md:border-b-0 md:border-r md:px-5">
       <nav className="grid gap-2">
         <button className={itemClass('surveys')} onClick={() => setActiveTab('surveys')}>
           My Surveys
@@ -150,35 +155,16 @@ function MySurveysPanel({ onCreate }: { onCreate: () => void }) {
   )
 }
 
-function CreateSurveyPanel() {
+function CreateSurveyPanel({ walletBalance }: { walletBalance: number | null }) {
   const router = useRouter()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [reward, setReward] = useState(0)
   const [total, setTotal] = useState(0)
   const [responseMode, setResponseMode] = useState<ResponseMode>('fixed')
-  const [walletBalance, setWalletBalance] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [isError, setIsError] = useState(false)
-
-  useEffect(() => {
-    let cancelled = false
-
-    const fetchWallet = async () => {
-      try {
-        const wallet = await getWalletBalance()
-        if (!cancelled) setWalletBalance(wallet.balance)
-      } catch {
-        if (!cancelled) setWalletBalance(null)
-      }
-    }
-
-    fetchWallet()
-    return () => {
-      cancelled = true
-    }
-  }, [])
 
   const totalBudget = reward * total
   const budgetInfo = useMemo(() => {
@@ -377,17 +363,39 @@ function CreateSurveyPanel() {
 
 export default function CreatorPage() {
   const [activeTab, setActiveTab] = useState<CreatorTab>('surveys')
+  const [walletBalance, setWalletBalance] = useState<number | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    const fetchWallet = async () => {
+      try {
+        const wallet = await getWalletBalance()
+        if (!cancelled) setWalletBalance(wallet.balance)
+      } catch {
+        if (!cancelled) setWalletBalance(null)
+      }
+    }
+
+    fetchWallet()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   return (
-    <div className="min-h-screen bg-gray-100 md:flex">
-      <CreatorSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-      <main className="flex-1 p-6 md:p-8">
-        {activeTab === 'surveys' ? (
-          <MySurveysPanel onCreate={() => setActiveTab('create')} />
-        ) : (
-          <CreateSurveyPanel />
-        )}
-      </main>
+    <div className="min-h-screen bg-gray-100">
+      <CreatorTopBar walletBalance={walletBalance} />
+      <div className="md:flex">
+        <CreatorSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        <main className="flex-1 p-6 md:p-8">
+          {activeTab === 'surveys' ? (
+            <MySurveysPanel onCreate={() => setActiveTab('create')} />
+          ) : (
+            <CreateSurveyPanel walletBalance={walletBalance} />
+          )}
+        </main>
+      </div>
     </div>
   )
 }
