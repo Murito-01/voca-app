@@ -48,7 +48,7 @@ function ResponderSidebar({
   setActiveTab: (tab: ResponderTab) => void
 }) {
   const itemClass = (tab: ResponderTab) =>
-    `w-full rounded-lg px-4 py-3 text-left text-sm font-semibold transition-colors ${
+    `w-full rounded-lg px-4 py-3 text-left text-sm font-semibold transition-colors cursor-pointer ${
       activeTab === tab
         ? 'bg-blue-600 text-white shadow-sm'
         : 'text-gray-700 hover:bg-gray-100'
