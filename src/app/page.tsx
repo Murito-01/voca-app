@@ -38,23 +38,16 @@ export default function Home() {
         </div>
 
         <div className="flex flex-col gap-3 w-full">
-          <Link
-            href="/surveys"
-            className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md active:scale-95 w-full"
-          >
-            View Surveys
-          </Link>
-
           <Link href="/creator"
             className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md active:scale-95 w-full"
           >
-            Creator
+            Creator Dashboard
           </Link>
 
-          <Link href="/my-responses"
+          <Link href="/responder"
             className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md active:scale-95 w-full"
           >
-            My Responses
+            Responder Dashboard
           </Link>
 
           {!loading && (
