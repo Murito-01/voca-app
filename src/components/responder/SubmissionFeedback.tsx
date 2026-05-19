@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import type { SubmitResponseResult } from "@/components/ui/SubmitResponseButton";
+import type { SubmitResponseResult } from "./SubmitResponseButton";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; border: string; icon: string }> = {
   valid:       { label: "Valid",       color: "text-emerald-700", bg: "bg-emerald-50",  border: "border-emerald-200", icon: "✅" },
@@ -242,10 +242,10 @@ export default function SubmissionFeedback({
             </Link>
           )}
           <Link
-            href="/my-responses"
+            href="/responder"
             className="flex-1 text-center text-gray-500 hover:text-gray-700 hover:bg-gray-50 border border-gray-200 py-2.5 px-4 rounded-xl transition-all text-xs flex items-center justify-center"
           >
-            ← Back to My Responses
+            ← Back to Dashboard
           </Link>
         </div>
       </div>

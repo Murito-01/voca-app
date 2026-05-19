@@ -54,7 +54,7 @@ export default function ResponseDetail() {
         return (
             <div className="min-h-screen bg-gray-100 p-6">
                 <div className="max-w-2xl mx-auto">
-                    <Link href="/my-responses" className="text-blue-600 hover:underline text-sm font-medium mb-6 inline-block">
+                    <Link href="/responder" className="text-blue-600 hover:underline text-sm font-medium mb-6 inline-block">
                         ← Kembali ke Riwayat Respons
                     </Link>
                     <div className="bg-red-50 border border-red-100 text-red-700 rounded-lg p-4 text-sm">
@@ -83,7 +83,7 @@ export default function ResponseDetail() {
         <div className="min-h-screen bg-gray-100 p-6">
             <div className="max-w-3xl mx-auto">
                 <Link
-                    href="/my-responses"
+                    href="/responder"
                     className="text-blue-600 hover:underline text-sm font-medium mb-6 inline-block"
                 >
                     ← Kembali ke Riwayat Respons
