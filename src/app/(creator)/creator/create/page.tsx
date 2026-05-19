@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createSurvey, getWalletBalance } from '@/services/survey.service'
 import { getEstimationSummary, type EstimationSummary } from '@/lib/survey-estimation'
+import { computeInitialRewardEstimate } from '@/lib/reward-recommendation'
 
 type ResponseMode = 'fixed' | 'extended'
 
@@ -15,6 +16,7 @@ export default function CreateSurveyPage() {
     const [reward, setReward] = useState(0)
     const [total, setTotal] = useState(0)
     const [responseMode, setResponseMode] = useState<ResponseMode>('fixed')
+    const [assumedQuestions, setAssumedQuestions] = useState(0)
     const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState('')
     const [isError, setIsError] = useState(false)
@@ -38,13 +40,11 @@ export default function CreateSurveyPage() {
         return () => { cancelled = true }
     }, [])
 
+    // Single source of truth: uses reward-recommendation.ts
     const rewardHint = useMemo(() => {
-        const baseTotal = total > 0 ? total : 1;
-        return {
-            min_required: baseTotal * 100,
-            recommended: baseTotal * 200,
-        };
-    }, [total]);
+        if (total <= 0) return null
+        return computeInitialRewardEstimate(total, assumedQuestions)
+    }, [total, assumedQuestions])
 
     const totalBudget = reward * total
 
@@ -162,13 +162,13 @@ export default function CreateSurveyPage() {
                                     <span className="font-semibold text-gray-800">
                                         Rp {rewardHint.min_required.toLocaleString('id-ID')}
                                     </span>
-                                    {' '}· Estimasi awal:{' '}
+                                    {' '}· Estimasi reward awal:{' '}
                                     <span className="font-semibold text-amber-800">
                                         Rp {rewardHint.recommended.toLocaleString('id-ID')}
                                     </span>
                                 </p>
                                 <p className="text-[11px] text-gray-400">
-                                    Setelah kamu menambah pertanyaan, minimum wajib naik.
+                                    Nilai ini bisa berubah setelah pertanyaan ditambahkan.
                                 </p>
                                 <button
                                     type="button"
@@ -194,6 +194,25 @@ export default function CreateSurveyPage() {
                             value={total === 0 ? '' : total}
                             onChange={(e) => setTotal(Number(e.target.value))}
                         />
+                    </div>
+
+                    {/* Assumed Question Count */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Estimasi Jumlah Pertanyaan{' '}
+                            <span className="text-gray-400 font-normal">(Opsional)</span>
+                        </label>
+                        <input
+                            type="number"
+                            min="0"
+                            placeholder="0"
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                            value={assumedQuestions === 0 ? '' : assumedQuestions}
+                            onChange={(e) => setAssumedQuestions(Math.max(0, Number(e.target.value)))}
+                        />
+                        <p className="mt-1 text-[11px] text-gray-400">
+                            Dipakai untuk menghitung estimasi reward awal. Tidak tersimpan ke database.
+                        </p>
                     </div>
 
                     {/* Mode Picker */}

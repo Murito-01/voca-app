@@ -1,9 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import {
-    getRewardThresholdParamsFromEnv,
-    mergeRewardParamsFromAppConfig,
-    evaluateRewardThresholds
-} from '@/lib/reward-thresholds'
+import { evaluateReward, type QuestionLike } from '@/lib/reward-recommendation'
 
 export async function GET(
     req: Request,
@@ -29,7 +25,7 @@ export async function GET(
 
         const { data: survey, error: surveyError } = await supabase
             .from('surveys')
-            .select('id, creator_id, reward_per_response, status, avg_duration, avg_score')
+            .select('id, creator_id, reward_per_response, total_responses, status, avg_duration, avg_score')
             .eq('id', id)
             .single()
 
@@ -45,24 +41,29 @@ export async function GET(
             return Response.json({ error: 'Insight hanya tersedia untuk survey yang sudah selesai (completed)' }, { status: 400 })
         }
 
-        // Fetch question count to compute recommended reward and duration
-        const { count: questionCount, error: countError } = await supabase
+        // Fetch actual question types for accurate reward recommendation
+        const { data: questions, error: countError } = await supabase
             .from('questions')
-            .select('*', { count: 'exact', head: true })
+            .select('question_type')
             .eq('survey_id', id)
 
         if (countError) {
             return Response.json({ error: countError.message }, { status: 400 })
         }
 
-        let p = getRewardThresholdParamsFromEnv()
-        p = await mergeRewardParamsFromAppConfig(supabase, p)
+        const questionList: QuestionLike[] = (questions ?? []).map((q: any) => ({
+            question_type: q.question_type,
+        }))
 
-        const evaluation = evaluateRewardThresholds(
+        const evaluation = evaluateReward(
             Number(survey.reward_per_response) || 0,
-            questionCount ?? 0,
-            p
+            Number(survey.total_responses) || 1,
+            questionList
         )
+
+        // Estimated minutes: 1.5 min per question as heuristic
+        const estimatedMinutesTotal = questionList.length * 1.5
+        const expectedDurationSeconds = estimatedMinutesTotal * 60
 
         // Fetch responses
         const { data: responses, error: responseError } = await supabase
@@ -89,23 +90,21 @@ export async function GET(
         const lowQualityRate = totalResponses > 0 ? lowQualityCount / totalResponses : 0
         const rejectedRate = totalResponses > 0 ? rejectedCount / totalResponses : 0
 
-        // Expected duration in seconds (evaluation.estimatedMinutesTotal is in minutes)
-        const expectedDurationSeconds = evaluation.estimatedMinutesTotal * 60
-
-        let suggestion = "Survey berjalan sangat baik! Pertahankan kualitas dan struktur reward ini untuk survey selanjutnya."
+        let suggestion = 'Survey berjalan sangat baik! Pertahankan kualitas dan struktur reward ini untuk survey selanjutnya.'
 
         if (lowQualityRate > 0.3 && survey.reward_per_response < evaluation.recommended) {
             suggestion = `Naikkan reward ke Rp ${evaluation.recommended.toLocaleString('id-ID')} untuk mendapatkan respons yang lebih berkualitas.`
         } else if (rejectedRate > 0.15) {
-            suggestion = "Perbaiki kualitas pertanyaan atau tambahkan attention check untuk memfilter responden yang asal isi."
+            suggestion = 'Perbaiki kualitas pertanyaan atau tambahkan attention check untuk memfilter responden yang asal isi.'
         } else if (survey.avg_duration && survey.avg_duration < expectedDurationSeconds * 0.5) {
-            suggestion = "Banyak responden yang mengisi terlalu cepat. Kemungkinan asal isi, pertimbangkan untuk menambah attention check."
+            suggestion = 'Banyak responden yang mengisi terlalu cepat. Kemungkinan asal isi, pertimbangkan untuk menambah attention check.'
         }
 
         return Response.json({
             data: {
                 reward: survey.reward_per_response,
                 recommended: evaluation.recommended,
+                min_required: evaluation.min_required,
                 counts: {
                     valid: validCount,
                     lowQuality: lowQualityCount,
