@@ -4,8 +4,8 @@ import { useEffect, useState, use, useRef } from "react";
 import { getSurveyById, getSurveyQuestions } from "@/services/survey.service";
 import { getResponseById, startSurveyResponse, getDraftResponse, saveAnswer } from "@/services/response.service";
 import Link from "next/link";
-import SubmitResponseButton, { type SubmitResponseResult } from "@/components/ui/SubmitResponseButton";
-import SubmissionFeedback from "@/components/ui/SubmissionFeedback";
+import SubmitResponseButton, { type SubmitResponseResult } from "@/components/responder/SubmitResponseButton";
+import SubmissionFeedback from "@/components/responder/SubmissionFeedback";
 
 export default function SurveyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
