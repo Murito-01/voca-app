@@ -1,10 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import {
-    getRewardThresholdParamsFromEnv,
-    mergeRewardParamsFromAppConfig,
-    evaluateRewardThresholds,
-    assertRewardMeetsHardRule
-} from '@/lib/reward-thresholds'
+import { evaluateReward, type QuestionLike } from '@/lib/reward-recommendation'
 
 async function logSurveyEvent(
     supabase: any,
@@ -15,7 +10,7 @@ async function logSurveyEvent(
         await supabase.from('survey_events').insert({
             survey_id: surveyId,
             event_type: eventType
-        });
+        })
     } catch {
         // Keep create flow successful even if event logging fails.
     }
@@ -48,13 +43,13 @@ export async function POST(req: Request) {
             return Response.json({ error: 'Reward harus lebih dari 0' }, { status: 400 })
         }
 
-        let p = getRewardThresholdParamsFromEnv()
-        p = await mergeRewardParamsFromAppConfig(supabase, p)
-        const rewardCheck = evaluateRewardThresholds(rewardPerResponse, 0, p)
-        try {
-            assertRewardMeetsHardRule(rewardCheck)
-        } catch (e: any) {
-            return Response.json({ error: e.message }, { status: 400 })
+        const totalResponses = Math.max(1, Number(body.total_responses) || 1)
+
+        // At create time there are no questions yet, so we validate with 0 questions
+        const rewardCheck = evaluateReward(rewardPerResponse, totalResponses, [] as QuestionLike[])
+
+        if (!rewardCheck.hardOk && rewardCheck.hardMessage) {
+            return Response.json({ error: rewardCheck.hardMessage }, { status: 400 })
         }
 
         const { data, error } = await supabase.rpc('create_survey', {
@@ -70,15 +65,15 @@ export async function POST(req: Request) {
             return Response.json({ error: error.message }, { status: 400 })
         }
 
-        const surveyId = Array.isArray(data) ? data[0] : data;
+        const surveyId = Array.isArray(data) ? data[0] : data
         if (surveyId) {
-            await logSurveyEvent(supabase, surveyId, 'created');
+            await logSurveyEvent(supabase, surveyId, 'created')
         }
 
         return Response.json({
             success: true,
             survey_id: surveyId,
-            min_required: rewardCheck.minRequired,
+            min_required: rewardCheck.min_required,
             recommended: rewardCheck.recommended,
             ...(rewardCheck.softWarning
                 ? { reward_warning: rewardCheck.softWarning }

@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { getMySurveys, getSurveyQuestions, getSurveyRewardValidation, getSurveyInsight } from '@/services/survey.service'
 import { generateSurveyInsight } from '@/lib/survey-insight'
 import { getEstimationSummary } from '@/lib/survey-estimation'
+import { computeRewardRecommendation, type QuestionLike } from '@/lib/reward-recommendation'
 import QuestionItem from '@/components/creator/QuestionItem'
 import { Question } from '@/types/survey.types'
 
@@ -79,44 +80,35 @@ export default function SurveyDetailPage() {
             setRewardEval(null)
             return
         }
-        let cancelled = false
-            ; (async () => {
-                try {
-                    const json = await getSurveyRewardValidation(surveyId)
-                    if (!cancelled && json.data) {
-                        let calculatedRecommended = 0;
-                        if (questions.length > 0) {
-                            calculatedRecommended = questions.reduce((sum: number, q: any) => {
-                                const isEssay = q.question_type === 'text' || q.question_type === 'textarea';
-                                return sum + (isEssay ? 200 : 100);
-                            }, 0);
-                        } else {
-                            calculatedRecommended = 200; // Base if no questions
-                        }
-                        
-                        const calculatedMin = Math.floor(calculatedRecommended / 2);
-                        const currentReward = survey?.reward_per_response || 0;
+        if (!survey || questions.length === 0) return
 
-                        setRewardEval({
-                            hardOk: currentReward >= calculatedMin,
-                            softOk: currentReward >= calculatedRecommended,
-                            minRequired: calculatedMin,
-                            recommended: calculatedRecommended,
-                            rewardPerResponse: json.data.rewardPerResponse,
-                            questionCount: questions.length,
-                            estimatedMinutesTotal: json.data.estimatedMinutesTotal,
-                            hardMessage: currentReward < calculatedMin ? 'Reward terlalu rendah' : json.data.hardMessage,
-                            softWarning: currentReward < calculatedRecommended ? 'Reward di bawah rekomendasi' : json.data.softWarning,
-                        })
-                    }
-                } catch {
-                    if (!cancelled) setRewardEval(null)
-                }
-            })()
-        return () => {
-            cancelled = true
-        }
-    }, [surveyId, survey?.status, survey?.reward_per_response, questions])
+        const questionList: QuestionLike[] = questions.map((q: any) => ({
+            question_type: q.question_type,
+        }))
+
+        const { min_required, recommended } = computeRewardRecommendation(
+            Number(survey.total_responses) || 1,
+            questionList
+        )
+
+        const currentReward = Number(survey.reward_per_response) || 0
+
+        setRewardEval({
+            hardOk: currentReward >= min_required,
+            softOk: currentReward >= recommended,
+            minRequired: min_required,
+            recommended,
+            rewardPerResponse: currentReward,
+            questionCount: questions.length,
+            estimatedMinutesTotal: questions.length * 1.5,
+            hardMessage: currentReward < min_required
+                ? `Minimum reward adalah Rp ${min_required.toLocaleString('id-ID')} untuk survey ini.`
+                : undefined,
+            softWarning: currentReward >= min_required && currentReward < recommended
+                ? 'Reward di bawah rekomendasi platform.'
+                : undefined,
+        })
+    }, [surveyId, survey?.status, survey?.reward_per_response, survey?.total_responses, questions])
 
     useEffect(() => {
         if (!surveyId || survey?.status !== 'completed') {
