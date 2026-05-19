@@ -27,7 +27,7 @@ export default function ResponderSidebar() {
   }
 
   return (
-    <aside className="w-full border-b border-gray-200 bg-white px-4 py-4 md:min-h-[calc(100vh-4rem)] md:w-64 md:border-b-0 md:border-r md:px-5">
+    <aside className="w-full border-b border-gray-200 bg-white px-4 py-4 md:sticky md:top-16 md:h-[calc(100vh-4rem)] md:w-64 md:overflow-y-auto md:border-b-0 md:border-r md:px-5">
       <nav className="grid gap-2">
         {navItems.map((item) => (
           <Link key={item.href} href={item.href} className={itemClass(item.href)}>
