@@ -6,6 +6,8 @@ import { usePathname } from 'next/navigation'
 const navItems = [
   { href: '/responder', label: 'Riwayat Respons' },
   { href: '/responder/explore', label: 'Cari Survey' },
+  { href: '/responder/wallet', label: 'Wallet' },
+  { href: '/responder/profile', label: 'Profile' },
 ]
 
 export default function ResponderSidebar() {
