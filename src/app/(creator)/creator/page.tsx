@@ -35,7 +35,7 @@ export default function CreatorPage() {
   }, [])
 
   return (
-    <section className="mx-auto w-full max-w-4xl">
+    <section className="mx-auto w-full max-w-[1600px]">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">My Surveys</h1>
@@ -80,7 +80,7 @@ export default function CreatorPage() {
       )}
 
       {!loading && !error && data.length > 0 && (
-        <div className="space-y-4">
+        <div className="grid gap-4 xl:grid-cols-2">
           {data.map((survey) => (
             <SurveyCard key={survey.id} survey={survey} />
           ))}

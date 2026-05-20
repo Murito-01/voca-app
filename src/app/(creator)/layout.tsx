@@ -31,7 +31,7 @@ export default function CreatorLayout({ children }: { children: React.ReactNode 
       <CreatorTopBar walletBalance={walletBalance} />
       <div className="md:flex">
         <CreatorSidebar />
-        <main className="flex-1 p-6 md:p-8">
+        <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
           {children}
         </main>
       </div>

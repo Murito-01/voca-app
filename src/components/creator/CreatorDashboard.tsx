@@ -32,8 +32,8 @@ export default function CreatorDashboard() {
             try {
                 const response = await getCreatorDashboardMetrics();
                 setMetrics(response.data);
-            } catch (err: any) {
-                setError(err.message || 'Gagal memuat metrik');
+            } catch (err: unknown) {
+                setError(err instanceof Error ? err.message : 'Gagal memuat metrik');
             } finally {
                 setLoading(false);
             }
@@ -44,12 +44,14 @@ export default function CreatorDashboard() {
 
     if (loading) {
         return (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6 animate-pulse">
-                <div className="h-6 bg-gray-200 rounded w-1/4 mb-6"></div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div className="h-24 bg-gray-100 rounded-xl"></div>
-                    <div className="h-24 bg-gray-100 rounded-xl"></div>
-                    <div className="h-24 bg-gray-100 rounded-xl"></div>
+            <div className="mb-6 animate-pulse rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+                <div className="mb-4 h-5 w-48 rounded bg-gray-200"></div>
+                <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+                    <div className="h-20 rounded-lg bg-gray-100"></div>
+                    <div className="h-20 rounded-lg bg-gray-100"></div>
+                    <div className="h-20 rounded-lg bg-gray-100"></div>
+                    <div className="h-20 rounded-lg bg-gray-100"></div>
+                    <div className="h-20 rounded-lg bg-gray-100"></div>
                 </div>
             </div>
         );
@@ -57,8 +59,8 @@ export default function CreatorDashboard() {
 
     if (error) {
         return (
-            <div className="bg-red-50 text-red-700 p-4 rounded-xl mb-6 text-sm border border-red-100">
-                ⚠️ {error}
+            <div className="mb-6 rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">
+                {error}
             </div>
         );
     }
@@ -105,67 +107,45 @@ export default function CreatorDashboard() {
     const cannotPredictTimeLeft = estimatedMinutesLeft === null;
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-            <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <span>📊</span> Dashboard Overview
+        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+            <h2 className="mb-4 text-lg font-bold text-gray-900">
+                Dashboard Overview
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
                 {/* Budget Total */}
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200 shadow-sm">
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
                     <p className="text-blue-700 text-xs font-semibold uppercase tracking-wider mb-1">Total Budget</p>
-                    <p className="text-2xl font-bold text-blue-900">{formatCurrency(metrics.budget.total)}</p>
+                    <p className="truncate text-2xl font-bold text-blue-900">{formatCurrency(metrics.budget.total)}</p>
                 </div>
 
                 {/* Used Budget */}
-                <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-xl border border-orange-200 shadow-sm">
+                <div className="rounded-lg border border-orange-200 bg-orange-50 p-4">
                     <p className="text-orange-700 text-xs font-semibold uppercase tracking-wider mb-1">Used Budget</p>
-                    <p className="text-2xl font-bold text-orange-900">{formatCurrency(metrics.budget.used)}</p>
+                    <p className="truncate text-2xl font-bold text-orange-900">{formatCurrency(metrics.budget.used)}</p>
                 </div>
 
                 {/* Remaining / Locked Budget */}
-                <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200 shadow-sm">
+                <div className="rounded-lg border border-green-200 bg-green-50 p-4">
                     <p className="text-green-700 text-xs font-semibold uppercase tracking-wider mb-1">Locked Budget</p>
-                    <p className="text-2xl font-bold text-green-900">{formatCurrency(metrics.budget.remaining)}</p>
-                    <p className="text-[10px] text-green-600 mt-1 font-medium">Sisa dana di survey aktif</p>
+                    <p className="truncate text-2xl font-bold text-green-900">{formatCurrency(metrics.budget.remaining)}</p>
                 </div>
-            </div>
 
-            <div className="border-t border-gray-100 pt-5">
-                <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                    <span>👥</span> Kualitas Respons
-                </h3>
-                
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                        <p className="text-gray-500 text-xs font-medium mb-1">Total Responses</p>
-                        <p className="text-xl font-bold text-gray-900">{metrics.responses.total}</p>
-                    </div>
-                    
-                    <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-                        <p className="text-green-700 text-xs font-medium mb-1">Valid</p>
-                        <p className="text-xl font-bold text-green-800">{metrics.responses.valid}</p>
-                    </div>
-
-                    <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-                        <p className="text-yellow-700 text-xs font-medium mb-1">Low Quality</p>
-                        <p className="text-xl font-bold text-yellow-800">{metrics.responses.low_quality}</p>
-                    </div>
-
-                    <div className="bg-red-50 p-3 rounded-lg border border-red-200">
-                        <p className="text-red-700 text-xs font-medium mb-1">Rejected</p>
-                        <p className="text-xl font-bold text-red-800">{metrics.responses.rejected}</p>
-                    </div>
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-gray-500">Responses</p>
+                    <p className="text-2xl font-bold text-gray-900">{metrics.responses.total}</p>
+                    <p className="mt-1 text-xs text-gray-500">
+                        {metrics.responses.valid} valid · {metrics.responses.low_quality} low · {metrics.responses.rejected} rejected
+                    </p>
                 </div>
 
                 {/* Valid Rate */}
-                <div className="mt-4 flex items-center justify-between bg-gray-50 rounded-lg p-3 border border-gray-200">
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
                     <div>
-                        <p className="text-gray-800 font-semibold text-sm">Valid Rate</p>
-                        <p className="text-xs text-gray-500">Persentase respons valid dari total</p>
+                        <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-gray-500">Valid Rate</p>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className={`text-xl font-bold ${
+                        <span className={`text-2xl font-bold ${
                             metrics.responses.valid_rate >= 80 ? 'text-green-600' :
                             metrics.responses.valid_rate >= 50 ? 'text-yellow-600' : 'text-red-600'
                         }`}>
@@ -175,19 +155,14 @@ export default function CreatorDashboard() {
                 </div>
             </div>
 
-            <div className="border-t border-gray-100 mt-6 pt-5">
-                <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                    <span>🔥</span> Burn Rate
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                        <p className="text-orange-700 text-xs font-medium mb-1">Kecepatan Pengeluaran</p>
+            <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
+                    <div className="rounded-lg border border-orange-200 bg-orange-50 p-4">
+                        <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-orange-700">Burn Rate</p>
                         {hasNoSpendingActivity ? (
                             <p className="text-sm font-semibold text-orange-800">Belum ada aktivitas</p>
                         ) : (
                             <>
-                                <p className="text-xl font-bold text-orange-900">
+                                <p className="truncate text-xl font-bold text-orange-900">
                                     {formatCurrency(burnRatePerMinute)} / menit
                                 </p>
                                 <p className="text-[11px] text-orange-700 mt-1">
@@ -197,13 +172,13 @@ export default function CreatorDashboard() {
                         )}
                     </div>
 
-                    <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                        <p className="text-purple-700 text-xs font-medium mb-1">Estimasi Budget Habis</p>
+                    <div className="rounded-lg border border-purple-200 bg-purple-50 p-4">
+                        <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-purple-700">Estimasi Budget Habis</p>
                         {cannotPredictTimeLeft ? (
                             <p className="text-sm font-semibold text-purple-800">Tidak bisa diprediksi</p>
                         ) : (
                             <>
-                                <p className="text-xl font-bold text-purple-900">
+                                <p className="truncate text-xl font-bold text-purple-900">
                                     {formatDuration(Number(estimatedMinutesLeft))}
                                 </p>
                                 <p className="text-[11px] text-purple-700 mt-1">
@@ -212,7 +187,6 @@ export default function CreatorDashboard() {
                             </>
                         )}
                     </div>
-                </div>
             </div>
         </div>
     );
