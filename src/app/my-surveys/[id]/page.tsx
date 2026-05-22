@@ -3,12 +3,25 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { getMySurveys, getSurveyQuestions, getSurveyRewardValidation, getSurveyInsight } from '@/services/survey.service'
+import { getMySurveys, getSurveyQuestions, getSurveyInsight, getSurveyBurnRate } from '@/services/survey.service'
 import { generateSurveyInsight } from '@/lib/survey-insight'
 import { getEstimationSummary } from '@/lib/survey-estimation'
 import { computeRewardRecommendation, type QuestionLike } from '@/lib/reward-recommendation'
 import QuestionItem from '@/components/creator/QuestionItem'
 import { Question } from '@/types/survey.types'
+
+type SurveyBurnRate = {
+    completed_responses: number
+    remaining_responses: number
+    responses_per_minute: number
+    estimated_minutes_to_finish: number | null
+    has_enough_data: boolean
+    locked_budget: number
+    reward_per_response: number
+    total_spent: number
+    remaining_budget: number
+    budget_used_percent: number
+}
 
 export default function SurveyDetailPage() {
     const params = useParams()
@@ -44,6 +57,7 @@ export default function SurveyDetailPage() {
         softWarning?: string
     } | null>(null)
     const [insightData, setInsightData] = useState<any>(null)
+    const [burnRate, setBurnRate] = useState<SurveyBurnRate | null>(null)
 
     useEffect(() => {
         const fetchSurvey = async () => {
@@ -128,6 +142,25 @@ export default function SurveyDetailPage() {
             })()
         return () => { cancelled = true }
     }, [surveyId, survey?.status])
+
+    useEffect(() => {
+        if (!surveyId || !survey) return
+
+        let cancelled = false
+            ; (async () => {
+                try {
+                    const json = await getSurveyBurnRate(surveyId)
+                    if (!cancelled) {
+                        setBurnRate(json.data || null)
+                    }
+                } catch (err) {
+                    console.error('Failed to fetch burn rate:', err)
+                    if (!cancelled) setBurnRate(null)
+                }
+            })()
+
+        return () => { cancelled = true }
+    }, [surveyId, survey?.status, survey?.remaining_responses])
 
     const handleDeleteQuestion = async (questionId: string) => {
         if (!confirm('Apakah Anda yakin ingin menghapus pertanyaan ini?')) return;
@@ -505,22 +538,22 @@ export default function SurveyDetailPage() {
 
                             {/* Burn Rate Visualization UI */}
                             {(() => {
-                                const remaining = survey.remaining_responses;
                                 const total = survey.total_responses;
-                                const completed = total - remaining;
+                                const completed = burnRate?.completed_responses ?? Math.max(0, total - survey.remaining_responses);
+                                const remaining = burnRate?.remaining_responses ?? Math.max(0, total - completed);
                                 const progressPercent = total > 0 ? (completed / total) * 100 : 0;
                                 const progressStr = Math.round(progressPercent);
 
-                                const responses_per_minute = 2;
-                                const minutesToFinish = remaining / responses_per_minute;
-                                const hoursToFinish = minutesToFinish / 60;
+                                const responsesPerMinute = burnRate?.responses_per_minute ?? 0;
+                                const estimatedMinutesToFinish = burnRate?.estimated_minutes_to_finish ?? null;
+                                const hoursToFinish = estimatedMinutesToFinish !== null ? estimatedMinutesToFinish / 60 : null;
 
-                                const budgetTerpakai = completed * survey.reward_per_response;
-                                const totalBudget = total * survey.reward_per_response;
-                                const sisaBudget = remaining * survey.reward_per_response;
+                                const budgetTerpakai = burnRate?.total_spent ?? completed * survey.reward_per_response;
+                                const sisaBudget = burnRate?.remaining_budget ?? remaining * survey.reward_per_response;
+                                const totalBudget = budgetTerpakai + sisaBudget;
                                 const budgetTerpakaiPercent = totalBudget > 0 ? (budgetTerpakai / totalBudget) * 100 : 0;
 
-                                const isDataEnough = completed >= 5;
+                                const isDataEnough = burnRate?.has_enough_data ?? (completed >= 5 && responsesPerMinute > 0);
 
                                 return (
                                     <div className="space-y-4 font-mono mt-8">
@@ -550,16 +583,21 @@ export default function SurveyDetailPage() {
                                             </div>
                                         </div>
 
-                                        {/* Card 2: Estimasi Waktu */}
+                                        {/* Card 2: Time Estimation */}
                                         <div>
                                             <h3 className="text-sm font-bold text-gray-800 mb-2">Estimasi waktu</h3>
                                             <div className="bg-white border border-slate-200 rounded-xl p-4 text-slate-700 text-sm shadow-sm">
-                                                {!isDataEnough ? (
+                                                {responsesPerMinute <= 0 ? (
+                                                    <div className="flex items-center gap-2 text-slate-500">
+                                                        <span>⏱️</span> Belum ada aktivitas
+                                                    </div>
+                                                ) : !isDataEnough ? (
                                                     <div className="flex items-center gap-2 text-slate-500">
                                                         <span>⏱️</span> Belum cukup data untuk estimasi (butuh min 5 response)
                                                     </div>
                                                 ) : (
                                                     (() => {
+                                                        const safeHoursToFinish = hoursToFinish ?? 0;
                                                         const formatDynamicTime = (hours: number) => {
                                                             if (hours >= 24) {
                                                                 const d = Math.floor(hours / 24);
@@ -584,7 +622,7 @@ export default function SurveyDetailPage() {
                                                             }
                                                         };
 
-                                                        const timeText = formatDynamicTime(hoursToFinish);
+                                                        const timeText = formatDynamicTime(safeHoursToFinish);
 
                                                         return (
                                                             <>
@@ -598,13 +636,13 @@ export default function SurveyDetailPage() {
                                                                 <div className="mb-4">
                                                                     <p className="mb-2 font-medium text-slate-500">Status:</p>
                                                                     <div className="space-y-1.5 pl-1">
-                                                                        <p className={`flex items-center gap-2 ${hoursToFinish < 2 ? 'text-emerald-700 font-bold bg-emerald-50 py-1 px-2 rounded-md -ml-2' : 'text-slate-500'}`}>
+                                                                        <p className={`flex items-center gap-2 ${safeHoursToFinish < 2 ? 'text-emerald-700 font-bold bg-emerald-50 py-1 px-2 rounded-md -ml-2' : 'text-slate-500'}`}>
                                                                             <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block" /> Cepat ( kemungkinan selesai &lt; 2 jam )
                                                                         </p>
-                                                                        <p className={`flex items-center gap-2 ${(hoursToFinish >= 2 && hoursToFinish <= 6) ? 'text-amber-700 font-bold bg-amber-50 py-1 px-2 rounded-md -ml-2' : 'text-slate-500'}`}>
+                                                                        <p className={`flex items-center gap-2 ${(safeHoursToFinish >= 2 && safeHoursToFinish <= 6) ? 'text-amber-700 font-bold bg-amber-50 py-1 px-2 rounded-md -ml-2' : 'text-slate-500'}`}>
                                                                             <span className="w-3 h-3 rounded-full bg-amber-500 inline-block" /> Normal ( stabil )
                                                                         </p>
-                                                                        <p className={`flex items-center gap-2 ${hoursToFinish > 6 ? 'text-rose-700 font-bold bg-rose-50 py-1 px-2 rounded-md -ml-2' : 'text-slate-500'}`}>
+                                                                        <p className={`flex items-center gap-2 ${safeHoursToFinish > 6 ? 'text-rose-700 font-bold bg-rose-50 py-1 px-2 rounded-md -ml-2' : 'text-slate-500'}`}>
                                                                             <span className="w-3 h-3 rounded-full bg-rose-500 inline-block" /> Lambat ( risiko tidak selesai )
                                                                         </p>
                                                                     </div>
@@ -613,10 +651,10 @@ export default function SurveyDetailPage() {
                                                                 {/* Urgency */}
                                                                 <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
                                                                     <p className="font-semibold text-slate-800 flex items-center gap-2">
-                                                                        {hoursToFinish > 10 ? '⚠️' : '⏳'} Dengan kondisi sekarang:
+                                                                        {safeHoursToFinish > 10 ? '⚠️' : '⏳'} Dengan kondisi sekarang:
                                                                     </p>
-                                                                    <p className={`mt-1 ${hoursToFinish > 10 ? 'text-red-600 font-bold' : 'text-slate-700'}`}>
-                                                                        {hoursToFinish > 10 
+                                                                    <p className={`mt-1 ${safeHoursToFinish > 10 ? 'text-red-600 font-bold' : 'text-slate-700'}`}>
+                                                                        {safeHoursToFinish > 10
                                                                             ? `Survey kemungkinan butuh waktu lama` 
                                                                             : `Survey selesai dalam ~${timeText}`}
                                                                     </p>
@@ -651,7 +689,9 @@ export default function SurveyDetailPage() {
                                                     </div>
                                                     {isDataEnough && (
                                                         <div className="pt-2 border-t border-slate-100">
-                                                            <p className="text-slate-600">Burn rate: <span className="font-semibold text-slate-800">~{responses_per_minute} respon / menit</span></p>
+                                                            <p className="text-slate-600">
+                                                                Burn rate: <span className="font-semibold text-slate-800">~{responsesPerMinute.toFixed(2)} respon / menit</span>
+                                                            </p>
                                                         </div>
                                                     )}
                                                 </div>
@@ -675,7 +715,7 @@ export default function SurveyDetailPage() {
                                                         valid_rate: insightData?.rates?.valid,
                                                         low_quality_rate: insightData?.rates?.lowQuality,
                                                         isDataEnough,
-                                                        hoursToFinish
+                                                        hoursToFinish: hoursToFinish ?? undefined
                                                     });
 
                                                     const estimation = survey.status === 'draft' && rewardEval ? getEstimationSummary(
@@ -797,7 +837,6 @@ export default function SurveyDetailPage() {
                             })()}
 
 
-                            {/* Tombol Lihat Responses */}
                             {(survey.status === 'paused' || survey.status === 'completed') && (
                                 <div className="mt-6 pt-5 border-t">
                                     <Link
