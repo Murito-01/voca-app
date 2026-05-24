@@ -711,7 +711,7 @@ export default function SurveyDetailPage() {
                                                         status: survey.status,
                                                         reward: survey.reward_per_response,
                                                         recommended_reward: rewardEval?.recommended || 0,
-                                                        responses: survey.total_responses - survey.remaining_responses,
+                                                        responses: completed,
                                                         valid_rate: insightData?.rates?.valid,
                                                         low_quality_rate: insightData?.rates?.lowQuality,
                                                         isDataEnough,
@@ -724,28 +724,33 @@ export default function SurveyDetailPage() {
                                                         survey.total_responses
                                                     ) : null;
 
-                                                    if (!insight && !isDataEnough && survey.status !== 'draft') {
-                                                        return (
-                                                            <p className="text-slate-500 italic">
-                                                                Menunggu cukup response (min 5) untuk memberikan performa insight...
-                                                            </p>
-                                                        );
-                                                    }
-
                                                     if (!insight) return null;
 
                                                     const bgColor = insight.type === 'good' ? 'bg-emerald-50 border-emerald-100' :
-                                                                    insight.type === 'warning' ? 'bg-amber-50 border-amber-100' :
-                                                                    'bg-red-50 border-red-100';
+                                                                    insight.type === 'normal' ? 'bg-amber-50 border-amber-100' :
+                                                                    insight.type === 'warning' ? 'bg-orange-50 border-orange-100' :
+                                                                    insight.type === 'danger' ? 'bg-red-50 border-red-100' :
+                                                                    'bg-blue-50 border-blue-100';
                                                     const textColor = insight.type === 'good' ? 'text-emerald-800' :
-                                                                      insight.type === 'warning' ? 'text-amber-800' :
-                                                                      'text-red-800';
+                                                                      insight.type === 'normal' ? 'text-amber-800' :
+                                                                      insight.type === 'warning' ? 'text-orange-800' :
+                                                                      insight.type === 'danger' ? 'text-red-800' :
+                                                                      'text-blue-800';
                                                     const titleColor = insight.type === 'good' ? 'text-emerald-900' :
-                                                                       insight.type === 'warning' ? 'text-amber-900' :
-                                                                       'text-red-900';
+                                                                       insight.type === 'normal' ? 'text-amber-900' :
+                                                                       insight.type === 'warning' ? 'text-orange-900' :
+                                                                       insight.type === 'danger' ? 'text-red-900' :
+                                                                       'text-blue-900';
                                                     const subTextColor = insight.type === 'good' ? 'text-emerald-700' :
-                                                                         insight.type === 'warning' ? 'text-amber-700' :
-                                                                         'text-red-700';
+                                                                         insight.type === 'normal' ? 'text-amber-700' :
+                                                                         insight.type === 'warning' ? 'text-orange-700' :
+                                                                         insight.type === 'danger' ? 'text-red-700' :
+                                                                         'text-blue-700';
+                                                    const insightIcon = insight.type === 'good' ? '🟢' :
+                                                                        insight.type === 'normal' ? '🟡' :
+                                                                        insight.type === 'danger' ? '🔴' :
+                                                                        insight.type === 'warning' ? '⚠️' :
+                                                                        '💡';
 
                                                     return (
                                                         <div className={`border rounded-lg p-3 ${bgColor}`}>
@@ -773,11 +778,17 @@ export default function SurveyDetailPage() {
                                                                 <p className={`font-semibold ${textColor} mb-2`}>Karena reward &lt; rekomendasi final:</p>
                                                             )}
                                                             <p className={`font-bold text-base ${titleColor}`}>
-                                                                {insight.type === 'good' ? '✅' : '⚠️'} {insight.title}
+                                                                {insightIcon} {insight.title}
                                                             </p>
                                                             <p className={`${textColor} mt-1`}>{insight.message}</p>
                                                             {insight.suggestion && (
                                                                 <p className={`${subTextColor} mt-1`}>→ {insight.suggestion}</p>
+                                                            )}
+                                                            {insight.impact && (
+                                                                <div className={`mt-3 border-t border-black/10 pt-2 ${subTextColor}`}>
+                                                                    <p className="font-semibold">Dampak:</p>
+                                                                    <p>{insight.impact}</p>
+                                                                </div>
                                                             )}
 
                                                             {survey.status === 'draft' && insight.type === 'warning' && (

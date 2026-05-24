@@ -12,10 +12,11 @@ export interface SurveyInsightParams {
 }
 
 export interface SurveyInsightResult {
-  type: "good" | "warning" | "danger";
+  type: "info" | "good" | "normal" | "warning" | "danger";
   title: string;
   message: string;
   suggestion?: string;
+  impact?: string;
 }
 
 export function generateSurveyInsight(params: SurveyInsightParams): SurveyInsightResult | null {
@@ -49,30 +50,48 @@ export function generateSurveyInsight(params: SurveyInsightParams): SurveyInsigh
   }
 
   if (status === 'active') {
-    if (!isDataEnough) {
-      return null;
+    if (!isDataEnough || hoursToFinish === undefined) {
+      return {
+        type: "info",
+        title: "Belum cukup data",
+        message: responses > 0
+          ? "Menunggu beberapa response tambahan agar pola performa lebih terbaca"
+          : "Menunggu responden pertama...",
+        suggestion: "Insight akan muncul setelah beberapa response masuk"
+      };
     }
     
-    if (hoursToFinish !== undefined && hoursToFinish < 2) {
-      return {
-        type: "good",
-        title: "Survey berjalan sangat cepat",
-        message: "Reward cukup menarik",
-        suggestion: "Tidak perlu perubahan"
-      };
-    } else if (hoursToFinish !== undefined && hoursToFinish <= 6) {
+    if (hoursToFinish < 2) {
       return {
         type: "good",
         title: "Survey berjalan stabil",
-        message: "Kecepatan wajar",
-        suggestion: "Pantau secara berkala"
+        message: "Response masuk dengan cepat dan konsisten",
+        suggestion: "Reward menarik dan response lancar",
+        impact: "Survey berpeluang selesai lebih cepat dari estimasi."
       };
-    } else {
+    } else if (hoursToFinish <= 6) {
+      return {
+        type: "normal",
+        title: "Survey berjalan normal",
+        message: "Response masuk secara konsisten",
+        suggestion: "Tidak ada indikasi masalah saat ini",
+        impact: "Survey masih berada dalam ritme penyelesaian yang wajar."
+      };
+    } else if (hoursToFinish <= 10) {
       return {
         type: "warning",
         title: "Survey berjalan lambat",
-        message: "Kecepatan di bawah ekspektasi",
-        suggestion: "Pertimbangkan menambah reward"
+        message: "Response masuk lebih lambat dari estimasi",
+        suggestion: "Kemungkinan reward kurang menarik",
+        impact: "Survey mungkin membutuhkan waktu lebih lama untuk selesai."
+      };
+    } else {
+      return {
+        type: "danger",
+        title: "Survey hampir tidak bergerak",
+        message: "Sangat sedikit response yang masuk",
+        suggestion: "Kemungkinan reward terlalu rendah atau target terlalu sempit",
+        impact: "Survey berisiko membutuhkan waktu jauh lebih lama untuk selesai."
       };
     }
   }
