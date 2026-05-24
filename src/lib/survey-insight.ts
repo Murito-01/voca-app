@@ -13,6 +13,7 @@ export interface SurveyInsightParams {
 
 export interface SurveyInsightResult {
   type: "info" | "good" | "normal" | "warning" | "danger";
+  confidence?: "early" | "reliable";
   title: string;
   message: string;
   suggestion?: string;
@@ -50,48 +51,56 @@ export function generateSurveyInsight(params: SurveyInsightParams): SurveyInsigh
   }
 
   if (status === 'active') {
-    if (!isDataEnough || hoursToFinish === undefined) {
-      return {
-        type: "info",
-        title: "Belum cukup data",
-        message: responses > 0
-          ? "Menunggu beberapa response tambahan agar pola performa lebih terbaca"
-          : "Menunggu responden pertama...",
-        suggestion: "Insight akan muncul setelah beberapa response masuk"
-      };
+    if (responses < 5 || !isDataEnough || hoursToFinish === undefined) {
+      return null;
     }
+
+    const confidence = responses <= 10 ? "early" : "reliable";
+    const confidencePrefix = confidence === "early" ? "Early insight" : "Reliable insight";
     
     if (hoursToFinish < 2) {
       return {
         type: "good",
-        title: "Survey berjalan stabil",
+        confidence,
+        title: `${confidencePrefix}: Survey berjalan stabil`,
         message: "Response masuk dengan cepat dan konsisten",
         suggestion: "Reward menarik dan response lancar",
-        impact: "Survey berpeluang selesai lebih cepat dari estimasi."
+        impact: confidence === "early"
+          ? "Arah awal terlihat positif, tetapi pola masih bisa berubah saat response bertambah."
+          : "Survey berpeluang selesai lebih cepat dari estimasi."
       };
     } else if (hoursToFinish <= 6) {
       return {
         type: "normal",
-        title: "Survey berjalan normal",
+        confidence,
+        title: `${confidencePrefix}: Survey berjalan normal`,
         message: "Response masuk secara konsisten",
         suggestion: "Tidak ada indikasi masalah saat ini",
-        impact: "Survey masih berada dalam ritme penyelesaian yang wajar."
+        impact: confidence === "early"
+          ? "Sinyal awal terlihat aman, tetapi kesimpulan belum sekuat data yang lebih banyak."
+          : "Survey masih berada dalam ritme penyelesaian yang wajar."
       };
     } else if (hoursToFinish <= 10) {
       return {
         type: "warning",
-        title: "Survey berjalan lambat",
+        confidence,
+        title: `${confidencePrefix}: Survey berjalan lambat`,
         message: "Response masuk lebih lambat dari estimasi",
         suggestion: "Kemungkinan reward kurang menarik",
-        impact: "Survey mungkin membutuhkan waktu lebih lama untuk selesai."
+        impact: confidence === "early"
+          ? "Ada sinyal awal perlambatan, tetapi perlu lebih banyak response untuk memastikan pola."
+          : "Survey mungkin membutuhkan waktu lebih lama untuk selesai."
       };
     } else {
       return {
         type: "danger",
-        title: "Survey hampir tidak bergerak",
+        confidence,
+        title: `${confidencePrefix}: Survey hampir tidak bergerak`,
         message: "Sangat sedikit response yang masuk",
         suggestion: "Kemungkinan reward terlalu rendah atau target terlalu sempit",
-        impact: "Survey berisiko membutuhkan waktu jauh lebih lama untuk selesai."
+        impact: confidence === "early"
+          ? "Sinyal awal kurang baik, tetapi belum cukup kuat untuk disimpulkan sebagai pola final."
+          : "Survey berisiko membutuhkan waktu jauh lebih lama untuk selesai."
       };
     }
   }

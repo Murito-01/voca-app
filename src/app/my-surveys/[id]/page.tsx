@@ -703,7 +703,7 @@ export default function SurveyDetailPage() {
                                             <h3 className="text-sm font-bold text-gray-800 mb-2">Insight</h3>
                                             <div className="bg-white border border-slate-200 rounded-xl p-4 text-slate-700 text-sm shadow-sm">
                                                 <div className="flex items-center gap-2 font-bold text-indigo-900 mb-3 border-b border-slate-100 pb-2">
-                                                    <span>💡</span> Evaluasi & Insight
+                                                    <span>📊</span> Evaluasi & Insight
                                                 </div>
 
                                                 {(() => {
@@ -724,7 +724,17 @@ export default function SurveyDetailPage() {
                                                         survey.total_responses
                                                     ) : null;
 
-                                                    if (!insight) return null;
+                                                    if (!insight) {
+                                                        if (survey.status === 'active' && completed < 5) {
+                                                            return (
+                                                                <p className="text-slate-500 italic">
+                                                                    Belum ada insight. Minimal 5 response diperlukan agar pola awal bisa dibaca.
+                                                                </p>
+                                                            );
+                                                        }
+
+                                                        return null;
+                                                    }
 
                                                     const bgColor = insight.type === 'good' ? 'bg-emerald-50 border-emerald-100' :
                                                                     insight.type === 'normal' ? 'bg-amber-50 border-amber-100' :
