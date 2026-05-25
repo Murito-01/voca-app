@@ -15,14 +15,14 @@ export default function SurveyCard({ survey: s }: SurveyCardProps) {
     return (
         <Link
             href={`/my-surveys/${s.id}`}
-            className="block bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition-all cursor-pointer"
+            className="block min-w-0 rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:border-blue-300 hover:shadow-md sm:p-5"
         >
             {/* Title & Status */}
-            <div className="flex items-start justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900 leading-tight">
+            <div className="mb-4 flex items-start justify-between gap-4">
+                <h2 className="min-w-0 text-lg font-semibold leading-tight text-gray-900">
                     {s.title || 'Untitled Survey'}
                 </h2>
-                <div className="flex flex-col items-end gap-1 ml-3 shrink-0">
+                <div className="flex shrink-0 flex-col items-end gap-1 sm:flex-row">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         s.status === 'active' ? 'bg-green-100 text-green-800' :
                         s.status === 'paused' ? 'bg-yellow-100 text-yellow-800' :
@@ -45,7 +45,7 @@ export default function SurveyCard({ survey: s }: SurveyCardProps) {
 
             {/* Progress */}
             <div className="mb-4">
-                <div className="flex justify-between items-center mb-1.5">
+                <div className="mb-1.5 flex items-center justify-between gap-3">
                     <span className="text-sm text-gray-600 font-medium">
                         Progress Responden
                     </span>
@@ -63,8 +63,8 @@ export default function SurveyCard({ survey: s }: SurveyCardProps) {
             </div>
 
             {/* Stats Row */}
-            <div className="grid grid-cols-3 gap-3 pt-3 border-t border-gray-100">
-                <div>
+            <div className="grid grid-cols-1 gap-3 border-t border-gray-100 pt-3 sm:grid-cols-3">
+                <div className="min-w-0">
                     <p className="text-xs text-gray-500 mb-0.5">Reward/Responden</p>
                     <p className="text-sm font-semibold text-blue-600">
                         {new Intl.NumberFormat('id-ID', {
@@ -74,13 +74,13 @@ export default function SurveyCard({ survey: s }: SurveyCardProps) {
                         }).format(s.reward_per_response)}
                     </p>
                 </div>
-                <div>
+                <div className="min-w-0">
                     <p className="text-xs text-gray-500 mb-0.5">Sisa Slot</p>
                     <p className="text-sm font-semibold text-gray-800">
                         {s.remaining_responses}
                     </p>
                 </div>
-                <div>
+                <div className="min-w-0">
                     <p className="text-xs text-gray-500 mb-0.5">Total Dikeluarkan</p>
                     <p className="text-sm font-semibold text-gray-800">
                         {new Intl.NumberFormat('id-ID', {

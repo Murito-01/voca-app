@@ -93,16 +93,16 @@ export default function CreateSurveyPage() {
             setTimeout(() => {
                 router.push(`/my-surveys/${data.survey_id}`)
             }, 1500)
-        } catch (err: any) {
+        } catch (err: unknown) {
             setIsError(true)
-            setMessage(err.message || 'Terjadi kesalahan. Coba lagi.')
+            setMessage(err instanceof Error ? err.message : 'Terjadi kesalahan. Coba lagi.')
         }
 
         setLoading(false)
     }
 
     return (
-        <div className="max-w-xl mx-auto">
+        <div className="mx-auto w-full max-w-4xl">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">Buat Survey Baru</h1>
                 <p className="text-gray-500 text-sm mb-8">
@@ -110,9 +110,9 @@ export default function CreateSurveyPage() {
                 </p>
 
                 {/* Form */}
-                <div className="space-y-5" suppressHydrationWarning>
+                <div className="grid gap-5 lg:grid-cols-2" suppressHydrationWarning>
                     {/* Title */}
-                    <div>
+                    <div className="lg:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Judul Survey <span className="text-red-500">*</span>
                         </label>
@@ -126,7 +126,7 @@ export default function CreateSurveyPage() {
                     </div>
 
                     {/* Description */}
-                    <div>
+                    <div className="lg:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Deskripsi Survey <span className="text-gray-400 font-normal">(Opsional)</span>
                         </label>
@@ -216,7 +216,7 @@ export default function CreateSurveyPage() {
                     </div>
 
                     {/* Mode Picker */}
-                    <div>
+                    <div className="lg:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Mode Pengumpulan Responden <span className="text-red-500">*</span>
                         </label>
@@ -296,7 +296,7 @@ export default function CreateSurveyPage() {
                     </div>
 
                     {/* Total Budget Info */}
-                    <div className={`border rounded-lg p-4 ${responseMode === 'extended' ? 'bg-purple-50 border-purple-100' : 'bg-blue-50 border-blue-100'}`}>
+                    <div className={`border rounded-lg p-4 lg:col-span-2 ${responseMode === 'extended' ? 'bg-purple-50 border-purple-100' : 'bg-blue-50 border-blue-100'}`}>
                         <p className={`text-sm font-medium ${responseMode === 'extended' ? 'text-purple-700' : 'text-blue-700'}`}>
                             Total Budget yang Dibutuhkan
                         </p>
@@ -316,7 +316,7 @@ export default function CreateSurveyPage() {
 
                     {/* Smart Budget Suggestion */}
                     {budgetSuggestion && (
-                        <div className={`rounded-xl border p-4 ${
+                        <div className={`rounded-xl border p-4 lg:col-span-2 ${
                             budgetSuggestion.sufficient
                                 ? 'bg-green-50 border-green-200'
                                 : 'bg-red-50 border-red-200'
@@ -385,7 +385,7 @@ export default function CreateSurveyPage() {
 
                     {/* Estimation */}
                     {estimation && (
-                        <div className="border border-gray-200 rounded-xl p-5 bg-gradient-to-br from-gray-50 to-white shadow-sm">
+                            <div className="border border-gray-200 rounded-xl p-5 bg-gradient-to-br from-gray-50 to-white shadow-sm lg:col-span-2">
                             <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
                                 <span>📊</span> Estimasi Hasil Survey
                             </h3>
@@ -494,10 +494,10 @@ export default function CreateSurveyPage() {
                     )}
 
                     {/* Submit Button */}
-                    <button
-                        onClick={handleSubmit}
-                        disabled={loading}
-                        className={`w-full py-3 px-6 rounded-lg font-semibold text-white transition-all duration-200 ${
+                        <button
+                            onClick={handleSubmit}
+                            disabled={loading}
+                            className={`w-full py-3 px-6 rounded-lg font-semibold text-white transition-all duration-200 lg:col-span-2 ${
                             loading
                                 ? 'bg-blue-400 cursor-not-allowed'
                                 : 'bg-blue-600 hover:bg-blue-700 active:scale-95 shadow-md hover:shadow-lg'
@@ -518,7 +518,7 @@ export default function CreateSurveyPage() {
 
                     {/* Soft Warning Banner */}
                     {rewardWarning && (
-                        <div className="rounded-lg px-4 py-3 text-sm font-medium bg-amber-50 text-amber-900 border border-amber-200 flex gap-2">
+                            <div className="rounded-lg px-4 py-3 text-sm font-medium bg-amber-50 text-amber-900 border border-amber-200 flex gap-2 lg:col-span-2">
                             <span className="shrink-0">⚠️</span>
                             <div>
                                 <p className="font-semibold">Insight Reward</p>
@@ -529,7 +529,7 @@ export default function CreateSurveyPage() {
 
                     {/* Feedback Message */}
                     {message && (
-                        <div className={`rounded-lg px-4 py-3 text-sm font-medium ${
+                            <div className={`rounded-lg px-4 py-3 text-sm font-medium lg:col-span-2 ${
                             isError
                                 ? 'bg-red-50 text-red-700 border border-red-100'
                                 : 'bg-green-50 text-green-700 border border-green-100'
