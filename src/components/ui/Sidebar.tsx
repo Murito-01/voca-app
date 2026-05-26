@@ -43,12 +43,6 @@ export default function Sidebar({ navItems, basePath }: SidebarProps) {
         ))}
       </nav>
 
-      <Link
-        href="/"
-        className="mt-6 inline-flex text-sm font-medium text-blue-600 hover:underline"
-      >
-        Back to Home
-      </Link>
     </aside>
   )
 }
