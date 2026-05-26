@@ -27,9 +27,9 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
 }
 
 function ReputationBadge({ score }: { score: number }) {
-  let label = 'Sangat Baik'
+  let label = 'Sempurna'
   let colorClass = 'bg-emerald-100 text-emerald-700 border-emerald-200'
-  let icon = '⭐'
+  let icon = '🏆'
 
   if (score < 50) {
     label = 'Rendah'
@@ -43,10 +43,6 @@ function ReputationBadge({ score }: { score: number }) {
     label = 'Baik'
     colorClass = 'bg-blue-100 text-blue-700 border-blue-200'
     icon = '✅'
-  } else if (score > 120) {
-    label = 'Luar Biasa'
-    colorClass = 'bg-purple-100 text-purple-700 border-purple-200'
-    icon = '🏆'
   }
 
   return (
@@ -173,21 +169,28 @@ export default function ProfilePageContent() {
   // ─── Skeleton Loading ────────────────────────────────────
   if (loading) {
     return (
-      <section className="mx-auto w-full max-w-2xl">
+      <section className="mx-auto w-full max-w-6xl">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
           <p className="text-sm text-gray-500">Kelola informasi profil dan akunmu.</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-sm animate-pulse space-y-5">
-          <div className="h-5 w-48 bg-gray-200 rounded" />
-          <div className="grid grid-cols-2 gap-4">
-            <div className="h-10 bg-gray-100 rounded-lg" />
-            <div className="h-10 bg-gray-100 rounded-lg" />
-            <div className="h-10 bg-gray-100 rounded-lg" />
-            <div className="h-10 bg-gray-100 rounded-lg" />
+        <div className="lg:grid lg:grid-cols-3 lg:gap-6 space-y-6 lg:space-y-0">
+          <div className="lg:col-span-2 rounded-xl border border-gray-200 bg-white p-6 shadow-sm animate-pulse space-y-5">
+            <div className="h-5 w-48 bg-gray-200 rounded" />
+            <div className="space-y-4">
+              <div className="h-10 bg-gray-100 rounded-lg" />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="h-10 bg-gray-100 rounded-lg" />
+                <div className="h-10 bg-gray-100 rounded-lg" />
+              </div>
+              <div className="h-10 bg-gray-100 rounded-lg" />
+            </div>
+            <div className="h-10 bg-gray-200 rounded-lg w-32 ml-auto" />
           </div>
-          <div className="h-10 bg-gray-100 rounded-lg" />
-          <div className="h-10 bg-gray-200 rounded-lg" />
+          <div className="lg:col-span-1 space-y-4">
+            <div className="h-28 rounded-xl bg-gray-100 animate-pulse" />
+            <div className="h-44 rounded-xl bg-gray-100 animate-pulse" />
+          </div>
         </div>
       </section>
     )
@@ -196,7 +199,7 @@ export default function ProfilePageContent() {
   // ─── Error State ────────────────────────────────────────
   if (error && !profile) {
     return (
-      <section className="mx-auto w-full max-w-2xl">
+      <section className="mx-auto w-full max-w-6xl">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
           <p className="text-sm text-gray-500">Kelola informasi profil dan akunmu.</p>
@@ -215,167 +218,174 @@ export default function ProfilePageContent() {
   }
 
   return (
-    <section className="mx-auto w-full max-w-2xl">
+    <section className="mx-auto w-full max-w-6xl">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
         <p className="text-sm text-gray-500">Kelola informasi profil dan akunmu.</p>
       </div>
 
-      {/* Reputation Card */}
-      {profile && (
-        <div className="mb-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            {/* Avatar */}
-            <div className="h-14 w-14 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-2xl font-bold shadow-sm shrink-0 select-none">
-              {profile.email.charAt(0).toUpperCase()}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column: Profile Form Card */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+            <h2 className="text-base font-bold text-gray-900 mb-5 pb-4 border-b border-gray-100">
+              Informasi Profil
+            </h2>
+
+            <div className="space-y-5">
+              {/* Email (read-only) */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={profile?.email ?? ''}
+                  disabled
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-500 cursor-not-allowed"
+                />
+                <p className="mt-1 text-[11px] text-gray-400">Email tidak dapat diubah.</p>
+              </div>
+
+              {/* Gender & Age row */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                    Gender
+                  </label>
+                  <select
+                    value={gender}
+                    onChange={(e) => setGender(e.target.value as 'male' | 'female' | '')}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-shadow appearance-none cursor-pointer"
+                  >
+                    <option value="">Pilih gender...</option>
+                    <option value="male">Laki-laki</option>
+                    <option value="female">Perempuan</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                    Usia
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={120}
+                    placeholder="Masukkan usia..."
+                    value={age}
+                    onChange={(e) => setAge(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-shadow"
+                  />
+                </div>
+              </div>
+
+              {/* Job */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Pekerjaan
+                </label>
+                <input
+                  type="text"
+                  maxLength={100}
+                  placeholder="Masukkan pekerjaan..."
+                  value={job}
+                  onChange={(e) => setJob(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-shadow"
+                />
+              </div>
             </div>
-            <div>
-              <p className="font-semibold text-gray-900 text-sm truncate max-w-[200px]">{profile.email}</p>
-              <p className="text-xs text-gray-400 mt-0.5">Member sejak {formatDate(profile.created_at)}</p>
-              <div className="mt-1.5">
+
+            {/* Error / Success Feedback */}
+            {error && (
+              <div className="mt-5 rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
+            {successMsg && (
+              <div className="mt-5 rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 flex items-center gap-2">
+                <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+                {successMsg}
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-5 border-t border-gray-100">
+              {isDirty && (
+                <button
+                  onClick={handleReset}
+                  disabled={saving}
+                  className="px-4 py-2.5 text-sm font-semibold text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  Batalkan Perubahan
+                </button>
+              )}
+              <button
+                onClick={handleSave}
+                disabled={saving || !isDirty}
+                className={`flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-lg transition-all ${
+                  saving || !isDirty
+                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow-md active:scale-[0.98]'
+                }`}
+              >
+                {saving ? (
+                  <>
+                    <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Menyimpan...
+                  </>
+                ) : (
+                  'Simpan Perubahan'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Reputation & Info Cards */}
+        <div className="lg:col-span-1 space-y-6">
+          {/* Reputation Card */}
+          {profile && (
+            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm flex flex-col gap-4">
+              <div className="flex items-center gap-4">
+                {/* Avatar */}
+                <div className="h-14 w-14 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-2xl font-bold shadow-sm shrink-0 select-none">
+                  {profile.email.charAt(0).toUpperCase()}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-gray-900 text-sm truncate">{profile.email}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Member sejak {formatDate(profile.created_at)}</p>
+                </div>
+              </div>
+              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                <div>
+                  <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">Reputasi</p>
+                  <p className="text-3xl font-extrabold text-gray-900 leading-none mt-1">{profile.reputation_score}</p>
+                </div>
                 <ReputationBadge score={profile.reputation_score} />
               </div>
             </div>
-          </div>
-          <div className="text-right shrink-0">
-            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">Reputasi</p>
-            <p className="text-3xl font-extrabold text-gray-900 leading-none mt-0.5">{profile.reputation_score}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Profile Form Card */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-base font-bold text-gray-900 mb-5 pb-4 border-b border-gray-100">
-          Informasi Profil
-        </h2>
-
-        <div className="space-y-5">
-          {/* Email (read-only) */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-              Email
-            </label>
-            <input
-              type="email"
-              value={profile?.email ?? ''}
-              disabled
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-500 cursor-not-allowed"
-            />
-            <p className="mt-1 text-[11px] text-gray-400">Email tidak dapat diubah.</p>
-          </div>
-
-          {/* Gender & Age row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                Gender
-              </label>
-              <select
-                value={gender}
-                onChange={(e) => setGender(e.target.value as 'male' | 'female' | '')}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-shadow appearance-none cursor-pointer"
-              >
-                <option value="">Pilih gender...</option>
-                <option value="male">Laki-laki</option>
-                <option value="female">Perempuan</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                Usia
-              </label>
-              <input
-                type="number"
-                min={1}
-                max={120}
-                placeholder="Masukkan usia..."
-                value={age}
-                onChange={(e) => setAge(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-shadow"
-              />
-            </div>
-          </div>
-
-          {/* Job */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-              Pekerjaan
-            </label>
-            <input
-              type="text"
-              maxLength={100}
-              placeholder="Masukkan pekerjaan..."
-              value={job}
-              onChange={(e) => setJob(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-shadow"
-            />
-          </div>
-        </div>
-
-        {/* Error / Success Feedback */}
-        {error && (
-          <div className="mt-5 rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </div>
-        )}
-
-        {successMsg && (
-          <div className="mt-5 rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 flex items-center gap-2">
-            <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-            </svg>
-            {successMsg}
-          </div>
-        )}
-
-        {/* Action Buttons */}
-        <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-5 border-t border-gray-100">
-          {isDirty && (
-            <button
-              onClick={handleReset}
-              disabled={saving}
-              className="px-4 py-2.5 text-sm font-semibold text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-            >
-              Batalkan Perubahan
-            </button>
           )}
-          <button
-            onClick={handleSave}
-            disabled={saving || !isDirty}
-            className={`flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-lg transition-all ${
-              saving || !isDirty
-                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow-md active:scale-[0.98]'
-            }`}
-          >
-            {saving ? (
-              <>
-                <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                Menyimpan...
-              </>
-            ) : (
-              'Simpan Perubahan'
-            )}
-          </button>
-        </div>
-      </div>
 
-      {/* Reputation Info */}
-      <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-800">
-        <p className="font-semibold mb-1 flex items-center gap-1.5">
-          <span>ℹ️</span> Tentang Skor Reputasi
-        </p>
-        <p className="text-xs leading-relaxed text-blue-700">
-          Skor reputasi dimulai dari <strong>100</strong> dan mencerminkan kualitas responmu.
-          Jawaban yang asal-asalan atau gagal attention check akan mengurangi skor.
-          Skor di bawah <strong>50</strong> berpotensi mengurangi reward yang kamu terima.
-          Pertahankan skor tinggi untuk mendapatkan bonus reward!
-        </p>
+          {/* Reputation Info */}
+          <div className="rounded-xl border border-blue-100 bg-blue-50 p-5 text-sm text-blue-800">
+            <p className="font-semibold mb-2 flex items-center gap-1.5 text-blue-900">
+              <span>ℹ️</span> Tentang Skor Reputasi
+            </p>
+            <p className="text-xs leading-relaxed text-blue-700">
+              Skor reputasi dimulai dari <strong>100</strong> dan mencerminkan kualitas responmu.
+              Jawaban yang asal-asalan atau gagal attention check akan mengurangi skor.
+              Skor di bawah <strong>50</strong> berpotensi mengurangi reward yang kamu terima.
+              Pertahankan skor tinggi untuk mendapatkan bonus reward!
+            </p>
+          </div>
+        </div>
       </div>
     </section>
   )

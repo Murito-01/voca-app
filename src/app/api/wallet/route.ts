@@ -33,6 +33,16 @@ export async function GET(req: Request) {
             return Response.json({ error: 'Wallet tidak ditemukan' }, { status: 404 })
         }
 
+        // Fetch user info for card personalization
+        const { data: dbUser, error: dbUserError } = await supabase
+            .from('users')
+            .select('email, reputation_score')
+            .eq('id', user.id)
+            .single()
+
+        const email = dbUser?.email ?? user.email ?? 'User Account'
+        const reputationScore = dbUser?.reputation_score ?? 100
+
         // Fetch 50 most recent transactions
         const { data: transactions, error: txError } = await supabase
             .from('transactions')
@@ -61,6 +71,8 @@ export async function GET(req: Request) {
             data: {
                 balance: Number(wallet.balance),
                 locked_balance: Number(wallet.locked_balance),
+                email,
+                reputation_score: Number(reputationScore),
                 stats: {
                     total_earned: totalEarned,
                     total_withdrawn: totalWithdrawn,
