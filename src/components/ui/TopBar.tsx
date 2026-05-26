@@ -63,7 +63,7 @@ export default function TopBar({ walletBalance }: { walletBalance: number | null
         <span className="min-w-0 text-lg font-bold text-gray-900 sm:text-xl hidden xs:inline">Voca</span>
       </Link>
 
-      {/* Segmented Workspace Switcher */}
+      {/* Segmented Workspace Switcher (Icon-based) */}
       <div className="relative flex items-center rounded-full bg-gray-100 p-0.5 border border-gray-200/80 ml-2 sm:ml-4">
         {/* Active capsule slider with a custom spring-wobble bezier curve */}
         <div
@@ -79,20 +79,30 @@ export default function TopBar({ walletBalance }: { walletBalance: number | null
 
         <button
           onClick={() => handleSwitchMode('creator')}
-          className={`relative z-10 w-20 sm:w-24 text-center rounded-full py-1 text-xs sm:text-sm font-bold transition-colors duration-200 select-none cursor-pointer ${
+          title="Creator Workspace"
+          aria-label="Switch to Creator Mode"
+          className={`relative z-10 w-10 sm:w-11 h-8 flex items-center justify-center rounded-full transition-colors duration-200 cursor-pointer select-none active:scale-90 ${
             activeMode === 'creator' ? 'text-white' : 'text-gray-500 hover:text-gray-800'
           }`}
         >
-          Creator
+          {/* Pen / Creation Icon */}
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
         </button>
 
         <button
           onClick={() => handleSwitchMode('responder')}
-          className={`relative z-10 w-20 sm:w-24 text-center rounded-full py-1 text-xs sm:text-sm font-bold transition-colors duration-200 select-none cursor-pointer ${
+          title="Respondent Workspace"
+          aria-label="Switch to Respondent Mode"
+          className={`relative z-10 w-10 sm:w-11 h-8 flex items-center justify-center rounded-full transition-colors duration-200 cursor-pointer select-none active:scale-90 ${
             activeMode === 'responder' ? 'text-white' : 'text-gray-500 hover:text-gray-800'
           }`}
         >
-          Respondent
+          {/* Checklist / Survey Answer Icon */}
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+          </svg>
         </button>
       </div>
 
