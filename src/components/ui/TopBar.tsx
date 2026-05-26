@@ -3,6 +3,8 @@
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
+import { User } from '@supabase/supabase-js'
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat('id-ID', {
@@ -19,10 +21,28 @@ export default function TopBar({ walletBalance }: { walletBalance: number | null
   const isCreatorRoute = pathname?.startsWith('/creator')
   const isResponderRoute = pathname?.startsWith('/responder')
 
+  const [user, setUser] = useState<User | null>(null)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+
   // Local state for instant visual feedback of the slide animation
   const [activeMode, setActiveMode] = useState<'creator' | 'responder'>(
     isCreatorRoute ? 'creator' : 'responder'
   )
+
+  // Fetch Supabase user session data on mount and listen to changes
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+    }
+    getUser()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
 
   // Synchronize state with route changes (e.g., initial load or backward/forward navigation)
   useEffect(() => {
@@ -111,8 +131,87 @@ export default function TopBar({ walletBalance }: { walletBalance: number | null
           Balance: {walletBalance === null ? '-' : formatCurrency(walletBalance)}
         </div>
 
-        <div className="h-9 w-9 shrink-0 rounded-full border border-gray-300 bg-gray-100 sm:h-10 sm:w-10 flex items-center justify-center text-xs font-bold text-gray-600" aria-label="Profile placeholder">
-          U
+        {/* Dynamic Profile Dropdown Wrapper */}
+        <div className="relative">
+          <button
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            aria-expanded={isDropdownOpen}
+            aria-haspopup="menu"
+            title="User Profile & Settings"
+            className="h-9 w-9 shrink-0 rounded-full border border-gray-300 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:ring-2 hover:ring-blue-100/50 sm:h-10 sm:w-10 flex items-center justify-center text-xs sm:text-sm font-extrabold cursor-pointer select-none transition-all duration-200"
+          >
+            {user?.email?.[0].toUpperCase() ?? 'U'}
+          </button>
+
+          {isDropdownOpen && (
+            <>
+              {/* Invisible overlay backing to close dropdown on outside clicks */}
+              <div 
+                className="fixed inset-0 z-20 cursor-default" 
+                onClick={() => setIsDropdownOpen(false)} 
+              />
+              
+              {/* Dropdown Menu Card */}
+              <div className="absolute right-0 mt-2.5 w-60 rounded-xl border border-gray-200/80 bg-white p-1.5 shadow-lg z-30 transform origin-top-right transition-all duration-200 animate-in fade-in slide-in-from-top-2">
+                
+                {/* User email context header */}
+                <div className="px-3.5 py-3 border-b border-gray-100 flex flex-col gap-0.5">
+                  <span className="text-[10px] font-bold text-gray-400 tracking-wider uppercase">Signed in as</span>
+                  <span className="text-sm font-semibold text-gray-800 truncate" title={user?.email ?? ''}>
+                    {user?.email ?? 'Loading active session...'}
+                  </span>
+                </div>
+
+                {/* Contextual Navigation Links */}
+                <div className="py-1">
+                  <Link
+                    href={isCreatorRoute ? '/creator/profile' : '/responder/profile'}
+                    onClick={() => setIsDropdownOpen(false)}
+                    className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    My Profile
+                  </Link>
+
+                  <Link
+                    href={isCreatorRoute ? '/creator/wallet' : '/responder/wallet'}
+                    onClick={() => setIsDropdownOpen(false)}
+                    className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                    My Wallet
+                  </Link>
+                </div>
+
+                {/* Sign Out Action */}
+                <div className="border-t border-gray-100 pt-1.5 pb-0.5">
+                  <button
+                    onClick={async () => {
+                      setIsDropdownOpen(false)
+                      const { error } = await supabase.auth.signOut()
+                      if (!error) {
+                        router.push('/')
+                        router.refresh()
+                      } else {
+                        console.error('Sign-out error:', error.message)
+                      }
+                    }}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 transition-colors text-left cursor-pointer"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    Sign Out
+                  </button>
+                </div>
+
+              </div>
+            </>
+          )}
         </div>
       </div>
     </header>
