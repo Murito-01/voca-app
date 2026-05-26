@@ -8,7 +8,7 @@ function formatCurrency(value: number) {
   }).format(value)
 }
 
-export default function CreatorTopBar({ walletBalance }: { walletBalance: number | null }) {
+export default function TopBar({ walletBalance }: { walletBalance: number | null }) {
   return (
     <header className="sticky top-0 z-20 flex min-h-16 items-center gap-3 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-4 md:px-6">
       <div className="h-9 w-9 shrink-0 rounded border border-gray-300 bg-white sm:h-10 sm:w-10" aria-label="Logo placeholder" />
