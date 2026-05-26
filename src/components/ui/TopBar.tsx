@@ -48,10 +48,10 @@ export default function TopBar({ walletBalance }: { walletBalance: number | null
     // Instantly trigger local slide animation and text color transition!
     setActiveMode(target)
 
-    // Defer the Next.js routing by 200ms to allow the wobbly animation to be seen in full
+    // Defer the Next.js routing by 500ms to allow the wobbly animation to be seen in full
     setTimeout(() => {
       router.push(target === 'creator' ? '/creator' : '/responder')
-    }, 200)
+    }, 500)
   }
 
   return (
