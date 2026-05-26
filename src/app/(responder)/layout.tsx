@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import ResponderTopBar from '@/components/responder/ResponderTopBar'
+import TopBar from '@/components/ui/TopBar'
 import ResponderSidebar from '@/components/responder/ResponderSidebar'
 import { getWalletBalance } from '@/services/survey.service'
 
@@ -28,7 +28,7 @@ export default function ResponderLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <ResponderTopBar walletBalance={walletBalance} />
+      <TopBar walletBalance={walletBalance} />
       <div className="md:flex">
         <ResponderSidebar />
         <main className="flex-1 p-6 md:p-8">
