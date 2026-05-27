@@ -60,16 +60,16 @@ export function questionCost(questionType: QuestionType): number {
  * and an array of questions (with their types).
  *
  * Formula:
- *   base = totalResponses * 100
+ *   base = 100
  *   question_cost = sum of per-question costs
  *   min_required = base + question_cost
  *   recommended  = min_required * 2
  */
 export function computeRewardRecommendation(
-    totalResponses: number,
+    totalResponses: number, // kept for signature compatibility
     questions: QuestionLike[]
 ): RewardRecommendation {
-    const base = Math.max(1, Math.floor(totalResponses)) * REWARD_TARIFF.PER_RESPONDENT
+    const base = REWARD_TARIFF.PER_RESPONDENT
     const perQuestionCost = questions.reduce((sum, q) => sum + questionCost(q.question_type), 0)
     const min_required = base + perQuestionCost
     const recommended = min_required * REWARD_TARIFF.RECOMMENDED_MULTIPLIER
@@ -133,7 +133,7 @@ export function evaluateReward(
 
     const hardMessage = hardOk
         ? undefined
-        : `Minimum reward adalah Rp ${min_required.toLocaleString('id-ID')} (${questions.length} pertanyaan, ${Math.floor(totalResponses)} responden). Kamu memasukkan Rp ${Math.floor(reward).toLocaleString('id-ID')}.`
+        : `Minimum reward adalah Rp ${min_required.toLocaleString('id-ID')} (${questions.length} pertanyaan). Kamu memasukkan Rp ${Math.floor(reward).toLocaleString('id-ID')}.`
 
     const softWarning =
         hardOk && !softOk
