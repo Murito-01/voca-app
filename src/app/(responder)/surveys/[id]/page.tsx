@@ -185,7 +185,7 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
 
   if (error || !survey) {
     return (
-      <div className="max-w-3xl mx-auto">
+      <div>
         <Link href="/responder/explore" className="text-blue-600 hover:underline mb-6 inline-block font-medium">
           &larr; Back to Surveys
         </Link>
@@ -198,7 +198,7 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div>
       <Link href="/responder/explore" className="text-blue-600 hover:underline mb-6 inline-block font-medium">
         &larr; Back to Surveys
       </Link>
