@@ -40,7 +40,7 @@ export default function ExploreSurveysPage() {
   }, [])
 
   return (
-    <section className="mx-auto w-full max-w-4xl">
+    <section className="mx-auto w-full max-w-6xl">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Cari Survey</h1>
         <p className="text-sm text-gray-500">Daftar survey yang tersedia untukmu.</p>
