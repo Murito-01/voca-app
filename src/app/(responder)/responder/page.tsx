@@ -36,6 +36,15 @@ export default function ResponderPage() {
   const draftResponses = data.filter((r) => r.status === 'draft')
   const submittedResponses = data.filter((r) => r.status !== 'draft')
 
+  const validCount = submittedResponses.filter((r: any) => r.status === 'valid').length
+  const lowQualityCount = submittedResponses.filter((r: any) => r.status === 'low_quality').length
+  const rejectedCount = submittedResponses.filter((r: any) => r.status === 'rejected').length
+  const totalEarnings = submittedResponses.reduce((acc: number, r: any) => acc + (r.reward_final || 0), 0)
+  const scored = submittedResponses.filter((r: any) => r.score !== null && r.score !== undefined)
+  const averageScore = scored.length > 0
+    ? scored.reduce((acc: number, r: any) => acc + r.score, 0) / scored.length
+    : null
+
   if (loading) {
     return (
       <section className="mx-auto w-full max-w-6xl animate-pulse">
@@ -104,7 +113,17 @@ export default function ResponderPage() {
         </Link>
       </div>
 
-      {!error && <ResponderDashboard />}
+      {!error && (
+        <ResponderDashboard
+          totalEarnings={totalEarnings}
+          totalCompleted={submittedResponses.length}
+          totalDraft={draftResponses.length}
+          validCount={validCount}
+          lowQualityCount={lowQualityCount}
+          rejectedCount={rejectedCount}
+          averageScore={averageScore}
+        />
+      )}
 
       {error && (
         <div className="rounded-lg border border-red-100 bg-red-50 p-4 text-sm text-red-700">
