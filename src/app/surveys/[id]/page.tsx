@@ -187,7 +187,7 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
     return (
       <div className="min-h-screen bg-gray-50 p-8">
         <div className="max-w-3xl mx-auto">
-          <Link href="/surveys" className="text-blue-600 hover:underline mb-6 inline-block font-medium">
+          <Link href="/responder/explore" className="text-blue-600 hover:underline mb-6 inline-block font-medium">
             &larr; Back to Surveys
           </Link>
           <div className="bg-red-50 text-red-600 p-6 rounded-lg border border-red-100 shadow-sm">
@@ -202,7 +202,7 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-3xl mx-auto">
-        <Link href="/surveys" className="text-blue-600 hover:underline mb-6 inline-block font-medium">
+        <Link href="/responder/explore" className="text-blue-600 hover:underline mb-6 inline-block font-medium">
           &larr; Back to Surveys
         </Link>
 
