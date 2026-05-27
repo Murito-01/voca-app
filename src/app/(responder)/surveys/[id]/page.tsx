@@ -435,6 +435,9 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
                       remaining_responses: Math.max(0, prev.remaining_responses - 1),
                       has_submitted: true
                     }));
+
+                    // Notify the layout to re-fetch the wallet balance from the API
+                    window.dispatchEvent(new CustomEvent('wallet-updated'));
                   }}
                 />
               </div>
