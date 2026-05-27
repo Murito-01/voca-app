@@ -8,22 +8,29 @@ import { getWalletBalance } from '@/services/survey.service'
 export default function ResponderLayout({ children }: { children: React.ReactNode }) {
   const [walletBalance, setWalletBalance] = useState<number | null>(null)
 
+  const fetchWallet = async () => {
+    try {
+      const wallet = await getWalletBalance()
+      setWalletBalance(wallet.balance)
+    } catch {
+      setWalletBalance(null)
+    }
+  }
+
   useEffect(() => {
-    let cancelled = false
-
-    const fetchWallet = async () => {
-      try {
-        const wallet = await getWalletBalance()
-        if (!cancelled) setWalletBalance(wallet.balance)
-      } catch {
-        if (!cancelled) setWalletBalance(null)
-      }
-    }
-
+    // Initial fetch
     fetchWallet()
+
+    // Listen for a custom event dispatched by the survey submission page.
+    // This is simpler and more reliable than a Supabase realtime subscription
+    // because it doesn't depend on REPLICA IDENTITY or any DB-level config.
+    const handleWalletUpdated = () => fetchWallet()
+    window.addEventListener('wallet-updated', handleWalletUpdated)
+
     return () => {
-      cancelled = true
+      window.removeEventListener('wallet-updated', handleWalletUpdated)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (

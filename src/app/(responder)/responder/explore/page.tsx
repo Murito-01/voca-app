@@ -39,26 +39,51 @@ export default function ExploreSurveysPage() {
     }
   }, [])
 
+  if (loading) {
+    return (
+      <section className="mx-auto w-full max-w-6xl animate-pulse">
+        {/* Header */}
+        <div className="mb-6 space-y-2">
+          <div className="h-7 w-28 rounded-lg bg-gray-200" />
+          <div className="h-4 w-56 rounded bg-gray-100" />
+        </div>
+
+        {/* Survey card skeletons */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+              <div className="mb-4 flex justify-between items-start">
+                <div className="h-5 w-14 rounded-full bg-green-100" />
+                <div className="h-4 w-10 rounded bg-gray-100" />
+              </div>
+              <div className="h-5 w-3/4 rounded bg-gray-200 mb-2" />
+              <div className="h-3 w-full rounded bg-gray-100 mb-1" />
+              <div className="h-3 w-5/6 rounded bg-gray-100" />
+              <div className="mt-4 pt-4 border-t border-gray-100 space-y-1.5">
+                <div className="h-3 w-32 rounded bg-gray-100" />
+                <div className="h-3 w-24 rounded bg-blue-100" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    )
+  }
+
   return (
-    <section className="mx-auto w-full max-w-4xl">
+    <section className="mx-auto w-full max-w-6xl">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Cari Survey</h1>
         <p className="text-sm text-gray-500">Daftar survey yang tersedia untukmu.</p>
       </div>
 
-      {loading && (
-        <div className="flex h-40 items-center justify-center">
-          <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-blue-600" />
-        </div>
-      )}
-
-      {!loading && error && (
+      {error && (
         <div className="rounded-lg border border-red-100 bg-red-50 p-4 text-sm text-red-700">
           {error}
         </div>
       )}
 
-      {!loading && !error && surveys.length === 0 && (
+      {!error && surveys.length === 0 && (
         <div className="rounded-xl border border-gray-200 bg-white p-10 text-center shadow-sm">
           <p className="text-lg font-semibold text-gray-700">Belum ada survey</p>
           <p className="mt-1 text-sm text-gray-500">
@@ -67,7 +92,7 @@ export default function ExploreSurveysPage() {
         </div>
       )}
 
-      {!loading && !error && surveys.length > 0 && (
+      {!error && surveys.length > 0 && (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {surveys.map((survey) => (
             <Link

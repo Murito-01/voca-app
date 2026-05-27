@@ -44,7 +44,7 @@ export default function ResponseDetail() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-100 p-6 flex justify-center items-center">
+            <div className="flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
             </div>
         )
@@ -52,14 +52,12 @@ export default function ResponseDetail() {
 
     if (error || !data) {
         return (
-            <div className="min-h-screen bg-gray-100 p-6">
-                <div className="max-w-2xl mx-auto">
-                    <Link href="/responder" className="text-blue-600 hover:underline text-sm font-medium mb-6 inline-block">
-                        ← Kembali ke Riwayat Respons
-                    </Link>
-                    <div className="bg-red-50 border border-red-100 text-red-700 rounded-lg p-4 text-sm">
-                        {error || 'Data tidak ditemukan'}
-                    </div>
+            <div>
+                <Link href="/responder" className="text-blue-600 hover:underline text-sm font-medium mb-6 inline-block">
+                    ← Kembali ke Riwayat Respons
+                </Link>
+                <div className="bg-red-50 border border-red-100 text-red-700 rounded-lg p-4 text-sm">
+                    {error || 'Data tidak ditemukan'}
                 </div>
             </div>
         )
@@ -80,8 +78,7 @@ export default function ResponseDetail() {
     ) as any[];
 
     return (
-        <div className="min-h-screen bg-gray-100 p-6">
-            <div className="max-w-3xl mx-auto">
+        <div>
                 <Link
                     href="/responder"
                     className="text-blue-600 hover:underline text-sm font-medium mb-6 inline-block"
@@ -254,7 +251,6 @@ export default function ResponseDetail() {
                         <p className="text-sm text-gray-500 italic">Tidak ada detail jawaban tersedia.</p>
                     )}
                 </div>
-            </div>
         </div>
     )
 }
