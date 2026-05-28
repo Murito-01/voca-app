@@ -42,7 +42,7 @@ export async function getSurveyById(id: string) {
   return response.json();
 }
 
-export async function createSurvey(payload: { title: string; description?: string; reward_per_response: number; total_responses: number; allow_extended_responses?: boolean }) {
+export async function createSurvey(payload: { title: string; description?: string; reward_per_response: number; total_responses: number; allow_extended_responses?: boolean; assumed_question_count?: number }) {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
 
