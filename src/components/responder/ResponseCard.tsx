@@ -64,6 +64,11 @@ export default function ResponseCard({ response: r, isDraft }: { response: any; 
           >
             {formatCurrency(isDraft ? r.reward : r.reward_final || 0)}
           </p>
+          {!isDraft && r.reward_final > 0 && (
+            <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">
+              Net: {formatCurrency(r.reward_final * 0.95)}
+            </p>
+          )}
           {!isDraft && r.reward_final !== r.reward && r.reward > 0 && (
             <p className="text-[10px] text-gray-400 line-through">
               {formatCurrency(r.reward)}

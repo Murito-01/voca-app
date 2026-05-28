@@ -293,9 +293,9 @@ export default function WalletPageContent() {
               accent="border-blue-200 bg-blue-50 text-blue-900"
             />
             <StatCard
-              label="Total Earned"
+              label="Total Earned (Net)"
               value={formatIDR(stats.total_earned)}
-              sub="Dari semua survey"
+              sub="Setelah biaya platform 5%"
               accent="border-emerald-200 bg-emerald-50 text-emerald-900"
             />
             <StatCard
