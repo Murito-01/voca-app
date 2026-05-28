@@ -40,6 +40,8 @@ export default function ResponderPage() {
   const lowQualityCount = submittedResponses.filter((r: any) => r.status === 'low_quality').length
   const rejectedCount = submittedResponses.filter((r: any) => r.status === 'rejected').length
   const totalEarnings = submittedResponses.reduce((acc: number, r: any) => acc + (r.reward_final || 0), 0)
+  const totalFee = totalEarnings * 0.05
+  const totalNet = totalEarnings - totalFee
   const scored = submittedResponses.filter((r: any) => r.score !== null && r.score !== undefined)
   const averageScore = scored.length > 0
     ? scored.reduce((acc: number, r: any) => acc + r.score, 0) / scored.length
@@ -116,6 +118,8 @@ export default function ResponderPage() {
       {!error && (
         <ResponderDashboard
           totalEarnings={totalEarnings}
+          totalFee={totalFee}
+          totalNet={totalNet}
           totalCompleted={submittedResponses.length}
           totalDraft={draftResponses.length}
           validCount={validCount}
