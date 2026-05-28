@@ -1,9 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import {
-    getRewardThresholdParamsFromEnv,
-    mergeRewardParamsFromAppConfig,
-    evaluateRewardThresholds
-} from '@/lib/reward-thresholds'
+import { evaluateReward, type QuestionLike } from '@/lib/reward-recommendation'
 
 export async function GET(
     req: Request,
@@ -29,7 +25,7 @@ export async function GET(
 
         const { data: survey, error: surveyError } = await supabase
             .from('surveys')
-            .select('id, creator_id, reward_per_response, status')
+            .select('id, creator_id, reward_per_response, total_responses, status')
             .eq('id', id)
             .single()
 
@@ -41,29 +37,37 @@ export async function GET(
             return Response.json({ error: 'Akses ditolak' }, { status: 403 })
         }
 
-        const { count, error: countError } = await supabase
+        const { data: questions, error: qError } = await supabase
             .from('questions')
-            .select('*', { count: 'exact', head: true })
+            .select('question_type')
             .eq('survey_id', id)
 
-        if (countError) {
-            return Response.json({ error: countError.message }, { status: 400 })
+        if (qError) {
+            return Response.json({ error: qError.message }, { status: 400 })
         }
 
-        const questionCount = count ?? 0
-        let p = getRewardThresholdParamsFromEnv()
-        p = await mergeRewardParamsFromAppConfig(supabase, p)
+        const questionList: QuestionLike[] = (questions ?? []).map((q: any) => ({
+            question_type: q.question_type,
+        }))
 
-        const evaluation = evaluateRewardThresholds(
+        const evaluation = evaluateReward(
             Number(survey.reward_per_response) || 0,
-            questionCount,
-            p
+            Number(survey.total_responses) || 1,
+            questionList
         )
 
         return Response.json({
             data: {
-                ...evaluation,
-                survey_status: survey.status
+                rewardPerResponse: evaluation.reward,
+                minRequired: evaluation.min_required,
+                recommended: evaluation.recommended,
+                hardOk: evaluation.hardOk,
+                softOk: evaluation.softOk,
+                hardMessage: evaluation.hardMessage,
+                softWarning: evaluation.softWarning,
+                questionCount: questionList.length,
+                breakdown: evaluation.breakdown,
+                survey_status: survey.status,
             }
         })
     } catch (err: any) {
