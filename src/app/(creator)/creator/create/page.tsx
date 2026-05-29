@@ -81,6 +81,7 @@ export default function CreateSurveyPage() {
                 reward_per_response: reward,
                 total_responses: total,
                 allow_extended_responses: responseMode === 'extended',
+                assumed_question_count: assumedQuestions,
             })
 
             setIsError(false)

@@ -44,9 +44,14 @@ export async function POST(req: Request) {
         }
 
         const totalResponses = Math.max(1, Number(body.total_responses) || 1)
+        const assumedQuestionCount = Math.max(0, Math.floor(Number(body.assumed_question_count) || 0))
 
-        // At create time there are no questions yet, so we validate with 0 questions
-        const rewardCheck = evaluateReward(rewardPerResponse, totalResponses, [] as QuestionLike[])
+        // Validate using the user's assumed question count
+        const fakeQuestions: QuestionLike[] = Array.from(
+            { length: assumedQuestionCount },
+            () => ({ question_type: 'multiple_choice' })
+        )
+        const rewardCheck = evaluateReward(rewardPerResponse, totalResponses, fakeQuestions)
 
         if (!rewardCheck.hardOk && rewardCheck.hardMessage) {
             return Response.json({ error: rewardCheck.hardMessage }, { status: 400 })
@@ -59,6 +64,7 @@ export async function POST(req: Request) {
             p_reward_per_response: rewardPerResponse,
             p_total_responses: body.total_responses,
             p_allow_extended_responses: body.allow_extended_responses ?? false,
+            p_assumed_question_count: assumedQuestionCount,
         })
 
         if (error) {
