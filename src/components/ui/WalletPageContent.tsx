@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
+import Script from 'next/script'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -33,13 +35,15 @@ interface WalletData {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-async function fetchWithAuth(url: string) {
+async function fetchWithAuth(url: string, options: RequestInit = {}) {
   const { data: { session } } = await supabase.auth.getSession()
   const token = session?.access_token
   return fetch(url, {
+    ...options,
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
     },
   })
 }
@@ -120,29 +124,89 @@ export default function WalletPageContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showWithdrawBanner, setShowWithdrawBanner] = useState(false)
+  const [topupAmount, setTopupAmount] = useState<string>('')
+  const [topupLoading, setTopupLoading] = useState(false)
+  const [topupError, setTopupError] = useState<string | null>(null)
+
+  const router = useRouter()
+
+  const loadWallet = async (showLoading = false) => {
+    if (showLoading) setLoading(true)
+    try {
+      const res = await fetchWithAuth('/api/wallet')
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || 'Gagal memuat data wallet')
+      }
+      const json = await res.json()
+      setData(json.data)
+      setError(null)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Terjadi kesalahan')
+    } finally {
+      if (showLoading) setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    let cancelled = false
+    loadWallet(true)
+  }, [])
 
-    const load = async () => {
-      try {
-        const res = await fetchWithAuth('/api/wallet')
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}))
-          throw new Error(err.error || 'Gagal memuat data wallet')
-        }
-        const json = await res.json()
-        if (!cancelled) setData(json.data)
-      } catch (err: unknown) {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'Terjadi kesalahan')
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
+  const handleTopup = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setTopupError(null)
+    const amount = parseInt(topupAmount, 10)
+    if (isNaN(amount) || amount < 10000) {
+      setTopupError('Nominal top up harus berupa angka bulat minimal Rp 10.000')
+      return
     }
 
-    load()
-    return () => { cancelled = true }
-  }, [])
+    setTopupLoading(true)
+    try {
+      const response = await fetchWithAuth('/api/payments/topup', {
+        method: 'POST',
+        body: JSON.stringify({ amount })
+      })
+
+      const result = await response.json()
+      if (!response.ok) {
+        throw new Error(result.error || 'Gagal membuat transaksi top up')
+      }
+
+      const snapToken = result.snap_token
+      if (!snapToken) {
+        throw new Error('Token transaksi tidak valid dari payment gateway')
+      }
+
+      // Open Snap Popup
+      if ((window as any).snap) {
+        (window as any).snap.pay(snapToken, {
+          onSuccess: () => {
+            router.refresh()
+            loadWallet(false)
+            setTopupAmount('')
+          },
+          onPending: () => {
+            router.refresh()
+            loadWallet(false)
+            setTopupAmount('')
+          },
+          onError: () => {
+            alert("Pembayaran gagal")
+          },
+          onClose: () => {
+            console.log("Popup ditutup")
+          }
+        })
+      } else {
+        throw new Error('Midtrans Snap SDK tidak berhasil dimuat')
+      }
+    } catch (err: any) {
+      setTopupError(err.message || 'Terjadi kesalahan saat memproses pembayaran')
+    } finally {
+      setTopupLoading(false)
+    }
+  }
 
   // ── Skeleton ──────────────────────────────────────────────────────────────
   if (loading) {
@@ -275,6 +339,11 @@ export default function WalletPageContent() {
   // ── Main ──────────────────────────────────────────────────────────────────
   return (
     <section className="mx-auto w-full max-w-6xl">
+      <Script
+        src="https://app.sandbox.midtrans.com/snap/snap.js"
+        data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
+        strategy="lazyOnload"
+      />
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Wallet</h1>
@@ -462,6 +531,106 @@ export default function WalletPageContent() {
               </div>
             )
           })()}
+
+          {/* Action Box: Top Up Panel */}
+          <div className="rounded-xl border border-emerald-100 bg-white overflow-hidden shadow-sm">
+            {/* Accent header strip */}
+            <div className="bg-gradient-to-r from-emerald-500 to-teal-600 px-5 py-3 flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
+                <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white leading-none">Isi Saldo</h3>
+                <p className="text-[10px] text-emerald-100/80 mt-0.5">Midtrans Sandbox</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleTopup} className="p-5 space-y-3.5">
+              <div>
+                <label htmlFor="topup-amount" className="block text-xs font-semibold text-gray-600 mb-1.5">
+                  Nominal Top Up
+                </label>
+                <div className="relative">
+                  <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm font-semibold text-gray-400">Rp</span>
+                  <input
+                    type="number"
+                    name="amount"
+                    id="topup-amount"
+                    min="10000"
+                    placeholder="10.000"
+                    value={topupAmount}
+                    onChange={(e) => setTopupAmount(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2.5 pl-9 pr-3 text-sm font-semibold text-gray-800 placeholder:text-gray-300 focus:border-emerald-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100 transition-all"
+                    required
+                  />
+                </div>
+                <p className="mt-1 text-[10px] text-gray-400">Minimum Rp 10.000</p>
+              </div>
+
+              {/* Preset amount pills */}
+              <div>
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Pilih Nominal Cepat</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { label: 'Rp 50k', value: 50000 },
+                    { label: 'Rp 100k', value: 100000 },
+                    { label: 'Rp 250k', value: 250000 },
+                    { label: 'Rp 500k', value: 500000 },
+                  ].map(({ label, value }) => {
+                    const isSelected = topupAmount === value.toString()
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setTopupAmount(value.toString())}
+                        className={`py-2 rounded-lg text-xs font-semibold transition-all border ${
+                          isSelected
+                            ? 'bg-emerald-50 border-emerald-400 text-emerald-700 ring-1 ring-emerald-200'
+                            : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-emerald-300 hover:bg-emerald-50/60 hover:text-emerald-700'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {topupError && (
+                <div className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 flex items-start gap-2">
+                  <svg className="h-3.5 w-3.5 text-red-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <p className="text-xs text-red-600 font-medium">{topupError}</p>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={topupLoading}
+                className="w-full py-2.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-xs font-bold text-white transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm shadow-emerald-200 active:scale-[0.99]"
+              >
+                {topupLoading ? (
+                  <>
+                    <svg className="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Memproses...
+                  </>
+                ) : (
+                  <>
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Top Up Sekarang
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
 
           {/* Action Box: Withdraw Panel */}
           <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm space-y-4">
