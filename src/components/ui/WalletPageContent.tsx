@@ -157,10 +157,10 @@ export default function WalletPageContent() {
     const status = params.get('status')
     if (status === 'success') {
       setPaymentSuccess('Top up saldo berhasil diproses! Saldo akan segera masuk ke akunmu.')
-      router.replace('/wallet')
+      router.replace(window.location.pathname)
     } else if (status === 'failed') {
       setTopupError('Pembayaran top up gagal atau dibatalkan. Silakan coba lagi.')
-      router.replace('/wallet')
+      router.replace(window.location.pathname)
     }
   }, [])
 

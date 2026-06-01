@@ -63,6 +63,17 @@ export async function POST(req: Request) {
         const { Invoice } = xenditClient
 
         const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+        const referer = req.headers.get('referer')
+        
+        let returnUrl = `${origin}/creator/wallet` // Safe default fallback
+        if (referer) {
+            try {
+                const refererUrl = new URL(referer)
+                returnUrl = `${refererUrl.origin}${refererUrl.pathname}`
+            } catch (e) {
+                console.error('Error parsing referer URL:', e)
+            }
+        }
         
         let invoice
         try {
@@ -73,8 +84,8 @@ export async function POST(req: Request) {
                     description: `Top up Saldo Voca - ${orderId}`,
                     currency: 'IDR',
                     payerEmail: user.email || undefined,
-                    successRedirectUrl: `${origin}/wallet?status=success`,
-                    failureRedirectUrl: `${origin}/wallet?status=failed`,
+                    successRedirectUrl: `${returnUrl}?status=success`,
+                    failureRedirectUrl: `${returnUrl}?status=failed`,
                 }
             })
         } catch (xenditError: any) {
