@@ -571,7 +571,7 @@ export default function WalletPageContent() {
                         key={value}
                         type="button"
                         onClick={() => setTopupAmount(value.toString())}
-                        className={`py-2 rounded-lg text-xs font-semibold transition-all border ${
+                        className={`py-2 rounded-lg text-xs font-semibold transition-all border cursor-pointer ${
                           isSelected
                             ? 'bg-emerald-50 border-emerald-400 text-emerald-700 ring-1 ring-emerald-200'
                             : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-emerald-300 hover:bg-emerald-50/60 hover:text-emerald-700'
@@ -605,7 +605,7 @@ export default function WalletPageContent() {
               <button
                 type="submit"
                 disabled={topupLoading}
-                className="w-full py-2.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-xs font-bold text-white transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm shadow-emerald-200 active:scale-[0.99]"
+                className="w-full py-2.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-xs font-bold text-white transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm shadow-emerald-200 active:scale-[0.99] cursor-pointer"
               >
                 {topupLoading ? (
                   <>
