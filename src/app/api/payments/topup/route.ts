@@ -55,10 +55,10 @@ export async function POST(req: Request) {
 
         // 2. Request Midtrans Snap Transaction
         const snap = new midtransClient.Snap({
-            isProduction: process.env.MIDTRANS_IS_PRODUCTION === 'false',
-            serverKey: process.env.MIDTRANS_SERVER_KEY,
-            clientKey: process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY
-        })
+            isProduction: false,
+            serverKey: process.env.MIDTRANS_SERVER_KEY!,
+            clientKey: process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY!,
+        });
 
         const parameter = {
             transaction_details: {
