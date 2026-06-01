@@ -55,6 +55,12 @@ const formatIDR = (amount: number) =>
     minimumFractionDigits: 0,
   }).format(amount)
 
+const formatThousand = (val: string) => {
+  const clean = val.replace(/\D/g, '')
+  if (!clean) return ''
+  return new Intl.NumberFormat('id-ID').format(parseInt(clean, 10))
+}
+
 const formatDate = (dateStr: string) =>
   new Date(dateStr).toLocaleDateString('id-ID', {
     year: 'numeric',
@@ -167,7 +173,7 @@ export default function WalletPageContent() {
   const handleTopup = async (e: React.FormEvent) => {
     e.preventDefault()
     setTopupError(null)
-    const amount = parseInt(topupAmount, 10)
+    const amount = parseInt(topupAmount.replace(/\./g, ''), 10)
     if (isNaN(amount) || amount < 10000) {
       setTopupError('Nominal top up harus berupa angka bulat minimal Rp 10.000')
       return
@@ -541,13 +547,12 @@ export default function WalletPageContent() {
                 <div className="relative">
                   <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm font-semibold text-gray-400">Rp</span>
                   <input
-                    type="number"
+                    type="text"
                     name="amount"
                     id="topup-amount"
-                    min="10000"
                     placeholder="10.000"
                     value={topupAmount}
-                    onChange={(e) => setTopupAmount(e.target.value)}
+                    onChange={(e) => setTopupAmount(formatThousand(e.target.value))}
                     className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2.5 pl-9 pr-3 text-sm font-semibold text-gray-800 placeholder:text-gray-300 focus:border-emerald-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100 transition-all"
                     required
                   />
@@ -565,12 +570,12 @@ export default function WalletPageContent() {
                     { label: 'Rp 250k', value: 250000 },
                     { label: 'Rp 500k', value: 500000 },
                   ].map(({ label, value }) => {
-                    const isSelected = topupAmount === value.toString()
+                    const isSelected = topupAmount.replace(/\./g, '') === value.toString()
                     return (
                       <button
                         key={value}
                         type="button"
-                        onClick={() => setTopupAmount(value.toString())}
+                        onClick={() => setTopupAmount(formatThousand(value.toString()))}
                         className={`py-2 rounded-lg text-xs font-semibold transition-all border cursor-pointer ${
                           isSelected
                             ? 'bg-emerald-50 border-emerald-400 text-emerald-700 ring-1 ring-emerald-200'
