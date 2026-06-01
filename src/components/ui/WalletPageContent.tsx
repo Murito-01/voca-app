@@ -14,7 +14,7 @@ interface WalletStats {
 
 interface Transaction {
   id: string
-  type: 'reward' | 'fee' | 'refund' | 'withdraw' | 'spend' | 'withdraw_request' | 'withdraw_success' | 'withdraw_failed_refund'
+  type: 'reward' | 'fee' | 'refund' | 'withdraw' | 'spend' | 'topup' | 'withdraw_request' | 'withdraw_success' | 'withdraw_failed_refund'
   amount: number
   status: 'pending' | 'success' | 'failed'
   reference_id: string | null
@@ -93,17 +93,18 @@ const formatDate = (dateStr: string) =>
 // Label & style for transaction type
 function txTypeLabel(type: Transaction['type']): { label: string; pill: string } {
   switch (type) {
-    case 'reward':   return { label: 'Reward',    pill: 'bg-emerald-100 text-emerald-700' }
-    case 'refund':   return { label: 'Refund',    pill: 'bg-blue-100 text-blue-700' }
+    case 'topup':    return { label: 'Top Up',   pill: 'bg-indigo-100 text-indigo-700' }
+    case 'reward':   return { label: 'Reward',   pill: 'bg-emerald-100 text-emerald-700' }
+    case 'refund':   return { label: 'Refund',   pill: 'bg-blue-100 text-blue-700' }
     case 'withdraw':
     case 'withdraw_request':
     case 'withdraw_success':
-                     return { label: 'Withdraw',  pill: 'bg-rose-100 text-rose-700' }
+                     return { label: 'Withdraw', pill: 'bg-rose-100 text-rose-700' }
     case 'withdraw_failed_refund':
-                     return { label: 'Refund',    pill: 'bg-blue-100 text-blue-700' }
-    case 'spend':    return { label: 'Spend',     pill: 'bg-orange-100 text-orange-700' }
-    case 'fee':      return { label: 'Fee',       pill: 'bg-gray-100 text-gray-600' }
-    default:         return { label: type,        pill: 'bg-gray-100 text-gray-600' }
+                     return { label: 'Refund',   pill: 'bg-blue-100 text-blue-700' }
+    case 'spend':    return { label: 'Spend',    pill: 'bg-orange-100 text-orange-700' }
+    case 'fee':      return { label: 'Fee',      pill: 'bg-gray-100 text-gray-600' }
+    default:         return { label: type,       pill: 'bg-gray-100 text-gray-600' }
   }
 }
 
@@ -112,6 +113,8 @@ function txDescription(tx: Transaction): string {
   const meta = tx.metadata as Record<string, string> | null
   const type = meta?.ledger_type || tx.type
   switch (type) {
+    case 'topup':
+      return 'Top up saldo via Xendit'
     case 'reward':
       return `Reward survey — ${tx.reference_type ?? 'response'}`
     case 'refund':
@@ -523,7 +526,7 @@ export default function WalletPageContent() {
                     {transactions.map((tx) => {
                       const ledgerType = (tx.metadata as any)?.ledger_type || tx.type
                       const { label, pill } = txTypeLabel(ledgerType)
-                      const isCredit = ledgerType === 'reward' || ledgerType === 'refund' || ledgerType === 'withdraw_failed_refund'
+                      const isCredit = ledgerType === 'topup' || ledgerType === 'reward' || ledgerType === 'refund' || ledgerType === 'withdraw_failed_refund'
                       const isDebit = ledgerType === 'withdraw' || ledgerType === 'withdraw_request' || ledgerType === 'withdraw_success' || ledgerType === 'spend' || ledgerType === 'fee'
 
                       return (
