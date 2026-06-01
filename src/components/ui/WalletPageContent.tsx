@@ -127,6 +127,7 @@ export default function WalletPageContent() {
   const [topupAmount, setTopupAmount] = useState<string>('')
   const [topupLoading, setTopupLoading] = useState(false)
   const [topupError, setTopupError] = useState<string | null>(null)
+  const [paymentSuccess, setPaymentSuccess] = useState<string | null>(null)
 
   const router = useRouter()
 
@@ -150,6 +151,17 @@ export default function WalletPageContent() {
 
   useEffect(() => {
     loadWallet(true)
+
+    // Scan for redirect parameters from Xendit payment gateway
+    const params = new URLSearchParams(window.location.search)
+    const status = params.get('status')
+    if (status === 'success') {
+      setPaymentSuccess('Top up saldo berhasil diproses! Saldo akan segera masuk ke akunmu.')
+      router.replace('/wallet')
+    } else if (status === 'failed') {
+      setTopupError('Pembayaran top up gagal atau dibatalkan. Silakan coba lagi.')
+      router.replace('/wallet')
+    }
   }, [])
 
   const handleTopup = async (e: React.FormEvent) => {
@@ -173,34 +185,13 @@ export default function WalletPageContent() {
         throw new Error(result.error || 'Gagal membuat transaksi top up')
       }
 
-      const snapToken = result.snap_token
-      if (!snapToken) {
-        throw new Error('Token transaksi tidak valid dari payment gateway')
+      const redirectUrl = result.redirect_url
+      if (!redirectUrl) {
+        throw new Error('URL pembayaran tidak valid dari payment gateway')
       }
 
-      // Open Snap Popup
-      if ((window as any).snap) {
-        (window as any).snap.pay(snapToken, {
-          onSuccess: () => {
-            router.refresh()
-            loadWallet(false)
-            setTopupAmount('')
-          },
-          onPending: () => {
-            router.refresh()
-            loadWallet(false)
-            setTopupAmount('')
-          },
-          onError: () => {
-            alert("Pembayaran gagal")
-          },
-          onClose: () => {
-            console.log("Popup ditutup")
-          }
-        })
-      } else {
-        throw new Error('Midtrans Snap SDK tidak berhasil dimuat')
-      }
+      // Redirect user to the Xendit Invoice payment page
+      window.location.href = redirectUrl
     } catch (err: any) {
       setTopupError(err.message || 'Terjadi kesalahan saat memproses pembayaran')
     } finally {
@@ -339,11 +330,6 @@ export default function WalletPageContent() {
   // ── Main ──────────────────────────────────────────────────────────────────
   return (
     <section className="mx-auto w-full max-w-6xl">
-      <Script
-        src="https://app.sandbox.midtrans.com/snap/snap.js"
-        data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
-        strategy="lazyOnload"
-      />
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Wallet</h1>
@@ -543,7 +529,7 @@ export default function WalletPageContent() {
               </div>
               <div>
                 <h3 className="text-sm font-bold text-white leading-none">Isi Saldo</h3>
-                <p className="text-[10px] text-emerald-100/80 mt-0.5">Midtrans Sandbox</p>
+                <p className="text-[10px] text-emerald-100/80 mt-0.5">Xendit Payment Gateway</p>
               </div>
             </div>
 
@@ -604,6 +590,15 @@ export default function WalletPageContent() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
                   <p className="text-xs text-red-600 font-medium">{topupError}</p>
+                </div>
+              )}
+
+              {paymentSuccess && (
+                <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 flex items-start gap-2">
+                  <svg className="h-3.5 w-3.5 text-emerald-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-xs text-emerald-700 font-medium">{paymentSuccess}</p>
                 </div>
               )}
 

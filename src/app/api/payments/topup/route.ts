@@ -1,6 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-// @ts-ignore
-import midtransClient from 'midtrans-client'
+import { Xendit } from 'xendit-node'
 
 export async function POST(req: Request) {
     try {
@@ -53,31 +52,33 @@ export async function POST(req: Request) {
             return Response.json({ error: 'Gagal membuat transaksi top up' }, { status: 500 })
         }
 
-        // 2. Request Midtrans Snap Transaction
-        const snap = new midtransClient.Snap({
-            isProduction: false,
-            serverKey: process.env.MIDTRANS_SERVER_KEY!,
-            clientKey: process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY!,
-        });
-
-        const parameter = {
-            transaction_details: {
-                order_id: orderId,
-                gross_amount: amount
-            },
-            credit_card: {
-                secure: true
-            },
-            customer_details: {
-                email: user.email || ''
-            }
+        // 2. Request Xendit Invoice
+        const secretKey = process.env.XENDIT_SECRET_KEY
+        if (!secretKey) {
+            console.error('XENDIT_SECRET_KEY environment variable is not defined')
+            return Response.json({ error: 'Konfigurasi server pembayaran tidak tersedia' }, { status: 500 })
         }
 
-        let transaction
+        const xenditClient = new Xendit({ secretKey })
+        const { Invoice } = xenditClient
+
+        const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+        
+        let invoice
         try {
-            transaction = await snap.createTransaction(parameter)
-        } catch (midtransError: any) {
-            console.error('Midtrans API error:', midtransError)
+            invoice = await Invoice.createInvoice({
+                data: {
+                    amount,
+                    externalId: orderId,
+                    description: `Top up Saldo Voca - ${orderId}`,
+                    currency: 'IDR',
+                    payerEmail: user.email || undefined,
+                    successRedirectUrl: `${origin}/wallet?status=success`,
+                    failureRedirectUrl: `${origin}/wallet?status=failed`,
+                }
+            })
+        } catch (xenditError: any) {
+            console.error('Xendit API error:', xenditError)
             // Update topup status to failed
             await supabase
                 .from('topups')
@@ -87,24 +88,24 @@ export async function POST(req: Request) {
             return Response.json({ error: 'Gagal menghubungi payment gateway' }, { status: 500 })
         }
 
-        // 3. Save the token and redirect URL returned from Midtrans into the topups row
+        // 3. Save the invoice ID and redirect URL returned from Xendit into the topups row
         const { error: updateError } = await supabase
             .from('topups')
             .update({
-                snap_token: transaction.token,
-                redirect_url: transaction.redirect_url
+                snap_token: invoice.id,
+                redirect_url: invoice.invoiceUrl
             })
             .eq('order_id', orderId)
 
         if (updateError) {
-            console.error('Error updating topup row with snap token:', updateError)
+            console.error('Error updating topup row with Xendit invoice details:', updateError)
             return Response.json({ error: 'Gagal menyimpan token transaksi' }, { status: 500 })
         }
 
-        // Return snap_token and redirect_url
+        // Return snap_token (invoice ID) and redirect_url
         return Response.json({
-            snap_token: transaction.token,
-            redirect_url: transaction.redirect_url,
+            snap_token: invoice.id,
+            redirect_url: invoice.invoiceUrl,
             order_id: orderId
         })
 
