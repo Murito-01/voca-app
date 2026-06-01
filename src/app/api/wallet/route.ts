@@ -61,7 +61,11 @@ export async function GET(req: Request) {
             .filter((t) => t.type === 'reward' && t.status === 'success')
             .reduce((sum, t) => sum + Number(t.amount), 0)
         const totalWithdrawn = txList
-            .filter((t) => (t.type === 'withdraw_success' || t.type === 'withdraw') && t.status === 'success')
+            .filter((t) => {
+                const meta = t.metadata as any
+                const ledgerType = meta?.ledger_type || t.type
+                return (ledgerType === 'withdraw_success' || (t.type === 'withdraw' && !meta?.ledger_type)) && t.status === 'success'
+            })
             .reduce((sum, t) => sum + Number(t.amount), 0)
         const pendingAmount = txList
             .filter((t) => t.status === 'pending')

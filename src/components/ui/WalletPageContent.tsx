@@ -88,7 +88,8 @@ function txTypeLabel(type: Transaction['type']): { label: string; pill: string }
 // Human-readable description from transaction type + metadata
 function txDescription(tx: Transaction): string {
   const meta = tx.metadata as Record<string, string> | null
-  switch (tx.type) {
+  const type = meta?.ledger_type || tx.type
+  switch (type) {
     case 'reward':
       return `Reward survey — ${tx.reference_type ?? 'response'}`
     case 'refund':
@@ -413,9 +414,10 @@ export default function WalletPageContent() {
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                     {transactions.map((tx) => {
-                      const { label, pill } = txTypeLabel(tx.type)
-                      const isCredit = tx.type === 'reward' || tx.type === 'refund' || tx.type === 'withdraw_failed_refund'
-                      const isDebit = tx.type === 'withdraw' || tx.type === 'withdraw_request' || tx.type === 'withdraw_success' || tx.type === 'spend' || tx.type === 'fee'
+                      const ledgerType = (tx.metadata as any)?.ledger_type || tx.type
+                      const { label, pill } = txTypeLabel(ledgerType)
+                      const isCredit = ledgerType === 'reward' || ledgerType === 'refund' || ledgerType === 'withdraw_failed_refund'
+                      const isDebit = ledgerType === 'withdraw' || ledgerType === 'withdraw_request' || ledgerType === 'withdraw_success' || ledgerType === 'spend' || ledgerType === 'fee'
 
                       return (
                         <tr
