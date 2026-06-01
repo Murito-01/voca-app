@@ -42,7 +42,9 @@ export async function POST(req: Request) {
             !orderId || 
             !invoiceStatus || 
             !xenditInvoiceId ||
-            body.business_id === '5f218745736e619164dc8608' ||
+            body.payer_email === 'wildan@xendit.co' ||
+            body.merchant_name === 'Xendit' ||
+            orderId === 'invoice_123124123' ||
             (orderId && (orderId.startsWith('demo_') || orderId === '9e01aa0f-d452-4630-916b-7ac77ca12234'))
 
         if (isTestWebhook) {
