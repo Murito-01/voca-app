@@ -15,7 +15,7 @@ interface WalletStats {
 
 interface Transaction {
   id: string
-  type: 'reward' | 'fee' | 'refund' | 'withdraw' | 'spend'
+  type: 'reward' | 'fee' | 'refund' | 'withdraw' | 'spend' | 'withdraw_request' | 'withdraw_success' | 'withdraw_failed_refund'
   amount: number
   status: 'pending' | 'success' | 'failed'
   reference_id: string | null
@@ -73,7 +73,12 @@ function txTypeLabel(type: Transaction['type']): { label: string; pill: string }
   switch (type) {
     case 'reward':   return { label: 'Reward',    pill: 'bg-emerald-100 text-emerald-700' }
     case 'refund':   return { label: 'Refund',    pill: 'bg-blue-100 text-blue-700' }
-    case 'withdraw': return { label: 'Withdraw',  pill: 'bg-rose-100 text-rose-700' }
+    case 'withdraw':
+    case 'withdraw_request':
+    case 'withdraw_success':
+                     return { label: 'Withdraw',  pill: 'bg-rose-100 text-rose-700' }
+    case 'withdraw_failed_refund':
+                     return { label: 'Refund',    pill: 'bg-blue-100 text-blue-700' }
     case 'spend':    return { label: 'Spend',     pill: 'bg-orange-100 text-orange-700' }
     case 'fee':      return { label: 'Fee',       pill: 'bg-gray-100 text-gray-600' }
     default:         return { label: type,        pill: 'bg-gray-100 text-gray-600' }
@@ -91,7 +96,12 @@ function txDescription(tx: Transaction): string {
         ? 'Refund sisa budget survey'
         : 'Refund'
     case 'withdraw':
-      return 'Penarikan saldo'
+    case 'withdraw_request':
+      return 'Permintaan penarikan saldo'
+    case 'withdraw_success':
+      return 'Penarikan saldo berhasil dicairkan'
+    case 'withdraw_failed_refund':
+      return 'Pengembalian saldo penarikan gagal'
     case 'spend':
       return 'Pembayaran reward responden'
     case 'fee':
@@ -404,8 +414,8 @@ export default function WalletPageContent() {
                   <tbody className="divide-y divide-gray-50">
                     {transactions.map((tx) => {
                       const { label, pill } = txTypeLabel(tx.type)
-                      const isCredit = tx.type === 'reward' || tx.type === 'refund'
-                      const isDebit = tx.type === 'withdraw' || tx.type === 'spend' || tx.type === 'fee'
+                      const isCredit = tx.type === 'reward' || tx.type === 'refund' || tx.type === 'withdraw_failed_refund'
+                      const isDebit = tx.type === 'withdraw' || tx.type === 'withdraw_request' || tx.type === 'withdraw_success' || tx.type === 'spend' || tx.type === 'fee'
 
                       return (
                         <tr
