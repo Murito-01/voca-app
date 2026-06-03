@@ -296,34 +296,41 @@ export default function SurveyDetailPage() {
 
     return (
         <>
-            <div className="min-h-screen bg-gray-100 p-6">
-                <div className="max-w-2xl mx-auto">
+            <div className="min-h-screen bg-gray-50/50">
+                <div className="mx-auto max-w-4xl px-4 pb-12 pt-6 sm:px-6">
 
                     {/* Back */}
                     <Link
                         href="/my-surveys"
-                        className="text-blue-600 text-sm hover:underline"
+                        className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 transition-colors hover:text-blue-600"
                     >
-                        ← Kembali ke My Surveys
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        Kembali ke My Surveys
                     </Link>
 
                     {/* Loading */}
                     {loading && (
-                        <div className="flex justify-center items-center h-40">
-                            <div className="animate-spin h-10 w-10 border-b-2 border-blue-600 rounded-full"></div>
+                        <div className="flex h-48 items-center justify-center">
+                            <div className="flex flex-col items-center gap-3">
+                                <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-gray-200 border-t-blue-600" />
+                                <p className="text-sm text-gray-400">Memuat detail survey...</p>
+                            </div>
                         </div>
                     )}
 
                     {/* Error */}
                     {!loading && error && (
-                        <div className="bg-red-50 text-red-700 border border-red-200 p-4 rounded-lg mt-4">
-                            {error}
+                        <div className="mt-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
+                            <span className="text-lg shrink-0">⚠️</span>
+                            <p className="text-sm text-red-700">{error}</p>
                         </div>
                     )}
 
                     {/* Content */}
                     {!loading && survey && (
-                        <div className="bg-white mt-6 p-6 rounded-xl border shadow-sm">
+                        <div className="mt-6 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
 
                             {/* Title & Publish Button */}
                             <div className="flex justify-between items-start">
@@ -391,78 +398,53 @@ export default function SurveyDetailPage() {
                                         <button
                                             onClick={handlePublish}
                                             disabled={isPublishing || questions.length === 0 || publishBlockedByReward}
-                                            className={`px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors ${isPublishing || questions.length === 0 || publishBlockedByReward
-                                                ? 'bg-gray-400 cursor-not-allowed'
-                                                : 'bg-green-600 hover:bg-green-700'
-                                                }`}
+                                            className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+                                                isPublishing || questions.length === 0 || publishBlockedByReward
+                                                    ? 'bg-gray-500/20 text-gray-400 cursor-not-allowed'
+                                                    : 'bg-emerald-500 text-white hover:bg-emerald-400 shadow-sm'
+                                            }`}
                                         >
-                                            {isPublishing ? 'Publishing...' : '🚀 Publish Survey'}
+                                            {isPublishing ? 'Publishing...' : '🚀 Publish'}
                                         </button>
                                         <button
                                             onClick={handleDeleteSurvey}
                                             disabled={isDeleting}
-                                            className={`px-4 py-2 rounded-lg text-sm font-medium text-red-600 border border-red-300 transition-colors ${isDeleting
-                                                ? 'opacity-50 cursor-not-allowed'
-                                                : 'hover:bg-red-50'
-                                                }`}
+                                            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium transition-all ${
+                                                isDeleting ? 'border-gray-200 text-gray-400 cursor-not-allowed' : 'border-red-200 text-red-500 hover:bg-red-50'
+                                            }`}
                                         >
-                                            {isDeleting ? 'Menghapus...' : '🗑️ Hapus Survey'}
+                                            {isDeleting ? 'Menghapus...' : '🗑️ Hapus'}
                                         </button>
                                     </div>
                                 )}
 
                                 {survey.status === 'active' && !isEditingInfo && (
-                                    <button
-                                        onClick={() => handleStatusChange('paused')}
-                                        disabled={isChangingStatus}
-                                        className={`px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors shrink-0 ${isChangingStatus ? 'bg-gray-400 cursor-not-allowed' : 'bg-yellow-500 hover:bg-yellow-600'
-                                            }`}
-                                    >
-                                        {isChangingStatus ? 'Processing...' : '⏸️ Pause Survey'}
+                                    <button onClick={() => handleStatusChange('paused')} disabled={isChangingStatus}
+                                        className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+                                            isChangingStatus ? 'bg-gray-500/20 text-gray-400 cursor-not-allowed' : 'bg-amber-400/20 text-amber-700 hover:bg-amber-400/30 border border-amber-300'
+                                        }`}>
+                                        {isChangingStatus ? 'Processing...' : '⏸️ Pause'}
                                     </button>
                                 )}
 
                                 {survey.status === 'paused' && !isEditingInfo && (
                                     <div className="flex gap-2 shrink-0">
-                                        <button
-                                            onClick={() => handleStatusChange('active')}
-                                            disabled={isChangingStatus}
-                                            className={`px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors ${isChangingStatus ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
-                                                }`}
-                                        >
-                                            {isChangingStatus ? 'Processing...' : '▶️ Resume Survey'}
+                                        <button onClick={() => handleStatusChange('active')} disabled={isChangingStatus}
+                                            className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+                                                isChangingStatus ? 'bg-gray-500/20 text-gray-400 cursor-not-allowed' : 'bg-emerald-500 text-white hover:bg-emerald-400 shadow-sm'
+                                            }`}>
+                                            {isChangingStatus ? 'Processing...' : '▶️ Resume'}
                                         </button>
-                                        <button
-                                            onClick={() => handleStatusChange('completed')}
-                                            disabled={isChangingStatus}
-                                            className={`px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors ${isChangingStatus ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'
-                                                }`}
-                                        >
-                                            {isChangingStatus ? 'Processing...' : '🛑 Tutup Survey'}
+                                        <button onClick={() => handleStatusChange('completed')} disabled={isChangingStatus}
+                                            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium transition-all ${
+                                                isChangingStatus ? 'border-gray-200 text-gray-400 cursor-not-allowed' : 'border-red-200 text-red-500 hover:bg-red-50'
+                                            }`}>
+                                            {isChangingStatus ? 'Processing...' : '🛑 Tutup'}
                                         </button>
                                     </div>
                                 )}
 
-                            </div>
-
-                            {/* Status + Mode Badge */}
-                            <div className="flex items-center gap-2 mt-2 flex-wrap">
-                                <span className={`inline-block px-3 py-1 text-xs rounded-full ${survey.status === 'active' ? 'bg-green-100 text-green-700' :
-                                    survey.status === 'paused' ? 'bg-yellow-100 text-yellow-800' :
-                                        survey.status === 'completed' ? 'bg-blue-100 text-blue-700' :
-                                            'bg-gray-100 text-gray-600'
-                                    }`}>
-                                    {survey.status === 'active' ? 'Active' :
-                                        survey.status === 'paused' ? 'Paused' :
-                                            survey.status === 'completed' ? 'Completed' : 'Draft'}
-                                </span>
-                                <span className={`inline-block px-3 py-1 text-xs rounded-full font-medium ${survey.allow_extended_responses
-                                    ? 'bg-purple-100 text-purple-700'
-                                    : 'bg-slate-100 text-slate-600'
-                                    }`} title={survey.allow_extended_responses ? 'Budget dipakai untuk mendapat respon sebanyak mungkin.' : 'Jumlah responden tetap, sisa budget dikembalikan.'}>
-                                    {survey.allow_extended_responses ? '🚀 Maksimalkan Respon' : '🔒 Jumlah Tetap'}
-                                </span>
-                            </div>
+                                </div>
 
 
                             {/* Banner reward warning setelah publish berhasil */}
@@ -482,53 +464,48 @@ export default function SurveyDetailPage() {
                                 </div>
                             )}
 
+                            {/* Survey Detail Body */}
+                            <div className="p-6 space-y-6">
+
                             {/* Reward Edit Section */}
-                            <div id="reward-section" className="mt-6 mb-4 text-sm text-gray-700">
-                                <div className="flex items-center gap-2">
-                                    <span>Reward / Response:</span>
+                            <div id="reward-section" className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                                <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">Reward per Responden</p>
+                                <div className="flex items-center gap-3">
                                     {isEditingReward ? (
-                                        <div className="flex items-center gap-2">
-                                            <input
-                                                type="number"
-                                                min="1"
-                                                value={editReward}
-                                                onChange={(e) => setEditReward(e.target.value === '' ? '' : Number(e.target.value))}
-                                                className="w-24 px-2 py-1 border border-gray-300 rounded text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                                            />
-                                            <button
-                                                onClick={handleSaveReward}
-                                                disabled={isSavingReward || editReward === '' || editReward <= 0}
-                                                className="px-2 py-1 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 disabled:bg-gray-400"
-                                            >
+                                        <div className="flex flex-1 items-center gap-2">
+                                            <div className="relative flex-1 max-w-[160px]">
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-400">Rp</span>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    value={editReward}
+                                                    onChange={(e) => setEditReward(e.target.value === '' ? '' : Number(e.target.value))}
+                                                    className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                />
+                                            </div>
+                                            <button onClick={handleSaveReward} disabled={isSavingReward || editReward === '' || editReward <= 0}
+                                                className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:bg-gray-300">
                                                 {isSavingReward ? '⏳' : 'Simpan'}
                                             </button>
-                                            <button
-                                                onClick={() => setIsEditingReward(false)}
-                                                disabled={isSavingReward}
-                                                className="px-2 py-1 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300 disabled:bg-gray-100"
-                                            >
+                                            <button onClick={() => setIsEditingReward(false)} disabled={isSavingReward}
+                                                className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-100">
                                                 Batal
                                             </button>
                                         </div>
                                     ) : (
-                                        <div className="flex items-center gap-2 group">
-                                            <span className="font-semibold text-blue-600">
-                                                {new Intl.NumberFormat('id-ID', {
-                                                    style: 'currency',
-                                                    currency: 'IDR',
-                                                    minimumFractionDigits: 0
-                                                }).format(survey.reward_per_response)}
+                                        <div className="flex flex-1 items-center justify-between group">
+                                            <span className="text-2xl font-extrabold text-blue-600">
+                                                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(survey.reward_per_response)}
                                             </span>
                                             {survey.status === 'draft' && (
                                                 <button
-                                                    onClick={() => {
-                                                        setEditReward(survey.reward_per_response);
-                                                        setIsEditingReward(true);
-                                                    }}
-                                                    className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-blue-600 transition-opacity rounded hover:bg-blue-50"
-                                                    title="Edit Reward"
-                                                >
-                                                    ✏️
+                                                    onClick={() => { setEditReward(survey.reward_per_response); setIsEditingReward(true); }}
+                                                    className="opacity-0 group-hover:opacity-100 inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-500 transition-all hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600"
+                                                    title="Edit Reward">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                    </svg>
+                                                    Edit
                                                 </button>
                                             )}
                                         </div>
@@ -556,37 +533,31 @@ export default function SurveyDetailPage() {
                                 const isDataEnough = burnRate?.has_enough_data ?? (completed >= 5 && responsesPerMinute > 0);
 
                                 return (
-                                    <div className="space-y-4 font-mono mt-8">
+                                    <div className="space-y-3">
                                         {/* Card 1: Progress */}
-                                        <div>
-                                            <h3 className="text-sm font-bold text-gray-800 mb-2">Progress</h3>
-                                            <div className="bg-white border border-slate-200 rounded-xl p-4 text-slate-700 text-sm shadow-sm">
-                                                <div className="flex justify-between items-center mb-2">
-                                                    <p>Progress: {completed} / {total} responses</p>
-                                                    <span className="text-slate-400">📋</span>
-                                                </div>
-                                                {completed === 0 ? (
-                                                    <div className="py-2 text-slate-400 italic text-center border border-dashed border-slate-200 rounded-lg">
-                                                        Belum ada response masuk
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="flex-1 font-bold text-slate-500 tracking-[0.2em] relative h-4 bg-slate-100 rounded flex items-center overflow-hidden">
-                                                            <div
-                                                                className="absolute top-0 left-0 bottom-0 bg-blue-500"
-                                                                style={{ width: `${progressPercent}%` }}
-                                                            />
-                                                        </div>
-                                                        <span className="w-10 text-right font-semibold">{progressStr}%</span>
-                                                    </div>
-                                                )}
+                                        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                                            <div className="mb-3 flex items-center justify-between">
+                                                <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Progress Responden</p>
+                                                <span className="text-sm font-bold text-gray-700">{completed}<span className="font-normal text-gray-400">/{total}</span></span>
                                             </div>
+                                            {completed === 0 ? (
+                                                <div className="rounded-lg border border-dashed border-gray-200 py-3 text-center text-sm italic text-gray-400">
+                                                    Belum ada respons masuk
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-100">
+                                                        <div className="h-full rounded-full bg-gradient-to-r from-blue-400 to-blue-600 transition-all duration-500" style={{ width: `${progressPercent}%` }} />
+                                                    </div>
+                                                    <p className="mt-1.5 text-right text-xs font-bold text-gray-500">{progressStr}%</p>
+                                                </>
+                                            )}
                                         </div>
 
                                         {/* Card 2: Time Estimation */}
-                                        <div>
-                                            <h3 className="text-sm font-bold text-gray-800 mb-2">Estimasi waktu</h3>
-                                            <div className="bg-white border border-slate-200 rounded-xl p-4 text-slate-700 text-sm shadow-sm">
+                                        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                                            <p className="mb-3 text-xs font-bold uppercase tracking-widest text-gray-400">Estimasi Waktu</p>
+                                            <div>
                                                 {responsesPerMinute <= 0 ? (
                                                     <div className="flex items-center gap-2 text-slate-500">
                                                         <span>⏱️</span> Belum ada aktivitas
@@ -667,44 +638,32 @@ export default function SurveyDetailPage() {
                                         </div>
 
                                         {/* Card 3: Budget Burn */}
-                                        <div>
-                                            <h3 className="text-sm font-bold text-gray-800 mb-2">Budget burn</h3>
-                                            <div className="bg-white border border-slate-200 rounded-xl p-4 text-slate-700 text-sm shadow-sm">
-                                                <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
-                                                    <p className="flex items-center gap-2 font-medium">
-                                                        <span>💰</span>
-                                                        Budget terpakai: {Math.round(budgetTerpakaiPercent)}%
+                                        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                                            <div className="mb-3 flex items-center justify-between">
+                                                <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Budget Burn</p>
+                                                <span className="text-xs font-semibold text-gray-500">{Math.round(budgetTerpakaiPercent)}% terpakai</span>
+                                            </div>
+                                            <div className="mb-3 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                                                <div className="h-full rounded-full bg-gradient-to-r from-orange-400 to-amber-500 transition-all" style={{ width: `${budgetTerpakaiPercent}%` }} />
+                                            </div>
+                                            <div className="flex items-end justify-between">
+                                                <div>
+                                                    <p className="text-xs text-gray-400">Sisa Budget</p>
+                                                    <p className="text-xl font-extrabold text-gray-900">Rp{sisaBudget.toLocaleString('id-ID')}</p>
+                                                    <p className="text-xs text-gray-400">≈ {remaining} respon lagi</p>
+                                                </div>
+                                                {isDataEnough && (
+                                                    <p className="text-xs text-gray-500">
+                                                        ~{responsesPerMinute.toFixed(2)} respon/mnt
                                                     </p>
-                                                    <span className="text-slate-400">💰</span>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <div>
-                                                        <p className="text-slate-500 mb-1">Sisa:</p>
-                                                        <p className="font-bold text-slate-800 text-lg">
-                                                            Rp{sisaBudget.toLocaleString('id-ID')}
-                                                        </p>
-                                                        <p className="text-slate-500">
-                                                            ≈ {remaining} respon lagi
-                                                        </p>
-                                                    </div>
-                                                    {isDataEnough && (
-                                                        <div className="pt-2 border-t border-slate-100">
-                                                            <p className="text-slate-600">
-                                                                Burn rate: <span className="font-semibold text-slate-800">~{responsesPerMinute.toFixed(2)} respon / menit</span>
-                                                            </p>
-                                                        </div>
-                                                    )}
-                                                </div>
+                                                )}
                                             </div>
                                         </div>
 
                                         {/* Card 4: Insight */}
-                                        <div>
-                                            <h3 className="text-sm font-bold text-gray-800 mb-2">Insight</h3>
-                                            <div className="bg-white border border-slate-200 rounded-xl p-4 text-slate-700 text-sm shadow-sm">
-                                                <div className="flex items-center gap-2 font-bold text-indigo-900 mb-3 border-b border-slate-100 pb-2">
-                                                    <span>📊</span> Evaluasi & Insight
-                                                </div>
+                                        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                                            <p className="mb-3 text-xs font-bold uppercase tracking-widest text-gray-400">Evaluasi & Insight</p>
+                                            <div className="text-sm">
 
                                                 {(() => {
                                                     const insight = generateSurveyInsight({
@@ -857,9 +816,8 @@ export default function SurveyDetailPage() {
                                 );
                             })()}
 
-
                             {(survey.status === 'paused' || survey.status === 'completed') && (
-                                <div className="mt-6 pt-5 border-t">
+                                <div className="pt-2">
                                     <Link
                                         href={`/my-surveys/${surveyId}/responses`}
                                         className="flex items-center justify-between w-full px-4 py-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition-colors group"
@@ -880,27 +838,39 @@ export default function SurveyDetailPage() {
 
 
                             {/* Questions Section */}
-                            <div className="mt-8 border-t pt-6">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h2 className="text-lg font-semibold text-gray-900">
-                                        Pertanyaan Survey
-                                    </h2>
+                            <div className="border-t border-gray-100 pt-6">
+                                <div className="mb-4 flex items-center justify-between">
+                                    <div>
+                                        <h2 className="text-sm font-bold text-gray-800">Pertanyaan Survey</h2>
+                                        <p className="text-xs text-gray-400">{questions.length} pertanyaan</p>
+                                    </div>
                                     {survey.status === 'draft' && (
                                         <Link
                                             href={`/my-surveys/${surveyId}/add-question`}
-                                            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
+                                            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-blue-700 hover:shadow-md"
                                         >
-                                            + Tambah Pertanyaan
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                                            </svg>
+                                            Tambah Pertanyaan
                                         </Link>
                                     )}
                                 </div>
 
                                 {questions.length === 0 ? (
-                                    <p className="text-sm text-gray-500">
-                                        Belum ada pertanyaan.
-                                    </p>
+                                    <div className="flex flex-col items-center rounded-xl border border-dashed border-gray-200 bg-gray-50/50 py-10 text-center">
+                                        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-2xl">📝</div>
+                                        <p className="text-sm font-semibold text-gray-700">Belum ada pertanyaan</p>
+                                        <p className="mt-1 text-xs text-gray-400">Tambahkan pertanyaan untuk mulai membangun surveymu.</p>
+                                        {survey.status === 'draft' && (
+                                            <Link href={`/my-surveys/${surveyId}/add-question`}
+                                                className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-700">
+                                                + Tambah Pertanyaan Pertama
+                                            </Link>
+                                        )}
+                                    </div>
                                 ) : (
-                                    <div className="space-y-4">
+                                    <div className="space-y-3">
                                         {questions.map((q: Question, i: number) => (
                                             <QuestionItem
                                                 key={q.id}
@@ -914,6 +884,7 @@ export default function SurveyDetailPage() {
                                 )}
                             </div>
 
+                            </div>{/* end p-6 body */}
                         </div>
                     )}
                 </div>
