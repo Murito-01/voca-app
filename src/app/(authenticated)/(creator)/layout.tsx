@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import TopBar from '@/components/ui/TopBar'
 import CreatorSidebar from '@/components/creator/CreatorSidebar'
 import { getWalletBalance } from '@/services/survey.service'
+import { supabase } from '@/lib/supabase'
 
 export default function CreatorLayout({ children }: { children: React.ReactNode }) {
   const [walletBalance, setWalletBalance] = useState<number | null>(null)
@@ -13,6 +14,9 @@ export default function CreatorLayout({ children }: { children: React.ReactNode 
 
     const fetchWallet = async () => {
       try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) return
+
         const wallet = await getWalletBalance()
         if (!cancelled) setWalletBalance(wallet.balance)
       } catch {
