@@ -4,12 +4,17 @@ import { useEffect, useState } from 'react'
 import TopBar from '@/components/ui/TopBar'
 import ResponderSidebar from '@/components/responder/ResponderSidebar'
 import { getWalletBalance } from '@/services/survey.service'
+import AuthGuard from '@/components/ui/AuthGuard'
+import { supabase } from '@/lib/supabase'
 
 export default function ResponderLayout({ children }: { children: React.ReactNode }) {
   const [walletBalance, setWalletBalance] = useState<number | null>(null)
 
   const fetchWallet = async () => {
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+
       const wallet = await getWalletBalance()
       setWalletBalance(wallet.balance)
     } catch {
@@ -34,14 +39,16 @@ export default function ResponderLayout({ children }: { children: React.ReactNod
   }, [])
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <TopBar walletBalance={walletBalance} />
-      <div className="md:flex">
-        <ResponderSidebar />
-        <main className="flex-1 p-6 md:p-8">
-          {children}
-        </main>
+    <AuthGuard>
+      <div className="min-h-screen bg-gray-100">
+        <TopBar walletBalance={walletBalance} />
+        <div className="md:flex">
+          <ResponderSidebar />
+          <main className="flex-1 p-6 md:p-8">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </AuthGuard>
   )
 }
