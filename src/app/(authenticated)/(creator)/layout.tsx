@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import TopBar from '@/components/ui/TopBar'
 import CreatorSidebar from '@/components/creator/CreatorSidebar'
 import { getWalletBalance } from '@/services/survey.service'
-import AuthGuard from '@/components/ui/AuthGuard'
 import { supabase } from '@/lib/supabase'
 
 export default function CreatorLayout({ children }: { children: React.ReactNode }) {
@@ -32,16 +31,14 @@ export default function CreatorLayout({ children }: { children: React.ReactNode 
   }, [])
 
   return (
-    <AuthGuard>
-      <div className="min-h-screen bg-gray-100">
-        <TopBar walletBalance={walletBalance} />
-        <div className="md:flex">
-          <CreatorSidebar />
-          <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
-            {children}
-          </main>
-        </div>
+    <div className="min-h-screen bg-gray-100">
+      <TopBar walletBalance={walletBalance} />
+      <div className="md:flex">
+        <CreatorSidebar />
+        <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
+          {children}
+        </main>
       </div>
-    </AuthGuard>
+    </div>
   )
 }
