@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import LogoutButton from "@/components/ui/LogoutButton";
 import { User } from "@supabase/supabase-js";
 
 export default function Home() {
@@ -12,6 +11,17 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const router = useRouter();
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (!error) {
+      setUser(null);
+      router.push("/");
+      router.refresh();
+    } else {
+      console.error("Error logging out:", error.message);
+    }
+  };
 
   useEffect(() => {
     const checkUser = async () => {
@@ -102,7 +112,12 @@ export default function Home() {
           ) : (
             <div className="flex items-center gap-4">
               <span className="text-xs font-semibold text-gray-500 hidden sm:inline">Signed in as {user.email}</span>
-              <LogoutButton />
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100/80 rounded-lg border border-red-100 transition-all shadow-sm active:scale-95 cursor-pointer"
+              >
+                Logout
+              </button>
             </div>
           )}
         </div>
