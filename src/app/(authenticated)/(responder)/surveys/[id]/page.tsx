@@ -4,11 +4,15 @@ import { useEffect, useState, use, useRef } from "react";
 import { getSurveyById, getSurveyQuestions } from "@/services/survey.service";
 import { getResponseById, startSurveyResponse, getDraftResponse, saveAnswer } from "@/services/response.service";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 import SubmitResponseButton, { type SubmitResponseResult } from "@/components/responder/SubmitResponseButton";
 import SubmissionFeedback from "@/components/responder/SubmissionFeedback";
 
+
 export default function SurveyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const router = useRouter();
 
   const [survey, setSurvey] = useState<any>(null);
   const [questions, setQuestions] = useState<any[]>([]);
@@ -29,13 +33,21 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [surveyResult, questionsResult] = await Promise.all([
+        const [surveyResult, questionsResult, sessionResult] = await Promise.all([
           getSurveyById(id),
-          getSurveyQuestions(id)
+          getSurveyQuestions(id),
+          supabase.auth.getSession()
         ]);
 
         const surveyData = surveyResult?.data ?? null;
         const questionsData = questionsResult?.data ?? [];
+        const session = sessionResult?.data?.session;
+        const currentUser = session?.user;
+
+        if (surveyData && currentUser && currentUser.id === surveyData.creator_id) {
+          router.replace(`/my-surveys/${id}`);
+          return;
+        }
 
         if (surveyData) setSurvey(surveyData);
         if (questionsData) setQuestions(questionsData);
