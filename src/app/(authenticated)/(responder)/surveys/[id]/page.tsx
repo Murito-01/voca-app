@@ -77,9 +77,9 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
             setSaveStatus('restored');
           }
         }
+        setIsLoading(false);
       } catch (err: any) {
         setError(err.message);
-      } finally {
         setIsLoading(false);
       }
     };
