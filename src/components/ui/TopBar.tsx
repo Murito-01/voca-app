@@ -18,8 +18,8 @@ export default function TopBar({ walletBalance }: { walletBalance: number | null
   const pathname = usePathname()
   const router = useRouter()
 
-  const isCreatorRoute = pathname?.startsWith('/creator')
-  const isResponderRoute = pathname?.startsWith('/responder')
+  const isCreatorRoute = pathname?.startsWith('/creator') || pathname?.startsWith('/my-surveys')
+  const isResponderRoute = pathname?.startsWith('/responder') || pathname?.startsWith('/surveys') || pathname?.startsWith('/my-responses')
 
   const [user, setUser] = useState<User | null>(null)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
