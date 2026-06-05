@@ -3,12 +3,24 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { getMySurveys, getSurveyQuestions, getSurveyInsight, getSurveyBurnRate } from '@/services/survey.service'
+import { getMySurveys, getSurveyQuestions, getSurveyInsight, getSurveyBurnRate, getSurveyTargeting, updateSurveyTargeting } from '@/services/survey.service'
 import { generateSurveyInsight } from '@/lib/survey-insight'
 import { getEstimationSummary } from '@/lib/survey-estimation'
 import { computeRewardRecommendation, type QuestionLike } from '@/lib/reward-recommendation'
 import QuestionItem from '@/components/creator/QuestionItem'
 import { Question } from '@/types/survey.types'
+
+const JOB_OPTIONS = [
+    'Mahasiswa', 'Pelajar', 'Karyawan', 'Freelancer', 'Wirausaha',
+    'Ibu rumah tangga', 'PNS', 'Profesional', 'Tidak bekerja', 'Lainnya',
+]
+
+type SurveyTargeting = {
+    gender: string | null
+    age_min: number | null
+    age_max: number | null
+    jobs: string[] | null
+}
 
 type SurveyBurnRate = {
     completed_responses: number
@@ -58,6 +70,15 @@ export default function SurveyDetailPage() {
     } | null>(null)
     const [insightData, setInsightData] = useState<any>(null)
     const [burnRate, setBurnRate] = useState<SurveyBurnRate | null>(null)
+
+    // Targeting state
+    const [targeting, setTargeting] = useState<SurveyTargeting | null>(null)
+    const [isEditingTargeting, setIsEditingTargeting] = useState(false)
+    const [editTargetGender, setEditTargetGender] = useState<string | null>(null)
+    const [editTargetAgeMin, setEditTargetAgeMin] = useState<number | ''>('')
+    const [editTargetAgeMax, setEditTargetAgeMax] = useState<number | ''>('')
+    const [editTargetJobs, setEditTargetJobs] = useState<string[]>([])
+    const [isSavingTargeting, setIsSavingTargeting] = useState(false)
 
     useEffect(() => {
         const fetchSurvey = async () => {
@@ -161,6 +182,53 @@ export default function SurveyDetailPage() {
 
         return () => { cancelled = true }
     }, [surveyId, survey?.status, survey?.remaining_responses])
+
+    // Fetch targeting data
+    useEffect(() => {
+        if (!surveyId || !survey) return
+        let cancelled = false
+        ;(async () => {
+            try {
+                const json = await getSurveyTargeting(surveyId)
+                if (!cancelled) {
+                    setTargeting(json.data ?? null)
+                }
+            } catch {
+                if (!cancelled) setTargeting(null)
+            }
+        })()
+        return () => { cancelled = true }
+    }, [surveyId, survey])
+
+    const handleStartEditTargeting = () => {
+        setEditTargetGender(targeting?.gender ?? null)
+        setEditTargetAgeMin(targeting?.age_min ?? '')
+        setEditTargetAgeMax(targeting?.age_max ?? '')
+        setEditTargetJobs(targeting?.jobs ?? [])
+        setIsEditingTargeting(true)
+    }
+
+    const handleCancelTargeting = () => {
+        setIsEditingTargeting(false)
+    }
+
+    const handleSaveTargeting = async () => {
+        setIsSavingTargeting(true)
+        try {
+            const result = await updateSurveyTargeting(surveyId, {
+                gender: editTargetGender,
+                age_min: editTargetAgeMin !== '' ? Number(editTargetAgeMin) : null,
+                age_max: editTargetAgeMax !== '' ? Number(editTargetAgeMax) : null,
+                jobs: editTargetJobs,
+            })
+            setTargeting(result.data ?? null)
+            setIsEditingTargeting(false)
+        } catch (err: any) {
+            alert(err.message || 'Gagal menyimpan targeting')
+        } finally {
+            setIsSavingTargeting(false)
+        }
+    }
 
     const handleDeleteQuestion = async (questionId: string) => {
         if (!confirm('Apakah Anda yakin ingin menghapus pertanyaan ini?')) return;
@@ -511,6 +579,164 @@ export default function SurveyDetailPage() {
                                         </div>
                                     )}
                                 </div>
+                            </div>
+
+                            {/* ===== TARGET RESPONDEN CARD ===== */}
+                            <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+                                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/60">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-base">🎯</span>
+                                        <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Target Responden</p>
+                                    </div>
+                                    {survey.status === 'draft' && !isEditingTargeting && (
+                                        <button
+                                            onClick={handleStartEditTargeting}
+                                            className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-blue-600 transition-colors"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                            Edit
+                                        </button>
+                                    )}
+                                </div>
+
+                                {isEditingTargeting ? (
+                                    <div className="p-4 space-y-4">
+                                        {/* Edit: Gender */}
+                                        <div>
+                                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Gender</p>
+                                            <div className="flex gap-2 flex-wrap">
+                                                {[
+                                                    { value: null, label: 'Semua', icon: '👥' },
+                                                    { value: 'male', label: 'Pria', icon: '👨' },
+                                                    { value: 'female', label: 'Wanita', icon: '👩' },
+                                                ].map((opt) => (
+                                                    <button
+                                                        key={String(opt.value)}
+                                                        type="button"
+                                                        onClick={() => setEditTargetGender(opt.value)}
+                                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+                                                            editTargetGender === opt.value
+                                                                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                                                : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                                                        }`}
+                                                    >
+                                                        <span>{opt.icon}</span>{opt.label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Edit: Rentang Usia */}
+                                        <div>
+                                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Rentang Usia</p>
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="number"
+                                                    min="1" max="100"
+                                                    placeholder="Min"
+                                                    value={editTargetAgeMin}
+                                                    onChange={(e) => setEditTargetAgeMin(e.target.value === '' ? '' : Number(e.target.value))}
+                                                    className="w-20 px-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                />
+                                                <span className="text-gray-400 text-xs">—</span>
+                                                <input
+                                                    type="number"
+                                                    min="1" max="100"
+                                                    placeholder="Max"
+                                                    value={editTargetAgeMax}
+                                                    onChange={(e) => setEditTargetAgeMax(e.target.value === '' ? '' : Number(e.target.value))}
+                                                    className="w-20 px-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Edit: Pekerjaan */}
+                                        <div>
+                                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Pekerjaan</p>
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {JOB_OPTIONS.map((job) => {
+                                                    const isSelected = editTargetJobs.includes(job)
+                                                    return (
+                                                        <button
+                                                            key={job}
+                                                            type="button"
+                                                            onClick={() => setEditTargetJobs(prev =>
+                                                                isSelected ? prev.filter(j => j !== job) : [...prev, job]
+                                                            )}
+                                                            className={`px-2.5 py-1 rounded-full border text-xs font-medium transition-all ${
+                                                                isSelected
+                                                                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                                                                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                                                            }`}
+                                                        >
+                                                            {isSelected && <span className="mr-1">✓</span>}
+                                                            {job}
+                                                        </button>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex gap-2 pt-1">
+                                            <button
+                                                onClick={handleSaveTargeting}
+                                                disabled={isSavingTargeting}
+                                                className="px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 disabled:bg-blue-300"
+                                            >
+                                                {isSavingTargeting ? 'Menyimpan...' : 'Simpan'}
+                                            </button>
+                                            <button
+                                                onClick={handleCancelTargeting}
+                                                disabled={isSavingTargeting}
+                                                className="px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-200"
+                                            >
+                                                Batal
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="p-4">
+                                        {!targeting || (!targeting.gender && !targeting.age_min && !targeting.age_max && !(targeting.jobs?.length)) ? (
+                                            <p className="text-sm text-gray-400 italic">Tidak ada targeting — semua responden dapat mengisi survey ini.</p>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                {targeting.gender && (
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs font-semibold text-gray-500 w-20">Gender</span>
+                                                        <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-200">
+                                                            {targeting.gender === 'male' ? '👨 Pria' : '👩 Wanita'}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                {(targeting.age_min || targeting.age_max) && (
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs font-semibold text-gray-500 w-20">Usia</span>
+                                                        <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-200">
+                                                            {targeting.age_min ?? '?'} – {targeting.age_max ?? '?'} tahun
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                {targeting.jobs && targeting.jobs.length > 0 && (
+                                                    <div className="flex items-start gap-2">
+                                                        <span className="text-xs font-semibold text-gray-500 w-20 mt-0.5">Pekerjaan</span>
+                                                        <div className="flex flex-wrap gap-1.5">
+                                                            {targeting.jobs.map(job => (
+                                                                <span key={job} className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-xs font-medium border border-indigo-200">
+                                                                    {job}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                        {survey.status !== 'draft' && (
+                                            <p className="mt-3 text-[11px] text-gray-400 italic">Targeting tidak dapat diubah setelah survey dipublish.</p>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Burn Rate Visualization UI */}
