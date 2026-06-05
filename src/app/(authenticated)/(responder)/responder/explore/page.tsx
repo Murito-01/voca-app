@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { getSurveys } from '@/services/survey.service'
+import { supabase } from '@/lib/supabase'
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat('id-ID', {
@@ -12,18 +13,45 @@ function formatCurrency(value: number) {
   }).format(value)
 }
 
+type IncompleteField = 'Gender' | 'Usia' | 'Pekerjaan'
+
 export default function ExploreSurveysPage() {
   const [surveys, setSurveys] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [incompleteFields, setIncompleteFields] = useState<IncompleteField[]>([])
+  const [bannerDismissed, setBannerDismissed] = useState(false)
 
   useEffect(() => {
     let cancelled = false
 
     const fetchData = async () => {
       try {
-        const result = await getSurveys()
-        if (!cancelled) setSurveys(result.data || [])
+        // Fetch surveys and user profile in parallel
+        const { data: { session } } = await supabase.auth.getSession()
+        const token = session?.access_token
+
+        const [result, profileRes] = await Promise.all([
+          getSurveys(),
+          token
+            ? fetch('/api/profile', {
+                headers: { Authorization: `Bearer ${token}` },
+              }).then((r) => r.ok ? r.json() : null)
+            : Promise.resolve(null),
+        ])
+
+        if (!cancelled) {
+          setSurveys(result.data || [])
+
+          if (profileRes?.data) {
+            const p = profileRes.data
+            const missing: IncompleteField[] = []
+            if (!p.gender) missing.push('Gender')
+            if (p.age === null || p.age === undefined) missing.push('Usia')
+            if (!p.job) missing.push('Pekerjaan')
+            setIncompleteFields(missing)
+          }
+        }
       } catch (err: unknown) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Terjadi kesalahan saat memuat data.')
@@ -76,6 +104,45 @@ export default function ExploreSurveysPage() {
         <h1 className="text-2xl font-bold text-gray-900">Cari Survey</h1>
         <p className="text-sm text-gray-500">Daftar survey yang tersedia untukmu.</p>
       </div>
+
+      {/* Incomplete profile banner */}
+      {!bannerDismissed && incompleteFields.length > 0 && (
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5 shadow-sm">
+          <span className="shrink-0 text-lg mt-0.5">🎯</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-amber-900">
+              Lengkapi profilmu untuk melihat lebih banyak survey!
+            </p>
+            <p className="mt-0.5 text-xs text-amber-700 leading-relaxed">
+              Beberapa survey hanya ditampilkan untuk responden dengan profil yang sesuai.
+              Profil yang belum diisi:&nbsp;
+              {incompleteFields.map((field, i) => (
+                <span key={field}>
+                  <span className="inline-flex items-center rounded-full bg-amber-200 px-2 py-0.5 text-[11px] font-semibold text-amber-900">
+                    {field}
+                  </span>
+                  {i < incompleteFields.length - 1 && <span className="mx-1 text-amber-500">·</span>}
+                </span>
+              ))}
+            </p>
+            <Link
+              href="/responder/profile"
+              className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-amber-800 underline underline-offset-2 hover:text-amber-900 transition-colors"
+            >
+              Lengkapi profil sekarang →
+            </Link>
+          </div>
+          <button
+            onClick={() => setBannerDismissed(true)}
+            className="shrink-0 p-1 text-amber-400 hover:text-amber-600 transition-colors rounded-md hover:bg-amber-100"
+            aria-label="Tutup notifikasi"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="rounded-lg border border-red-100 bg-red-50 p-4 text-sm text-red-700">
