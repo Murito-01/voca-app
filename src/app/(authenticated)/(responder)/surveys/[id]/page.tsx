@@ -184,15 +184,70 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
   }
 
   if (error || !survey) {
+    const isTargetingError = error ? error.includes("Anda tidak memenuhi kriteria target responden survei ini") : false;
+
     return (
-      <div>
-        <Link href="/responder/explore" className="text-blue-600 hover:underline mb-6 inline-block font-medium">
-          &larr; Back to Surveys
+      <div className="max-w-2xl mx-auto px-4 py-12">
+        <Link href="/responder/explore" className="text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1.5 mb-8 group transition-colors">
+          <span className="group-hover:-translate-x-1 transition-transform">&larr;</span> Kembali ke Jelajah Survei
         </Link>
-        <div className="bg-red-50 text-red-600 p-6 rounded-lg border border-red-100 shadow-sm">
-          <h2 className="text-xl font-semibold mb-2">Error Loading Survey</h2>
-          <p>{error || "Survey not found."}</p>
-        </div>
+        
+        {isTargetingError ? (
+          <div className="bg-white rounded-2xl border border-amber-100 shadow-xl overflow-hidden">
+            <div className="p-8 md:p-10 text-center">
+              <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-amber-100 text-amber-500">
+                <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">Profil Anda Belum Sesuai Kriteria</h2>
+              <p className="text-gray-600 mb-8 max-w-md mx-auto leading-relaxed text-sm">
+                Pembuat survei ini membatasi responden berdasarkan kriteria profil tertentu (seperti usia, gender, atau jenis pekerjaan) yang saat ini belum sesuai dengan profil Anda.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <Link
+                  href="/responder/profile"
+                  className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl shadow-md hover:bg-blue-700 hover:shadow-lg active:scale-95 transition-all text-sm text-center"
+                >
+                  Perbarui Profil Anda
+                </Link>
+                <Link
+                  href="/responder/explore"
+                  className="w-full sm:w-auto px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 active:scale-95 transition-all text-sm text-center"
+                >
+                  Cari Survei Lain
+                </Link>
+              </div>
+            </div>
+            <div className="bg-amber-50/50 border-t border-amber-100/50 px-8 py-4 text-xs text-amber-700 text-center">
+              Pastikan profil Anda selalu diperbarui untuk mendapatkan akses ke lebih banyak survei.
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-red-100 shadow-xl overflow-hidden">
+            <div className="p-8 md:p-10 text-center">
+              <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-100 text-red-500">
+                <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">Gagal Memuat Survei</h2>
+              <p className="text-gray-600 mb-8 max-w-md mx-auto leading-relaxed text-sm">
+                {error || "Survei tidak ditemukan atau terjadi kesalahan saat mengambil data."}
+              </p>
+              
+              <Link
+                href="/responder/explore"
+                className="inline-block px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl shadow-md hover:bg-blue-700 hover:shadow-lg active:scale-95 transition-all text-sm text-center"
+              >
+                Kembali ke Jelajah Survei
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
