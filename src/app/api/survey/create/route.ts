@@ -74,6 +74,29 @@ export async function POST(req: Request) {
         const surveyId = Array.isArray(data) ? data[0] : data
         if (surveyId) {
             await logSurveyEvent(supabase, surveyId, 'created')
+
+            // Upsert targeting jika ada data targeting di body
+            const targeting = body.targeting
+            if (targeting && typeof targeting === 'object') {
+                const jobs: string[] = Array.isArray(targeting.jobs) ? targeting.jobs : []
+                const gender: string | null = targeting.gender ?? null
+                const age_min: number | null = targeting.age_min ?? null
+                const age_max: number | null = targeting.age_max ?? null
+
+                // Hanya simpan jika ada setidaknya satu filter aktif
+                const hasAnyFilter = gender !== null || age_min !== null || age_max !== null || jobs.length > 0
+                if (hasAnyFilter) {
+                    await supabase.from('survey_targeting').upsert({
+                        survey_id: surveyId,
+                        gender,
+                        age_min,
+                        age_max,
+                        jobs: jobs.length > 0 ? jobs : null,
+                        updated_at: new Date().toISOString(),
+                    }, { onConflict: 'survey_id' })
+                    // Non-blocking: error targeting tidak batalkan pembuatan survey
+                }
+            }
         }
 
         return Response.json({
