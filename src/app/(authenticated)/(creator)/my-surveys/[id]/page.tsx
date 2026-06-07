@@ -393,8 +393,7 @@ export default function SurveyDetailPage() {
                 @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
             `}</style>
 
-            <div className="survey-detail-root min-h-screen" style={{ background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)' }}>
-                <div className="mx-auto max-w-4xl px-4 pb-16 pt-6 sm:px-6">
+            <section className="survey-detail-root mx-auto w-full max-w-6xl">
 
                     {/* Back */}
                     <Link
@@ -1243,10 +1242,12 @@ export default function SurveyDetailPage() {
                                 </div>
                             </div>
 
-                        </div> // end space-y-5
+                        </div>
                     )}
-                </div>
-            </div>
+            </section>
+
+
+
 
             {/* ===== CLOSE SURVEY CONFIRMATION MODAL ===== */}
             {showCloseModal && survey && (
