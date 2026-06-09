@@ -162,7 +162,7 @@ export default function ResponseDetail() {
             <p className="text-sm text-gray-500 mb-6">{error || 'Data tidak ditemukan.'}</p>
             <button
               onClick={() => window.location.reload()}
-              className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-sm font-semibold rounded-xl shadow-sm active:scale-95 transition-all"
+              className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-sm font-semibold rounded-xl shadow-sm active:scale-95 transition-all cursor-pointer"
             >
               Coba Lagi
             </button>

@@ -403,7 +403,7 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
             <button
               onClick={handleStartSurvey}
               disabled={isStarting}
-              className="px-8 py-3 font-bold text-white bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 active:scale-95 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-8 py-3 font-bold text-white bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 active:scale-95 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {isStarting ? (
                 <>
