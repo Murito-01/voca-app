@@ -288,7 +288,7 @@ export default function ProfilePageContent() {
           <p className="text-red-700 font-medium">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 text-sm font-semibold text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+            className="mt-4 px-4 py-2 text-sm font-semibold text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition-colors cursor-pointer"
           >
             Coba Lagi
           </button>
@@ -414,7 +414,7 @@ export default function ProfilePageContent() {
                 <button
                   onClick={handleReset}
                   disabled={saving}
-                  className="px-4 py-2.5 text-sm font-semibold text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  className="px-4 py-2.5 text-sm font-semibold text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Batalkan Perubahan
                 </button>
@@ -425,7 +425,7 @@ export default function ProfilePageContent() {
                 className={`flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-lg transition-all ${
                   saving || !isDirty
                     ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                    : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow-md active:scale-[0.98]'
+                    : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow-md active:scale-[0.98] cursor-pointer'
                 }`}
               >
                 {saving ? (

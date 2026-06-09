@@ -27,7 +27,6 @@ export default function ExploreSurveysPage() {
 
     const fetchData = async () => {
       try {
-        // Fetch surveys and user profile in parallel
         const { data: { session } } = await supabase.auth.getSession()
         const token = session?.access_token
 
@@ -67,6 +66,7 @@ export default function ExploreSurveysPage() {
     }
   }, [])
 
+  // ── Skeleton ───────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <section className="mx-auto w-full max-w-6xl animate-pulse">
@@ -81,7 +81,7 @@ export default function ExploreSurveysPage() {
           {[...Array(6)].map((_, i) => (
             <div key={i} className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
               <div className="mb-4 flex justify-between items-start">
-                <div className="h-5 w-14 rounded-full bg-green-100" />
+                <div className="h-5 w-14 rounded-full bg-emerald-100" />
                 <div className="h-4 w-10 rounded bg-gray-100" />
               </div>
               <div className="h-5 w-3/4 rounded bg-gray-200 mb-2" />
@@ -89,7 +89,7 @@ export default function ExploreSurveysPage() {
               <div className="h-3 w-5/6 rounded bg-gray-100" />
               <div className="mt-4 pt-4 border-t border-gray-100 space-y-1.5">
                 <div className="h-3 w-32 rounded bg-gray-100" />
-                <div className="h-3 w-24 rounded bg-blue-100" />
+                <div className="h-3 w-24 rounded bg-emerald-100" />
               </div>
             </div>
           ))}
@@ -100,6 +100,7 @@ export default function ExploreSurveysPage() {
 
   return (
     <section className="mx-auto w-full max-w-6xl">
+      {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Cari Survey</h1>
         <p className="text-sm text-gray-500">Daftar survey yang tersedia untukmu.</p>
@@ -134,7 +135,7 @@ export default function ExploreSurveysPage() {
           </div>
           <button
             onClick={() => setBannerDismissed(true)}
-            className="shrink-0 p-1 text-amber-400 hover:text-amber-600 transition-colors rounded-md hover:bg-amber-100"
+            className="shrink-0 p-1 text-amber-400 hover:text-amber-600 transition-colors rounded-md hover:bg-amber-100 cursor-pointer"
             aria-label="Tutup notifikasi"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -144,14 +145,25 @@ export default function ExploreSurveysPage() {
         </div>
       )}
 
+      {/* Error */}
       {error && (
-        <div className="rounded-lg border border-red-100 bg-red-50 p-4 text-sm text-red-700">
-          {error}
+        <div className="rounded-xl border border-red-100 bg-red-50 p-6 text-center shadow-sm mb-6">
+          <p className="text-red-700 font-medium">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 text-sm font-semibold text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition-colors cursor-pointer"
+          >
+            Coba Lagi
+          </button>
         </div>
       )}
 
+      {/* Empty state */}
       {!error && surveys.length === 0 && (
-        <div className="rounded-xl border border-gray-200 bg-white p-10 text-center shadow-sm">
+        <div className="rounded-xl border border-gray-200 bg-white p-12 text-center shadow-sm">
+          <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center text-2xl mx-auto mb-4">
+            📭
+          </div>
           <p className="text-lg font-semibold text-gray-700">Belum ada survey</p>
           <p className="mt-1 text-sm text-gray-500">
             Tidak ada survey aktif saat ini. Cek lagi nanti!
@@ -159,48 +171,59 @@ export default function ExploreSurveysPage() {
         </div>
       )}
 
+      {/* Survey Grid */}
       {!error && surveys.length > 0 && (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {surveys.map((survey) => (
             <Link
               href={`/surveys/${survey.id}`}
               key={survey.id}
-              className="block bg-white border border-gray-100 rounded-xl p-6 shadow-sm hover:shadow-md hover:border-blue-200 transition-all group"
+              className="block bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md hover:border-emerald-200 transition-all group overflow-hidden"
             >
-              <div className="flex justify-between items-start mb-4">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  Active
-                </span>
-                <span className="text-sm text-gray-500 font-medium">
-                  {survey.remaining_responses} left
-                </span>
-              </div>
+              {/* Card accent strip */}
+              <div className="h-1.5 w-full bg-gradient-to-r from-emerald-400 to-teal-500" />
 
-              <h3
-                className="text-lg font-semibold text-gray-900 mb-2 truncate"
-                title={survey.title}
-              >
-                {survey.title || `Survey ${survey.id?.substring(0, 8)}...`}
-              </h3>
-
-              {survey.description && (
-                <p
-                  className="text-gray-600 text-sm mb-4 line-clamp-2"
-                  title={survey.description}
-                >
-                  {survey.description}
-                </p>
-              )}
-
-              <div className="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500">
-                <span className="block mb-1">
-                  Creator: {survey.creator_id?.substring(0, 8)}...
-                </span>
-                {survey.reward_per_response && (
-                  <span className="block font-semibold text-blue-600">
-                    Reward: {formatCurrency(survey.reward_per_response)}
+              <div className="p-6">
+                {/* Status row */}
+                <div className="flex justify-between items-start mb-4">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Active
                   </span>
+                  <span className="text-xs text-gray-400 font-medium bg-gray-100 px-2.5 py-0.5 rounded-full">
+                    {survey.remaining_responses} tersisa
+                  </span>
+                </div>
+
+                {/* Title */}
+                <h3
+                  className="text-base font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-emerald-700 transition-colors"
+                  title={survey.title}
+                >
+                  {survey.title || `Survey ${survey.id?.substring(0, 8)}...`}
+                </h3>
+
+                {/* Description */}
+                {survey.description && (
+                  <p
+                    className="text-gray-500 text-sm mb-4 line-clamp-2 leading-relaxed"
+                    title={survey.description}
+                  >
+                    {survey.description}
+                  </p>
                 )}
+
+                {/* Footer */}
+                <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                  <span className="text-xs text-gray-400">
+                    ID: {survey.creator_id?.substring(0, 8)}...
+                  </span>
+                  {survey.reward_per_response && (
+                    <span className="inline-flex items-center gap-1 text-xs font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">
+                      💰 {formatCurrency(survey.reward_per_response)}
+                    </span>
+                  )}
+                </div>
               </div>
             </Link>
           ))}
