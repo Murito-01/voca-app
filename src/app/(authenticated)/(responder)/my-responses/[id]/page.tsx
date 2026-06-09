@@ -186,11 +186,23 @@ export default function ResponseDetail() {
     }, {})
   ) as any[]
 
-  const { pill, dot, label } = statusStyle(data.status)
+  // Normalize score_breakdown — Supabase JSONB can arrive as a string
+  const rawBreakdown = data.score_breakdown
+  const scoreBreakdown: Record<string, any> | null = (() => {
+    if (!rawBreakdown) return null
+    if (typeof rawBreakdown === 'string') {
+      try { return JSON.parse(rawBreakdown) } catch { return null }
+    }
+    if (typeof rawBreakdown === 'object') return rawBreakdown
+    return null
+  })()
+
   const hasBreakdown =
-    data.score_breakdown &&
-    typeof data.score_breakdown === 'object' &&
-    Object.keys(data.score_breakdown).length > 0
+    scoreBreakdown !== null &&
+    typeof scoreBreakdown === 'object' &&
+    Object.keys(scoreBreakdown).length > 0
+
+  const { pill, dot, label } = statusStyle(data.status)
 
   return (
     <section className="mx-auto w-full max-w-6xl">
@@ -273,9 +285,9 @@ export default function ResponseDetail() {
               <div className="bg-gradient-to-br from-amber-50 to-amber-100/40 p-4 rounded-xl border border-amber-200/50 shadow-sm">
                 <p className="text-amber-700 text-xs font-semibold uppercase tracking-wider mb-1">Durasi</p>
                 <p className="text-lg font-extrabold text-amber-900">
-                  {formatDuration(data.score_breakdown.duration)}
+                  {formatDuration(scoreBreakdown!.duration)}
                 </p>
-                {data.score_breakdown.duration >= data.score_breakdown.min_duration ? (
+                {scoreBreakdown!.duration >= scoreBreakdown!.min_duration ? (
                   <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-full">Normal ✅</span>
                 ) : (
                   <span className="text-[10px] font-bold text-red-700 bg-red-100 px-1.5 py-0.5 rounded-full">Terlalu cepat ❌</span>
@@ -288,12 +300,12 @@ export default function ResponseDetail() {
               <div className="bg-gradient-to-br from-gray-50 to-gray-100/40 p-4 rounded-xl border border-gray-200/50 shadow-sm">
                 <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1">Attention Check</p>
                 <p className="text-sm font-bold text-gray-800">
-                  {data.score_breakdown.attention_check === 'passed' ? (
+                  {scoreBreakdown!.attention_check === 'passed' ? (
                     <span className="text-emerald-600">Passed ✅</span>
-                  ) : data.score_breakdown.attention_check === 'failed' ? (
+                  ) : scoreBreakdown!.attention_check === 'failed' ? (
                     <span className="text-red-600">Failed ❌</span>
                   ) : (
-                    <span className="capitalize text-gray-500">{data.score_breakdown.attention_check || 'N/A'}</span>
+                    <span className="capitalize text-gray-500">{scoreBreakdown!.attention_check || 'N/A'}</span>
                   )}
                 </p>
               </div>
@@ -312,36 +324,36 @@ export default function ResponseDetail() {
                 <div className="p-4 space-y-2 text-sm font-mono">
                   <div className="flex justify-between text-gray-700">
                     <span>+ Base Score</span>
-                    <span className="font-bold">{data.score_breakdown.base || 0}</span>
+                    <span className="font-bold">{scoreBreakdown!.base || 0}</span>
                   </div>
-                  {(data.score_breakdown.time_penalty || 0) !== 0 && (
+                  {(scoreBreakdown!.time_penalty || 0) !== 0 && (
                     <div className="flex justify-between text-red-600">
-                      <span>− Time Penalty ({formatDuration(data.score_breakdown.duration)})</span>
-                      <span className="font-bold">{Math.abs(data.score_breakdown.time_penalty)}</span>
+                      <span>− Time Penalty ({formatDuration(scoreBreakdown!.duration)})</span>
+                      <span className="font-bold">{Math.abs(scoreBreakdown!.time_penalty)}</span>
                     </div>
                   )}
-                  {(data.score_breakdown.essay_penalty || 0) !== 0 && (
+                  {(scoreBreakdown!.essay_penalty || 0) !== 0 && (
                     <div className="flex justify-between text-red-600">
                       <span>− Essay Penalty</span>
-                      <span className="font-bold">{Math.abs(data.score_breakdown.essay_penalty)}</span>
+                      <span className="font-bold">{Math.abs(scoreBreakdown!.essay_penalty)}</span>
                     </div>
                   )}
-                  {(data.score_breakdown.reputation_bonus || 0) !== 0 && (
+                  {(scoreBreakdown!.reputation_bonus || 0) !== 0 && (
                     <div className="flex justify-between text-emerald-600">
                       <span>+ Reputation Bonus</span>
-                      <span className="font-bold">{data.score_breakdown.reputation_bonus}</span>
+                      <span className="font-bold">{scoreBreakdown!.reputation_bonus}</span>
                     </div>
                   )}
-                  {(data.score_breakdown.reputation_penalty || 0) !== 0 && (
+                  {(scoreBreakdown!.reputation_penalty || 0) !== 0 && (
                     <div className="flex justify-between text-red-600">
                       <span>− Reputation Penalty</span>
-                      <span className="font-bold">{Math.abs(data.score_breakdown.reputation_penalty)}</span>
+                      <span className="font-bold">{Math.abs(scoreBreakdown!.reputation_penalty)}</span>
                     </div>
                   )}
                   <div className="pt-2 mt-2 border-t border-gray-200 flex justify-between font-extrabold text-gray-900">
                     <span>Final Score</span>
-                    <span className={scoreColor(data.score_breakdown.final_score ?? data.score)}>
-                      {data.score_breakdown.final_score ?? data.score}
+                    <span className={scoreColor(scoreBreakdown!.final_score ?? data.score)}>
+                      {scoreBreakdown!.final_score ?? data.score}
                     </span>
                   </div>
                 </div>
@@ -356,10 +368,10 @@ export default function ResponseDetail() {
                     <h3 className="text-xs font-bold text-white uppercase tracking-wider">Duration</h3>
                   </div>
                   <div className="px-4 py-3 text-sm text-gray-700 flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold">{formatDuration(data.score_breakdown.duration)}</span>
+                    <span className="font-semibold">{formatDuration(scoreBreakdown!.duration)}</span>
                     <span className="text-gray-400">·</span>
-                    <span className="text-xs text-gray-500">Min: {formatDuration(data.score_breakdown.min_duration)}</span>
-                    {data.score_breakdown.duration >= data.score_breakdown.min_duration ? (
+                    <span className="text-xs text-gray-500">Min: {formatDuration(scoreBreakdown!.min_duration)}</span>
+                    {scoreBreakdown!.duration >= scoreBreakdown!.min_duration ? (
                       <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">Normal ✅</span>
                     ) : (
                       <span className="text-[10px] font-bold text-red-700 bg-red-100 px-2 py-0.5 rounded-full">Too fast ❌</span>
@@ -374,12 +386,12 @@ export default function ResponseDetail() {
                     <h3 className="text-xs font-bold text-white uppercase tracking-wider">Attention Check</h3>
                   </div>
                   <div className="px-4 py-3 text-sm text-gray-700">
-                    {data.score_breakdown.attention_check === 'passed' ? (
+                    {scoreBreakdown!.attention_check === 'passed' ? (
                       <span className="font-semibold text-emerald-600">Passed ✅</span>
-                    ) : data.score_breakdown.attention_check === 'failed' ? (
+                    ) : scoreBreakdown!.attention_check === 'failed' ? (
                       <span className="font-semibold text-red-600">Failed ❌</span>
                     ) : (
-                      <span className="capitalize text-gray-500">{data.score_breakdown.attention_check || 'N/A'}</span>
+                      <span className="capitalize text-gray-500">{scoreBreakdown!.attention_check || 'N/A'}</span>
                     )}
                   </div>
                 </div>
@@ -391,10 +403,10 @@ export default function ResponseDetail() {
                     <h3 className="text-xs font-bold text-white uppercase tracking-wider">Reputation</h3>
                   </div>
                   <div className="px-4 py-3 text-sm">
-                    {data.score_breakdown.reputation_bonus > 0 ? (
-                      <span className="font-semibold text-emerald-600">+{data.score_breakdown.reputation_bonus} Bonus</span>
-                    ) : data.score_breakdown.reputation_penalty > 0 ? (
-                      <span className="font-semibold text-red-600">−{data.score_breakdown.reputation_penalty} Penalty</span>
+                    {scoreBreakdown!.reputation_bonus > 0 ? (
+                      <span className="font-semibold text-emerald-600">+{scoreBreakdown!.reputation_bonus} Bonus</span>
+                    ) : scoreBreakdown!.reputation_penalty > 0 ? (
+                      <span className="font-semibold text-red-600">−{scoreBreakdown!.reputation_penalty} Penalty</span>
                     ) : (
                       <span className="text-gray-500">No impact</span>
                     )}
