@@ -35,6 +35,23 @@ type SurveyBurnRate = {
     budget_used_percent: number
 }
 
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; border: string; dot: string }> = {
+    draft:     { label: 'Draft',     color: 'text-slate-600',  bg: 'bg-slate-100',   border: 'border-slate-200', dot: 'bg-slate-400' },
+    active:    { label: 'Aktif',     color: 'text-emerald-700', bg: 'bg-emerald-50',  border: 'border-emerald-200', dot: 'bg-emerald-500' },
+    paused:    { label: 'Dijeda',    color: 'text-amber-700',  bg: 'bg-amber-50',    border: 'border-amber-200', dot: 'bg-amber-500' },
+    completed: { label: 'Selesai',   color: 'text-blue-700',   bg: 'bg-blue-50',     border: 'border-blue-200', dot: 'bg-blue-500' },
+}
+
+function StatusBadge({ status }: { status: string }) {
+    const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.draft
+    return (
+        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${cfg.bg} ${cfg.border} ${cfg.color}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot} ${status === 'active' ? 'animate-pulse' : ''}`} />
+            {cfg.label}
+        </span>
+    )
+}
+
 export default function SurveyDetailPage() {
     const params = useParams()
     const router = useRouter()
@@ -364,15 +381,26 @@ export default function SurveyDetailPage() {
 
     return (
         <>
-            <div className="min-h-screen bg-gray-50/50">
-                <div className="mx-auto max-w-4xl px-4 pb-12 pt-6 sm:px-6">
+            <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+                .survey-detail-root { font-family: 'Inter', sans-serif; }
+                .card-hover { transition: box-shadow 0.2s, transform 0.2s; }
+                .card-hover:hover { box-shadow: 0 4px 24px 0 rgba(0,0,0,0.08); transform: translateY(-1px); }
+                .progress-bar-fill { transition: width 0.6s cubic-bezier(0.4,0,0.2,1); }
+                .chip-btn { transition: all 0.15s ease; }
+                .chip-btn:hover { transform: scale(1.03); }
+                .pulse-dot { animation: pulse-dot 2s infinite; }
+                @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+            `}</style>
+
+            <section className="survey-detail-root mx-auto w-full max-w-6xl">
 
                     {/* Back */}
                     <Link
                         href="/my-surveys"
-                        className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 transition-colors hover:text-blue-600"
+                        className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition-colors hover:text-blue-600 mb-6"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                         </svg>
                         Kembali ke My Surveys
@@ -380,232 +408,387 @@ export default function SurveyDetailPage() {
 
                     {/* Loading */}
                     {loading && (
-                        <div className="flex h-48 items-center justify-center">
-                            <div className="flex flex-col items-center gap-3">
-                                <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-gray-200 border-t-blue-600" />
-                                <p className="text-sm text-gray-400">Memuat detail survey...</p>
+                        <div className="flex h-64 items-center justify-center">
+                            <div className="flex flex-col items-center gap-4">
+                                <div className="h-12 w-12 animate-spin rounded-full border-[3px] border-slate-200 border-t-blue-600" />
+                                <p className="text-sm text-slate-400 font-medium">Memuat detail survey...</p>
                             </div>
                         </div>
                     )}
 
                     {/* Error */}
                     {!loading && error && (
-                        <div className="mt-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
-                            <span className="text-lg shrink-0">⚠️</span>
-                            <p className="text-sm text-red-700">{error}</p>
+                        <div className="mt-6 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-5">
+                            <span className="text-xl shrink-0">⚠️</span>
+                            <p className="text-sm text-red-700 font-medium">{error}</p>
                         </div>
                     )}
 
                     {/* Content */}
                     {!loading && survey && (
-                        <div className="mt-6 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                        <div className="space-y-5">
 
-                            {/* Title & Publish Button */}
-                            <div className="flex justify-between items-start">
-                                {isEditingInfo ? (
-                                    <div className="flex-1 mr-4">
-                                        <input
-                                            type="text"
-                                            value={editTitle}
-                                            onChange={(e) => setEditTitle(e.target.value)}
-                                            className="w-full text-2xl font-bold text-gray-900 border-b-2 border-blue-500 focus:outline-none mb-2 bg-gray-50 px-2 py-1 rounded-t-md"
-                                            placeholder="Judul Survey"
-                                        />
-                                        <textarea
-                                            value={editDescription}
-                                            onChange={(e) => setEditDescription(e.target.value)}
-                                            className="w-full text-gray-600 border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm resize-none"
-                                            placeholder="Deskripsi Survey (Opsional)"
-                                            rows={3}
-                                        />
-                                        <div className="mt-2 flex gap-2">
-                                            <button
-                                                onClick={handleSaveInfo}
-                                                disabled={isSavingInfo}
-                                                className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:bg-blue-400"
-                                            >
-                                                {isSavingInfo ? 'Menyimpan...' : 'Simpan'}
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    setIsEditingInfo(false);
-                                                    setEditTitle(survey.title || '');
-                                                    setEditDescription(survey.description || '');
-                                                }}
-                                                disabled={isSavingInfo}
-                                                className="px-3 py-1.5 bg-gray-200 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-300 disabled:bg-gray-100"
-                                            >
-                                                Batal
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="flex-1 mr-4 group">
-                                        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                                            {survey.title}
-                                            {survey.status === 'draft' && (
+                            {/* ===== HERO HEADER CARD ===== */}
+                            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                                {/* Accent stripe */}
+                                <div className="h-1.5 w-full" style={{ background: survey.status === 'active' ? 'linear-gradient(90deg, #10b981, #059669)' : survey.status === 'paused' ? 'linear-gradient(90deg, #f59e0b, #d97706)' : survey.status === 'completed' ? 'linear-gradient(90deg, #3b82f6, #2563eb)' : 'linear-gradient(90deg, #94a3b8, #64748b)' }} />
+                                
+                                <div className="p-6">
+                                    {/* Top row: status + actions */}
+                                    <div className="flex items-center justify-between mb-4">
+                                        <StatusBadge status={survey.status} />
+                                        <div className="flex items-center gap-2">
+                                            {survey.status === 'draft' && !isEditingInfo && (
+                                                <>
+                                                    <button
+                                                        onClick={handlePublish}
+                                                        disabled={isPublishing || questions.length === 0 || publishBlockedByReward}
+                                                        className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all shadow-sm ${
+                                                            isPublishing || questions.length === 0 || publishBlockedByReward
+                                                                ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
+                                                                : 'bg-emerald-500 text-white hover:bg-emerald-600 hover:shadow-md'
+                                                        }`}
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 3l14 9-14 9V3z" />
+                                                        </svg>
+                                                        {isPublishing ? 'Publishing...' : 'Publish'}
+                                                    </button>
+                                                    <button
+                                                        onClick={handleDeleteSurvey}
+                                                        disabled={isDeleting}
+                                                        className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-500 transition-all hover:bg-red-100 hover:border-red-300 disabled:opacity-50"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                        {isDeleting ? 'Menghapus...' : 'Hapus'}
+                                                    </button>
+                                                </>
+                                            )}
+                                            {survey.status === 'active' && !isEditingInfo && (
                                                 <button
-                                                    onClick={() => setIsEditingInfo(true)}
-                                                    className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-blue-600 transition-opacity rounded-md hover:bg-blue-50"
-                                                    title="Edit Judul & Deskripsi"
+                                                    onClick={() => handleStatusChange('paused')}
+                                                    disabled={isChangingStatus}
+                                                    className="inline-flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-100 transition-all disabled:opacity-50"
                                                 >
-                                                    ✏️
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                                                        <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                                                    </svg>
+                                                    {isChangingStatus ? 'Processing...' : 'Pause'}
                                                 </button>
                                             )}
-                                        </h1>
-                                        {survey.description && (
-                                            <p className="mt-2 text-gray-600 text-sm whitespace-pre-wrap">
-                                                {survey.description}
-                                            </p>
-                                        )}
+                                            {survey.status === 'paused' && !isEditingInfo && (
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => handleStatusChange('active')}
+                                                        disabled={isChangingStatus}
+                                                        className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-600 shadow-sm transition-all disabled:opacity-50"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z"/></svg>
+                                                        {isChangingStatus ? 'Processing...' : 'Resume'}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleStatusChange('completed')}
+                                                        disabled={isChangingStatus}
+                                                        className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-500 hover:bg-red-100 transition-all disabled:opacity-50"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                                                        </svg>
+                                                        {isChangingStatus ? 'Processing...' : 'Tutup'}
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                )}
 
-                                {survey.status === 'draft' && !isEditingInfo && (
-                                    <div className="flex gap-2 shrink-0">
-                                        <button
-                                            onClick={handlePublish}
-                                            disabled={isPublishing || questions.length === 0 || publishBlockedByReward}
-                                            className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
-                                                isPublishing || questions.length === 0 || publishBlockedByReward
-                                                    ? 'bg-gray-500/20 text-gray-400 cursor-not-allowed'
-                                                    : 'bg-emerald-500 text-white hover:bg-emerald-400 shadow-sm'
-                                            }`}
-                                        >
-                                            {isPublishing ? 'Publishing...' : '🚀 Publish'}
-                                        </button>
-                                        <button
-                                            onClick={handleDeleteSurvey}
-                                            disabled={isDeleting}
-                                            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium transition-all ${
-                                                isDeleting ? 'border-gray-200 text-gray-400 cursor-not-allowed' : 'border-red-200 text-red-500 hover:bg-red-50'
-                                            }`}
-                                        >
-                                            {isDeleting ? 'Menghapus...' : '🗑️ Hapus'}
-                                        </button>
-                                    </div>
-                                )}
-
-                                {survey.status === 'active' && !isEditingInfo && (
-                                    <button onClick={() => handleStatusChange('paused')} disabled={isChangingStatus}
-                                        className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
-                                            isChangingStatus ? 'bg-gray-500/20 text-gray-400 cursor-not-allowed' : 'bg-amber-400/20 text-amber-700 hover:bg-amber-400/30 border border-amber-300'
-                                        }`}>
-                                        {isChangingStatus ? 'Processing...' : '⏸️ Pause'}
-                                    </button>
-                                )}
-
-                                {survey.status === 'paused' && !isEditingInfo && (
-                                    <div className="flex gap-2 shrink-0">
-                                        <button onClick={() => handleStatusChange('active')} disabled={isChangingStatus}
-                                            className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
-                                                isChangingStatus ? 'bg-gray-500/20 text-gray-400 cursor-not-allowed' : 'bg-emerald-500 text-white hover:bg-emerald-400 shadow-sm'
-                                            }`}>
-                                            {isChangingStatus ? 'Processing...' : '▶️ Resume'}
-                                        </button>
-                                        <button onClick={() => handleStatusChange('completed')} disabled={isChangingStatus}
-                                            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium transition-all ${
-                                                isChangingStatus ? 'border-gray-200 text-gray-400 cursor-not-allowed' : 'border-red-200 text-red-500 hover:bg-red-50'
-                                            }`}>
-                                            {isChangingStatus ? 'Processing...' : '🛑 Tutup'}
-                                        </button>
-                                    </div>
-                                )}
-
-                                </div>
-
-
-                            {/* Banner reward warning setelah publish berhasil */}
-                            {survey.status === 'active' && publishSuccessWarning && (
-                                <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 flex gap-2">
-                                    <span className="shrink-0 mt-0.5">⚠️</span>
-                                    <div>
-                                        <p className="font-semibold">Insight Reward</p>
-                                        <p className="mt-0.5">{publishSuccessWarning}</p>
-                                        <button
-                                            onClick={() => setPublishSuccessWarning(null)}
-                                            className="mt-1 text-xs text-amber-600 hover:underline"
-                                        >
-                                            Tutup
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Survey Detail Body */}
-                            <div className="p-6 space-y-6">
-
-                            {/* Reward Edit Section */}
-                            <div id="reward-section" className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                                <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">Reward per Responden</p>
-                                <div className="flex items-center gap-3">
-                                    {isEditingReward ? (
-                                        <div className="flex flex-1 items-center gap-2">
-                                            <div className="relative flex-1 max-w-[160px]">
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-400">Rp</span>
-                                                <input
-                                                    type="number"
-                                                    min="1"
-                                                    value={editReward}
-                                                    onChange={(e) => setEditReward(e.target.value === '' ? '' : Number(e.target.value))}
-                                                    className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                />
+                                    {/* Title & description */}
+                                    {isEditingInfo ? (
+                                        <div className="space-y-3">
+                                            <input
+                                                type="text"
+                                                value={editTitle}
+                                                onChange={(e) => setEditTitle(e.target.value)}
+                                                className="w-full text-2xl font-bold text-slate-900 border-2 border-blue-400 focus:outline-none focus:border-blue-500 bg-blue-50/40 px-3 py-2 rounded-xl"
+                                                placeholder="Judul Survey"
+                                            />
+                                            <textarea
+                                                value={editDescription}
+                                                onChange={(e) => setEditDescription(e.target.value)}
+                                                className="w-full text-slate-600 border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm resize-none"
+                                                placeholder="Deskripsi Survey (Opsional)"
+                                                rows={3}
+                                            />
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={handleSaveInfo}
+                                                    disabled={isSavingInfo}
+                                                    className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-all"
+                                                >
+                                                    {isSavingInfo ? 'Menyimpan...' : 'Simpan Perubahan'}
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        setIsEditingInfo(false);
+                                                        setEditTitle(survey.title || '');
+                                                        setEditDescription(survey.description || '');
+                                                    }}
+                                                    disabled={isSavingInfo}
+                                                    className="px-4 py-2 bg-slate-100 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-200 disabled:opacity-50 transition-all"
+                                                >
+                                                    Batal
+                                                </button>
                                             </div>
-                                            <button onClick={handleSaveReward} disabled={isSavingReward || editReward === '' || editReward <= 0}
-                                                className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:bg-gray-300">
-                                                {isSavingReward ? '⏳' : 'Simpan'}
-                                            </button>
-                                            <button onClick={() => setIsEditingReward(false)} disabled={isSavingReward}
-                                                className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-100">
-                                                Batal
-                                            </button>
                                         </div>
                                     ) : (
-                                        <div className="flex flex-1 items-center justify-between group">
-                                            <span className="text-2xl font-extrabold text-blue-600">
-                                                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(survey.reward_per_response)}
-                                            </span>
-                                            {survey.status === 'draft' && (
-                                                <button
-                                                    onClick={() => { setEditReward(survey.reward_per_response); setIsEditingReward(true); }}
-                                                    className="opacity-0 group-hover:opacity-100 inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-500 transition-all hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600"
-                                                    title="Edit Reward">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        <div className="group">
+                                            <div className="flex items-start gap-3">
+                                                <div className="flex-1">
+                                                    <h1 className="text-2xl font-bold text-slate-900 leading-tight">
+                                                        {survey.title}
+                                                    </h1>
+                                                    {survey.description && (
+                                                        <p className="mt-2 text-slate-500 text-sm leading-relaxed">
+                                                            {survey.description}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                {survey.status === 'draft' && (
+                                                    <button
+                                                        onClick={() => setIsEditingInfo(true)}
+                                                        className="opacity-0 group-hover:opacity-100 shrink-0 p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                                        title="Edit Judul & Deskripsi"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                        </svg>
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            {/* Quick stats row */}
+                                            <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-slate-100 pt-4">
+                                                <div className="flex items-center gap-1.5 text-sm text-slate-500">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                                                     </svg>
-                                                    Edit
-                                                </button>
-                                            )}
+                                                    <span className="font-semibold text-slate-700">{survey.total_responses}</span> target responden
+                                                </div>
+                                                <div className="flex items-center gap-1.5 text-sm text-slate-500">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                    <span className="font-semibold text-slate-700">{questions.length}</span> pertanyaan
+                                                </div>
+                                                <div className="flex items-center gap-1.5 text-sm text-slate-500">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                    <span className="font-semibold text-blue-600">
+                                                        {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(survey.reward_per_response)}
+                                                    </span> / responden
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
                             </div>
 
+                            {/* Reward warning banner setelah publish */}
+                            {survey.status === 'active' && publishSuccessWarning && (
+                                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 flex gap-3 items-start">
+                                    <span className="text-xl shrink-0 mt-0.5">⚠️</span>
+                                    <div className="flex-1">
+                                        <p className="font-semibold text-amber-900 text-sm">Insight Reward</p>
+                                        <p className="mt-0.5 text-sm text-amber-800">{publishSuccessWarning}</p>
+                                    </div>
+                                    <button
+                                        onClick={() => setPublishSuccessWarning(null)}
+                                        className="shrink-0 text-amber-500 hover:text-amber-700 transition-colors"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* ===== METRICS GRID: Reward + Progress ===== */}
+                            {(() => {
+                                const total = survey.total_responses;
+                                const completed = burnRate?.completed_responses ?? Math.max(0, total - survey.remaining_responses);
+                                const remaining = burnRate?.remaining_responses ?? Math.max(0, total - completed);
+                                const progressPercent = total > 0 ? (completed / total) * 100 : 0;
+
+                                const budgetTerpakai = burnRate?.total_spent ?? completed * survey.reward_per_response;
+                                const sisaBudget = burnRate?.remaining_budget ?? remaining * survey.reward_per_response;
+                                const totalBudget = budgetTerpakai + sisaBudget;
+                                const budgetTerpakaiPercent = totalBudget > 0 ? (budgetTerpakai / totalBudget) * 100 : 0;
+
+                                return (
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                        {/* Reward Card */}
+                                        <div id="reward-section" className="card-hover rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-100">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                        </svg>
+                                                    </div>
+                                                    <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Reward</p>
+                                                </div>
+                                                {survey.status === 'draft' && !isEditingReward && (
+                                                    <button
+                                                        onClick={() => { setEditReward(survey.reward_per_response); setIsEditingReward(true); }}
+                                                        className="text-xs font-medium text-slate-400 hover:text-blue-600 transition-colors flex items-center gap-1"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                        </svg>
+                                                        Edit
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            {isEditingReward ? (
+                                                <div className="space-y-2">
+                                                    <div className="relative">
+                                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400">Rp</span>
+                                                        <input
+                                                            type="number"
+                                                            min="1"
+                                                            value={editReward}
+                                                            onChange={(e) => setEditReward(e.target.value === '' ? '' : Number(e.target.value))}
+                                                            className="w-full rounded-xl border border-slate-300 py-2 pl-9 pr-3 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                                                        />
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <button onClick={handleSaveReward} disabled={isSavingReward || editReward === '' || editReward <= 0}
+                                                            className="flex-1 rounded-xl bg-blue-600 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400">
+                                                            {isSavingReward ? 'Simpan...' : 'Simpan'}
+                                                        </button>
+                                                        <button onClick={() => setIsEditingReward(false)} disabled={isSavingReward}
+                                                            className="flex-1 rounded-xl border border-slate-200 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">
+                                                            Batal
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <p className="text-2xl font-extrabold text-blue-600">
+                                                        {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(survey.reward_per_response)}
+                                                    </p>
+                                                    <p className="text-xs text-slate-400 mt-1">per responden</p>
+                                                </>
+                                            )}
+
+                                            {/* Reward eval warning */}
+                                            {rewardEval && !rewardEval.hardOk && (
+                                                <div className="mt-3 flex items-start gap-1.5 rounded-lg bg-red-50 p-2">
+                                                    <span className="text-xs shrink-0">❌</span>
+                                                    <p className="text-xs text-red-600">{rewardEval.hardMessage}</p>
+                                                </div>
+                                            )}
+                                            {rewardEval && rewardEval.hardOk && !rewardEval.softOk && (
+                                                <div className="mt-3 flex items-start gap-1.5 rounded-lg bg-amber-50 p-2">
+                                                    <span className="text-xs shrink-0">⚠️</span>
+                                                    <p className="text-xs text-amber-700">{rewardEval.softWarning}</p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Progress Card */}
+                                        <div className="card-hover rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    </svg>
+                                                </div>
+                                                <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Progress</p>
+                                            </div>
+                                            <div className="flex items-baseline gap-1 mb-3">
+                                                <span className="text-2xl font-extrabold text-slate-900">{completed}</span>
+                                                <span className="text-sm text-slate-400 font-medium">/ {total}</span>
+                                            </div>
+                                            <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                                                <div
+                                                    className="progress-bar-fill h-full rounded-full"
+                                                    style={{
+                                                        width: `${Math.round(progressPercent)}%`,
+                                                        background: 'linear-gradient(90deg, #10b981, #059669)'
+                                                    }}
+                                                />
+                                            </div>
+                                            <p className="text-xs text-slate-400 mt-2">{Math.round(progressPercent)}% selesai</p>
+                                        </div>
+
+                                        {/* Budget Card */}
+                                        <div className="card-hover rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-orange-100">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                                        </svg>
+                                                    </div>
+                                                    <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Budget</p>
+                                                </div>
+                                                <span className="text-xs font-semibold text-slate-400">{Math.round(budgetTerpakaiPercent)}% terpakai</span>
+                                            </div>
+                                            <p className="text-2xl font-extrabold text-slate-900 mb-3">
+                                                Rp{sisaBudget.toLocaleString('id-ID')}
+                                            </p>
+                                            <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                                                <div
+                                                    className="progress-bar-fill h-full rounded-full"
+                                                    style={{
+                                                        width: `${budgetTerpakaiPercent}%`,
+                                                        background: 'linear-gradient(90deg, #f97316, #ea580c)'
+                                                    }}
+                                                />
+                                            </div>
+                                            <p className="text-xs text-slate-400 mt-2">sisa dari {remaining} responden</p>
+                                        </div>
+                                    </div>
+                                )
+                            })()}
+
                             {/* ===== TARGET RESPONDEN CARD ===== */}
-                            <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-                                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/60">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-base">🎯</span>
-                                        <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Target Responden</p>
+                            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{ background: 'linear-gradient(135deg, #818cf8, #6366f1)' }}>
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-slate-800">Target Responden</p>
+                                            <p className="text-xs text-slate-400">Filter audiens yang sesuai</p>
+                                        </div>
                                     </div>
                                     {survey.status === 'draft' && !isEditingTargeting && (
                                         <button
                                             onClick={handleStartEditTargeting}
-                                            className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-blue-600 transition-colors"
+                                            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-500 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 transition-all"
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                             </svg>
-                                            Edit
+                                            Edit Targeting
                                         </button>
                                     )}
                                 </div>
 
                                 {isEditingTargeting ? (
-                                    <div className="p-4 space-y-4">
-                                        {/* Edit: Gender */}
+                                    <div className="p-5 space-y-5">
+                                        {/* Gender */}
                                         <div>
-                                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Gender</p>
+                                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Gender</p>
                                             <div className="flex gap-2 flex-wrap">
                                                 {[
                                                     { value: null, label: 'Semua', icon: '👥' },
@@ -616,46 +799,61 @@ export default function SurveyDetailPage() {
                                                         key={String(opt.value)}
                                                         type="button"
                                                         onClick={() => setEditTargetGender(opt.value)}
-                                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+                                                        className={`chip-btn flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium ${
                                                             editTargetGender === opt.value
-                                                                ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                                                : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                                                                ? 'border-indigo-500 bg-indigo-50 text-indigo-700 shadow-sm'
+                                                                : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
                                                         }`}
                                                     >
                                                         <span>{opt.icon}</span>{opt.label}
+                                                        {editTargetGender === opt.value && (
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                        )}
                                                     </button>
                                                 ))}
                                             </div>
                                         </div>
 
-                                        {/* Edit: Rentang Usia */}
+                                        {/* Rentang Usia */}
                                         <div>
-                                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Rentang Usia</p>
-                                            <div className="flex items-center gap-2">
-                                                <input
-                                                    type="number"
-                                                    min="1" max="100"
-                                                    placeholder="Min"
-                                                    value={editTargetAgeMin}
-                                                    onChange={(e) => setEditTargetAgeMin(e.target.value === '' ? '' : Number(e.target.value))}
-                                                    className="w-20 px-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                />
-                                                <span className="text-gray-400 text-xs">—</span>
-                                                <input
-                                                    type="number"
-                                                    min="1" max="100"
-                                                    placeholder="Max"
-                                                    value={editTargetAgeMax}
-                                                    onChange={(e) => setEditTargetAgeMax(e.target.value === '' ? '' : Number(e.target.value))}
-                                                    className="w-20 px-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                />
+                                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Rentang Usia</p>
+                                            <div className="flex items-center gap-3">
+                                                <div className="relative">
+                                                    <input
+                                                        type="number"
+                                                        min="1" max="100"
+                                                        placeholder="Min"
+                                                        value={editTargetAgeMin}
+                                                        onChange={(e) => setEditTargetAgeMin(e.target.value === '' ? '' : Number(e.target.value))}
+                                                        className="w-24 px-3 py-2 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400"
+                                                    />
+                                                </div>
+                                                <div className="h-px w-4 bg-slate-300" />
+                                                <div className="relative">
+                                                    <input
+                                                        type="number"
+                                                        min="1" max="100"
+                                                        placeholder="Max"
+                                                        value={editTargetAgeMax}
+                                                        onChange={(e) => setEditTargetAgeMax(e.target.value === '' ? '' : Number(e.target.value))}
+                                                        className="w-24 px-3 py-2 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400"
+                                                    />
+                                                </div>
+                                                <span className="text-xs text-slate-400">tahun</span>
                                             </div>
                                         </div>
 
-                                        {/* Edit: Pekerjaan */}
+                                        {/* Pekerjaan */}
                                         <div>
-                                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Pekerjaan</p>
-                                            <div className="flex flex-wrap gap-1.5">
+                                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
+                                                Pekerjaan
+                                                {editTargetJobs.length > 0 && (
+                                                    <span className="ml-2 normal-case font-normal text-indigo-500">({editTargetJobs.length} dipilih)</span>
+                                                )}
+                                            </p>
+                                            <div className="flex flex-wrap gap-2">
                                                 {JOB_OPTIONS.map((job) => {
                                                     const isSelected = editTargetJobs.includes(job)
                                                     return (
@@ -665,13 +863,17 @@ export default function SurveyDetailPage() {
                                                             onClick={() => setEditTargetJobs(prev =>
                                                                 isSelected ? prev.filter(j => j !== job) : [...prev, job]
                                                             )}
-                                                            className={`px-2.5 py-1 rounded-full border text-xs font-medium transition-all ${
+                                                            className={`chip-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${
                                                                 isSelected
-                                                                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                                                                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                                                                    ? 'border-indigo-500 bg-indigo-500 text-white shadow-sm'
+                                                                    : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-300 hover:text-indigo-600'
                                                             }`}
                                                         >
-                                                            {isSelected && <span className="mr-1">✓</span>}
+                                                            {isSelected && (
+                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                                </svg>
+                                                            )}
                                                             {job}
                                                         </button>
                                                     )
@@ -679,51 +881,57 @@ export default function SurveyDetailPage() {
                                             </div>
                                         </div>
 
-                                        <div className="flex gap-2 pt-1">
+                                        <div className="flex gap-2 pt-1 border-t border-slate-100">
                                             <button
                                                 onClick={handleSaveTargeting}
                                                 disabled={isSavingTargeting}
-                                                className="px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 disabled:bg-blue-300"
+                                                className="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 disabled:bg-indigo-300 transition-all shadow-sm"
                                             >
-                                                {isSavingTargeting ? 'Menyimpan...' : 'Simpan'}
+                                                {isSavingTargeting ? 'Menyimpan...' : 'Simpan Targeting'}
                                             </button>
                                             <button
                                                 onClick={handleCancelTargeting}
                                                 disabled={isSavingTargeting}
-                                                className="px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-200"
+                                                className="px-4 py-2 bg-slate-100 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-200 transition-all"
                                             >
                                                 Batal
                                             </button>
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="p-4">
+                                    <div className="p-5">
                                         {!targeting || (!targeting.gender && !targeting.age_min && !targeting.age_max && !(targeting.jobs?.length)) ? (
-                                            <p className="text-sm text-gray-400 italic">Tidak ada targeting — semua responden dapat mengisi survey ini.</p>
+                                            <div className="flex items-center gap-3 py-2">
+                                                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-sm">🌐</span>
+                                                <div>
+                                                    <p className="text-sm font-medium text-slate-700">Terbuka untuk Semua</p>
+                                                    <p className="text-xs text-slate-400">Semua responden dapat mengisi survey ini</p>
+                                                </div>
+                                            </div>
                                         ) : (
-                                            <div className="space-y-2">
+                                            <div className="flex flex-wrap gap-4">
                                                 {targeting.gender && (
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-xs font-semibold text-gray-500 w-20">Gender</span>
-                                                        <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-200">
+                                                    <div className="flex items-center gap-2.5">
+                                                        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Gender</span>
+                                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold border border-indigo-200">
                                                             {targeting.gender === 'male' ? '👨 Pria' : '👩 Wanita'}
                                                         </span>
                                                     </div>
                                                 )}
                                                 {(targeting.age_min || targeting.age_max) && (
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-xs font-semibold text-gray-500 w-20">Usia</span>
-                                                        <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-200">
-                                                            {targeting.age_min ?? '?'} – {targeting.age_max ?? '?'} tahun
+                                                    <div className="flex items-center gap-2.5">
+                                                        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Usia</span>
+                                                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold border border-indigo-200">
+                                                            🎂 {targeting.age_min ?? '?'} – {targeting.age_max ?? '?'} thn
                                                         </span>
                                                     </div>
                                                 )}
                                                 {targeting.jobs && targeting.jobs.length > 0 && (
-                                                    <div className="flex items-start gap-2">
-                                                        <span className="text-xs font-semibold text-gray-500 w-20 mt-0.5">Pekerjaan</span>
+                                                    <div className="flex items-start gap-2.5 w-full">
+                                                        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider mt-1 shrink-0">Pekerjaan</span>
                                                         <div className="flex flex-wrap gap-1.5">
                                                             {targeting.jobs.map(job => (
-                                                                <span key={job} className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-xs font-medium border border-indigo-200">
+                                                                <span key={job} className="px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-medium border border-indigo-200">
                                                                     {job}
                                                                 </span>
                                                             ))}
@@ -733,347 +941,264 @@ export default function SurveyDetailPage() {
                                             </div>
                                         )}
                                         {survey.status !== 'draft' && (
-                                            <p className="mt-3 text-[11px] text-gray-400 italic">Targeting tidak dapat diubah setelah survey dipublish.</p>
+                                            <p className="mt-4 flex items-center gap-1.5 text-xs text-slate-400">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                                </svg>
+                                                Targeting tidak dapat diubah setelah survey dipublish.
+                                            </p>
                                         )}
                                     </div>
                                 )}
                             </div>
 
-                            {/* Burn Rate Visualization UI */}
+                            {/* ===== ESTIMASI WAKTU + INSIGHT ===== */}
                             {(() => {
                                 const total = survey.total_responses;
                                 const completed = burnRate?.completed_responses ?? Math.max(0, total - survey.remaining_responses);
                                 const remaining = burnRate?.remaining_responses ?? Math.max(0, total - completed);
-                                const progressPercent = total > 0 ? (completed / total) * 100 : 0;
-                                const progressStr = Math.round(progressPercent);
 
                                 const responsesPerMinute = burnRate?.responses_per_minute ?? 0;
                                 const estimatedMinutesToFinish = burnRate?.estimated_minutes_to_finish ?? null;
                                 const hoursToFinish = estimatedMinutesToFinish !== null ? estimatedMinutesToFinish / 60 : null;
-
-                                const budgetTerpakai = burnRate?.total_spent ?? completed * survey.reward_per_response;
-                                const sisaBudget = burnRate?.remaining_budget ?? remaining * survey.reward_per_response;
-                                const totalBudget = budgetTerpakai + sisaBudget;
-                                const budgetTerpakaiPercent = totalBudget > 0 ? (budgetTerpakai / totalBudget) * 100 : 0;
-
                                 const isDataEnough = burnRate?.has_enough_data ?? (completed >= 5 && responsesPerMinute > 0);
 
                                 return (
-                                    <div className="space-y-3">
-                                        {/* Card 1: Progress */}
-                                        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                                            <div className="mb-3 flex items-center justify-between">
-                                                <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Progress Responden</p>
-                                                <span className="text-sm font-bold text-gray-700">{completed}<span className="font-normal text-gray-400">/{total}</span></span>
-                                            </div>
-                                            {completed === 0 ? (
-                                                <div className="rounded-lg border border-dashed border-gray-200 py-3 text-center text-sm italic text-gray-400">
-                                                    Belum ada respons masuk
+                                    <>
+                                        {/* Estimasi Waktu */}
+                                        <div className="card-hover rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                                            <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
+                                                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-100">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
                                                 </div>
-                                            ) : (
-                                                <>
-                                                    <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-100">
-                                                        <div className="h-full rounded-full bg-gradient-to-r from-blue-400 to-blue-600 transition-all duration-500" style={{ width: `${progressPercent}%` }} />
-                                                    </div>
-                                                    <p className="mt-1.5 text-right text-xs font-bold text-gray-500">{progressStr}%</p>
-                                                </>
-                                            )}
-                                        </div>
-
-                                        {/* Card 2: Time Estimation */}
-                                        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                                            <p className="mb-3 text-xs font-bold uppercase tracking-widest text-gray-400">Estimasi Waktu</p>
-                                            <div>
-                                                {responsesPerMinute <= 0 ? (
-                                                    <div className="flex items-center gap-2 text-slate-500">
-                                                        <span>⏱️</span> Belum ada aktivitas
-                                                    </div>
-                                                ) : !isDataEnough ? (
-                                                    <div className="flex items-center gap-2 text-slate-500">
-                                                        <span>⏱️</span> Belum cukup data untuk estimasi (butuh min 5 response)
-                                                    </div>
-                                                ) : (
-                                                    (() => {
-                                                        const safeHoursToFinish = hoursToFinish ?? 0;
-                                                        const formatDynamicTime = (hours: number) => {
-                                                            if (hours >= 24) {
-                                                                const d = Math.floor(hours / 24);
-                                                                const remainingHours = Math.floor(hours % 24);
-                                                                const remainingMinutes = Math.round((hours % 1) * 60);
-                                                                
-                                                                if (remainingHours > 0) {
-                                                                    return `${d} Hari ${remainingHours} Jam`;
-                                                                } else if (remainingMinutes > 0) {
-                                                                    return `${d} Hari ${remainingMinutes} Menit`;
-                                                                } else {
-                                                                    return `${d} Hari`;
-                                                                }
-                                                            } else {
-                                                                const h = Math.floor(hours);
-                                                                const m = Math.round((hours % 1) * 60);
-                                                                if (h > 0) {
-                                                                    if (m > 0) return `${h} Jam ${m} Menit`;
-                                                                    return `${h} Jam`;
-                                                                }
-                                                                return `${m} Menit`;
-                                                            }
-                                                        };
-
-                                                        const timeText = formatDynamicTime(safeHoursToFinish);
-
-                                                        return (
-                                                            <>
-                                                                <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
-                                                                    <p className="flex items-center gap-2 font-medium">
-                                                                        <span>⏱️</span>
-                                                                        Estimasi selesai: {timeText} lagi
-                                                                    </p>
-                                                                    <span className="text-slate-400">⏱️</span>
-                                                                </div>
-                                                                <div className="mb-4">
-                                                                    <p className="mb-2 font-medium text-slate-500">Status:</p>
-                                                                    <div className="space-y-1.5 pl-1">
-                                                                        <p className={`flex items-center gap-2 ${safeHoursToFinish < 2 ? 'text-emerald-700 font-bold bg-emerald-50 py-1 px-2 rounded-md -ml-2' : 'text-slate-500'}`}>
-                                                                            <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block" /> Cepat ( kemungkinan selesai &lt; 2 jam )
-                                                                        </p>
-                                                                        <p className={`flex items-center gap-2 ${(safeHoursToFinish >= 2 && safeHoursToFinish <= 6) ? 'text-amber-700 font-bold bg-amber-50 py-1 px-2 rounded-md -ml-2' : 'text-slate-500'}`}>
-                                                                            <span className="w-3 h-3 rounded-full bg-amber-500 inline-block" /> Normal ( stabil )
-                                                                        </p>
-                                                                        <p className={`flex items-center gap-2 ${safeHoursToFinish > 6 ? 'text-rose-700 font-bold bg-rose-50 py-1 px-2 rounded-md -ml-2' : 'text-slate-500'}`}>
-                                                                            <span className="w-3 h-3 rounded-full bg-rose-500 inline-block" /> Lambat ( risiko tidak selesai )
-                                                                        </p>
-                                                                    </div>
-                                                                </div>
-                                                                
-                                                                {/* Urgency */}
-                                                                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                                                                    <p className="font-semibold text-slate-800 flex items-center gap-2">
-                                                                        {safeHoursToFinish > 10 ? '⚠️' : '⏳'} Dengan kondisi sekarang:
-                                                                    </p>
-                                                                    <p className={`mt-1 ${safeHoursToFinish > 10 ? 'text-red-600 font-bold' : 'text-slate-700'}`}>
-                                                                        {safeHoursToFinish > 10
-                                                                            ? `Survey kemungkinan butuh waktu lama` 
-                                                                            : `Survey selesai dalam ~${timeText}`}
-                                                                    </p>
-                                                                </div>
-                                                            </>
-                                                        );
-                                                    })()
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* Card 3: Budget Burn */}
-                                        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                                            <div className="mb-3 flex items-center justify-between">
-                                                <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Budget Burn</p>
-                                                <span className="text-xs font-semibold text-gray-500">{Math.round(budgetTerpakaiPercent)}% terpakai</span>
-                                            </div>
-                                            <div className="mb-3 h-2 w-full overflow-hidden rounded-full bg-gray-100">
-                                                <div className="h-full rounded-full bg-gradient-to-r from-orange-400 to-amber-500 transition-all" style={{ width: `${budgetTerpakaiPercent}%` }} />
-                                            </div>
-                                            <div className="flex items-end justify-between">
                                                 <div>
-                                                    <p className="text-xs text-gray-400">Sisa Budget</p>
-                                                    <p className="text-xl font-extrabold text-gray-900">Rp{sisaBudget.toLocaleString('id-ID')}</p>
-                                                    <p className="text-xs text-gray-400">≈ {remaining} respon lagi</p>
+                                                    <p className="text-sm font-bold text-slate-800">Estimasi Waktu Selesai</p>
+                                                    <p className="text-xs text-slate-400">Berdasarkan kecepatan respon saat ini</p>
                                                 </div>
-                                                {isDataEnough && (
-                                                    <p className="text-xs text-gray-500">
-                                                        ~{responsesPerMinute.toFixed(2)} respon/mnt
-                                                    </p>
-                                                )}
                                             </div>
-                                        </div>
-
-                                        {/* Card 4: Insight */}
-                                        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                                            <p className="mb-3 text-xs font-bold uppercase tracking-widest text-gray-400">Evaluasi & Insight</p>
-                                            <div className="text-sm">
-
-                                                {(() => {
-                                                    const insight = generateSurveyInsight({
-                                                        status: survey.status,
-                                                        reward: survey.reward_per_response,
-                                                        recommended_reward: rewardEval?.recommended || 0,
-                                                        responses: completed,
-                                                        valid_rate: insightData?.rates?.valid,
-                                                        low_quality_rate: insightData?.rates?.lowQuality,
-                                                        isDataEnough,
-                                                        hoursToFinish: hoursToFinish ?? undefined
-                                                    });
-
-                                                    const estimation = survey.status === 'draft' && rewardEval ? getEstimationSummary(
-                                                        survey.reward_per_response,
-                                                        rewardEval.recommended,
-                                                        survey.total_responses
-                                                    ) : null;
-
-                                                    if (!insight) {
-                                                        if (survey.status === 'active' && completed < 5) {
-                                                            return (
-                                                                <p className="text-slate-500 italic">
-                                                                    Belum ada insight. Minimal 5 response diperlukan agar pola awal bisa dibaca.
-                                                                </p>
-                                                            );
+                                            <div className="p-5">
+                                                {!isDataEnough ? (
+                                                    <div className="flex items-center gap-3 text-slate-400">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                        </svg>
+                                                        <p className="text-sm">Belum ada cukup data. Minimal 5 respons diperlukan untuk estimasi.</p>
+                                                    </div>
+                                                ) : (() => {
+                                                    const safeHoursToFinish = hoursToFinish ?? 0;
+                                                    const formatDynamicTime = (hours: number) => {
+                                                        if (hours >= 24) {
+                                                            const d = Math.floor(hours / 24);
+                                                            const remainingHours = Math.floor(hours % 24);
+                                                            const remainingMinutes = Math.round((hours % 1) * 60);
+                                                            if (remainingHours > 0) return `${d} Hari ${remainingHours} Jam`;
+                                                            else if (remainingMinutes > 0) return `${d} Hari ${remainingMinutes} Menit`;
+                                                            else return `${d} Hari`;
+                                                        } else {
+                                                            const h = Math.floor(hours);
+                                                            const m = Math.round((hours % 1) * 60);
+                                                            if (h > 0) { if (m > 0) return `${h} Jam ${m} Menit`; return `${h} Jam`; }
+                                                            return `${m} Menit`;
                                                         }
-
-                                                        return null;
-                                                    }
-
-                                                    const bgColor = insight.type === 'good' ? 'bg-emerald-50 border-emerald-100' :
-                                                                    insight.type === 'normal' ? 'bg-amber-50 border-amber-100' :
-                                                                    insight.type === 'warning' ? 'bg-orange-50 border-orange-100' :
-                                                                    insight.type === 'danger' ? 'bg-red-50 border-red-100' :
-                                                                    'bg-blue-50 border-blue-100';
-                                                    const textColor = insight.type === 'good' ? 'text-emerald-800' :
-                                                                      insight.type === 'normal' ? 'text-amber-800' :
-                                                                      insight.type === 'warning' ? 'text-orange-800' :
-                                                                      insight.type === 'danger' ? 'text-red-800' :
-                                                                      'text-blue-800';
-                                                    const titleColor = insight.type === 'good' ? 'text-emerald-900' :
-                                                                       insight.type === 'normal' ? 'text-amber-900' :
-                                                                       insight.type === 'warning' ? 'text-orange-900' :
-                                                                       insight.type === 'danger' ? 'text-red-900' :
-                                                                       'text-blue-900';
-                                                    const subTextColor = insight.type === 'good' ? 'text-emerald-700' :
-                                                                         insight.type === 'normal' ? 'text-amber-700' :
-                                                                         insight.type === 'warning' ? 'text-orange-700' :
-                                                                         insight.type === 'danger' ? 'text-red-700' :
-                                                                         'text-blue-700';
-                                                    const insightIcon = insight.type === 'good' ? '🟢' :
-                                                                        insight.type === 'normal' ? '🟡' :
-                                                                        insight.type === 'danger' ? '🔴' :
-                                                                        insight.type === 'warning' ? '⚠️' :
-                                                                        '💡';
+                                                    };
+                                                    const timeText = formatDynamicTime(safeHoursToFinish);
+                                                    const speedType = safeHoursToFinish < 2 ? 'fast' : safeHoursToFinish <= 6 ? 'normal' : 'slow';
+                                                    const speedConfig = {
+                                                        fast:   { label: 'Cepat', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200', dot: 'bg-emerald-500', icon: '⚡' },
+                                                        normal: { label: 'Normal', color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200', dot: 'bg-amber-500', icon: '🕐' },
+                                                        slow:   { label: 'Lambat', color: 'text-red-700', bg: 'bg-red-50', border: 'border-red-200', dot: 'bg-red-400', icon: '⚠️' },
+                                                    }[speedType];
 
                                                     return (
-                                                        <div className={`border rounded-lg p-3 ${bgColor}`}>
-                                                            {survey.status === 'draft' && estimation && (
-                                                                <div className="mb-4 pb-4 border-b border-black/10">
-                                                                    <div className="flex justify-between items-center mb-3">
-                                                                        <span className={`font-bold text-xs uppercase tracking-wider ${titleColor}`}>Confidence Score</span>
-                                                                        <span className={`text-xl font-extrabold ${titleColor}`}>
-                                                                            {estimation.confidence_score}%
-                                                                        </span>
-                                                                    </div>
-                                                                    <div className={`text-xs space-y-2 ${textColor}`}>
-                                                                        <p className="font-semibold flex items-center gap-1.5">
-                                                                            {estimation.confidence_color === 'green' ? '🟢' : estimation.confidence_color === 'yellow' ? '🟡' : '🔴'} Kemungkinan:
-                                                                        </p>
-                                                                        <ul className="list-disc pl-5 space-y-1">
-                                                                            <li>Selesai {estimation.speed === 'cepat' ? 'sangat cepat' : estimation.speed === 'sedang' ? 'dalam waktu wajar' : 'sangat lambat'}</li>
-                                                                            <li>Kualitas response {estimation.quality}</li>
-                                                                        </ul>
-                                                                    </div>
-                                                                </div>
-                                                            )}
-
-                                                            {survey.status === 'draft' && rewardEval && !rewardEval.softOk && (
-                                                                <p className={`font-semibold ${textColor} mb-2`}>Karena reward &lt; rekomendasi final:</p>
-                                                            )}
-                                                            <p className={`font-bold text-base ${titleColor}`}>
-                                                                {insightIcon} {insight.title}
-                                                            </p>
-                                                            <p className={`${textColor} mt-1`}>{insight.message}</p>
-                                                            {insight.suggestion && (
-                                                                <p className={`${subTextColor} mt-1`}>→ {insight.suggestion}</p>
-                                                            )}
-                                                            {insight.impact && (
-                                                                <div className={`mt-3 border-t border-black/10 pt-2 ${subTextColor}`}>
-                                                                    <p className="font-semibold">Dampak:</p>
-                                                                    <p>{insight.impact}</p>
-                                                                </div>
-                                                            )}
-
-                                                            {survey.status === 'draft' && insight.type === 'warning' && (
-                                                                <div className="mt-3">
-                                                                    <p className={`${titleColor} font-semibold mb-1`}>Saran:</p>
-                                                                    <p className={`${textColor} text-xs mb-2`}>
-                                                                        Berdasarkan {questions.length} pertanyaan dan estimasi waktu pengisian.
-                                                                    </p>
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            setEditReward(rewardEval?.recommended || 0);
-                                                                            setIsEditingReward(true);
-                                                                            window.scrollTo({ top: document.getElementById('reward-section')?.offsetTop, behavior: 'smooth' });
-                                                                        }}
-                                                                        className="w-full text-center px-3 py-2 bg-amber-200 hover:bg-amber-300 text-amber-900 text-xs font-semibold rounded-lg transition-colors"
-                                                                    >
-                                                                        ✨ Gunakan rekomendasi final Rp {(rewardEval?.recommended || 0).toLocaleString('id-ID')}
-                                                                    </button>
-                                                                </div>
-                                                            )}
-
-                                                            {survey.status === 'completed' && insightData && (
-                                                                <div className="grid grid-cols-3 gap-3 my-3">
-                                                                    <div className="bg-white p-2 rounded border border-indigo-50 text-center">
-                                                                        <p className="text-[10px] text-gray-500 mb-0.5">Valid Rate</p>
-                                                                        <p className={`text-sm font-bold ${insightData.rates.valid >= 0.7 ? 'text-green-600' : 'text-amber-600'}`}>
-                                                                            {Math.round(insightData.rates.valid * 100)}%
-                                                                        </p>
-                                                                    </div>
-                                                                    <div className="bg-white p-2 rounded border border-indigo-50 text-center">
-                                                                        <p className="text-[10px] text-gray-500 mb-0.5">Low Quality</p>
-                                                                        <p className={`text-sm font-bold ${insightData.rates.lowQuality > 0.3 ? 'text-red-600' : 'text-gray-700'}`}>
-                                                                            {Math.round(insightData.rates.lowQuality * 100)}%
-                                                                        </p>
-                                                                    </div>
-                                                                    <div className="bg-white p-2 rounded border border-indigo-50 text-center">
-                                                                        <p className="text-[10px] text-gray-500 mb-0.5">Rejected</p>
-                                                                        <p className={`text-sm font-bold ${insightData.rates.rejected > 0.15 ? 'text-red-600' : 'text-gray-700'}`}>
-                                                                            {Math.round(insightData.rates.rejected * 100)}%
-                                                                        </p>
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                            {survey.status === 'completed' && insightData && insightData.suggestion && (
-                                                                <>
-                                                                    <p className="font-semibold text-indigo-900 mb-1 mt-3">📝 Evaluasi AI:</p>
-                                                                    <p className="text-indigo-800 text-xs leading-relaxed">{insightData.suggestion}</p>
-                                                                </>
+                                                        <div className="flex items-center gap-5 flex-wrap">
+                                                            <div>
+                                                                <p className="text-3xl font-extrabold text-slate-900">{timeText}</p>
+                                                                <p className="text-xs text-slate-400 mt-1">estimasi sisa waktu</p>
+                                                            </div>
+                                                            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold ${speedConfig.bg} ${speedConfig.border} ${speedConfig.color}`}>
+                                                                <span className={`h-2 w-2 rounded-full ${speedConfig.dot}`} />
+                                                                {speedConfig.icon} {speedConfig.label}
+                                                            </div>
+                                                            {isDataEnough && (
+                                                                <p className="text-xs text-slate-400">~{responsesPerMinute.toFixed(2)} respon/mnt</p>
                                                             )}
                                                         </div>
                                                     );
                                                 })()}
                                             </div>
                                         </div>
-                                    </div>
-                                );
+
+                                        {/* Evaluasi & Insight */}
+                                        {(() => {
+                                            const insight = generateSurveyInsight({
+                                                status: survey.status,
+                                                reward: survey.reward_per_response,
+                                                recommended_reward: rewardEval?.recommended || 0,
+                                                responses: completed,
+                                                valid_rate: insightData?.rates?.valid,
+                                                low_quality_rate: insightData?.rates?.lowQuality,
+                                                isDataEnough,
+                                                hoursToFinish: hoursToFinish ?? undefined
+                                            });
+
+                                            const estimation = survey.status === 'draft' && rewardEval ? getEstimationSummary(
+                                                survey.reward_per_response,
+                                                rewardEval.recommended,
+                                                survey.total_responses
+                                            ) : null;
+
+                                            if (!insight && !estimation) return null;
+
+                                            const insightBg = insight?.type === 'good' ? '#f0fdf4' : insight?.type === 'normal' ? '#fffbeb' : insight?.type === 'warning' ? '#fff7ed' : insight?.type === 'danger' ? '#fef2f2' : '#eff6ff';
+                                            const insightBorder = insight?.type === 'good' ? '#bbf7d0' : insight?.type === 'normal' ? '#fde68a' : insight?.type === 'warning' ? '#fed7aa' : insight?.type === 'danger' ? '#fecaca' : '#bfdbfe';
+                                            const insightTitleColor = insight?.type === 'good' ? '#14532d' : insight?.type === 'normal' ? '#78350f' : insight?.type === 'warning' ? '#7c2d12' : insight?.type === 'danger' ? '#7f1d1d' : '#1e3a5f';
+                                            const insightTextColor = insight?.type === 'good' ? '#166534' : insight?.type === 'normal' ? '#92400e' : insight?.type === 'warning' ? '#9a3412' : insight?.type === 'danger' ? '#991b1b' : '#1e40af';
+                                            const insightIcon = insight?.type === 'good' ? '🟢' : insight?.type === 'normal' ? '🟡' : insight?.type === 'danger' ? '🔴' : insight?.type === 'warning' ? '⚠️' : '💡';
+
+                                            return (
+                                                <div className="card-hover rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                                                    <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
+                                                        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-100">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                                            </svg>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-bold text-slate-800">Evaluasi & Insight</p>
+                                                            <p className="text-xs text-slate-400">Rekomendasi berdasarkan data survey</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="p-5 space-y-4">
+                                                        {/* Confidence Score (draft) */}
+                                                        {survey.status === 'draft' && estimation && (
+                                                            <div className="rounded-xl border p-4" style={{ background: insightBg, borderColor: insightBorder }}>
+                                                                <div className="flex items-center justify-between mb-3">
+                                                                    <p className="text-xs font-bold uppercase tracking-wider" style={{ color: insightTitleColor }}>Confidence Score</p>
+                                                                    <span className="text-2xl font-extrabold" style={{ color: insightTitleColor }}>{estimation.confidence_score}%</span>
+                                                                </div>
+                                                                <div className="space-y-1.5 text-sm" style={{ color: insightTextColor }}>
+                                                                    <p className="font-medium flex items-center gap-1.5">
+                                                                        {estimation.confidence_color === 'green' ? '🟢' : estimation.confidence_color === 'yellow' ? '🟡' : '🔴'} Kemungkinan:
+                                                                    </p>
+                                                                    <ul className="list-disc pl-5 space-y-1 text-xs">
+                                                                        <li>Selesai {estimation.speed === 'cepat' ? 'sangat cepat' : estimation.speed === 'sedang' ? 'dalam waktu wajar' : 'sangat lambat'}</li>
+                                                                        <li>Kualitas response {estimation.quality}</li>
+                                                                    </ul>
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Main insight */}
+                                                        {insight && (
+                                                            <div className="rounded-xl border p-4" style={{ background: insightBg, borderColor: insightBorder }}>
+                                                                {survey.status === 'draft' && rewardEval && !rewardEval.softOk && (
+                                                                    <p className="text-xs font-semibold mb-2" style={{ color: insightTextColor }}>Karena reward &lt; rekomendasi final:</p>
+                                                                )}
+                                                                <p className="font-bold text-base mb-1" style={{ color: insightTitleColor }}>
+                                                                    {insightIcon} {insight.title}
+                                                                </p>
+                                                                <p className="text-sm" style={{ color: insightTextColor }}>{insight.message}</p>
+                                                                {insight.suggestion && (
+                                                                    <p className="text-sm mt-1 font-medium" style={{ color: insightTextColor }}>→ {insight.suggestion}</p>
+                                                                )}
+                                                                {insight.impact && (
+                                                                    <div className="mt-3 pt-2 border-t" style={{ borderColor: insightBorder }}>
+                                                                        <p className="text-xs font-semibold mb-0.5" style={{ color: insightTitleColor }}>Dampak:</p>
+                                                                        <p className="text-xs" style={{ color: insightTextColor }}>{insight.impact}</p>
+                                                                    </div>
+                                                                )}
+                                                                {survey.status === 'draft' && insight.type === 'warning' && (
+                                                                    <div className="mt-3">
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                setEditReward(rewardEval?.recommended || 0);
+                                                                                setIsEditingReward(true);
+                                                                                window.scrollTo({ top: document.getElementById('reward-section')?.offsetTop, behavior: 'smooth' });
+                                                                            }}
+                                                                            className="w-full text-center px-3 py-2 rounded-xl text-xs font-semibold transition-colors"
+                                                                            style={{ background: insightBorder, color: insightTitleColor }}
+                                                                        >
+                                                                            ✨ Gunakan rekomendasi final Rp {(rewardEval?.recommended || 0).toLocaleString('id-ID')}
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+
+                                                        {/* Completed stats */}
+                                                        {survey.status === 'completed' && insightData && (
+                                                            <div className="grid grid-cols-3 gap-3">
+                                                                {[
+                                                                    { label: 'Valid Rate', value: `${Math.round(insightData.rates.valid * 100)}%`, good: insightData.rates.valid >= 0.7 },
+                                                                    { label: 'Low Quality', value: `${Math.round(insightData.rates.lowQuality * 100)}%`, good: insightData.rates.lowQuality <= 0.3 },
+                                                                    { label: 'Rejected', value: `${Math.round(insightData.rates.rejected * 100)}%`, good: insightData.rates.rejected <= 0.15 },
+                                                                ].map(stat => (
+                                                                    <div key={stat.label} className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-center">
+                                                                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">{stat.label}</p>
+                                                                        <p className={`text-lg font-extrabold ${stat.good ? 'text-emerald-600' : 'text-red-500'}`}>{stat.value}</p>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                        {survey.status === 'completed' && insightData?.suggestion && (
+                                                            <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
+                                                                <p className="text-xs font-bold text-blue-900 mb-1.5">📝 Evaluasi AI:</p>
+                                                                <p className="text-xs text-blue-800 leading-relaxed">{insightData.suggestion}</p>
+                                                            </div>
+                                                        )}
+
+                                                        {survey.status === 'active' && completed < 5 && !isDataEnough && (
+                                                            <p className="text-sm text-slate-400 italic">Belum ada insight. Minimal 5 response diperlukan agar pola awal bisa dibaca.</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
+                                    </>
+                                )
                             })()}
 
+                            {/* View responses CTA */}
                             {(survey.status === 'paused' || survey.status === 'completed') && (
-                                <div className="pt-2">
-                                    <Link
-                                        href={`/my-surveys/${surveyId}/responses`}
-                                        className="flex items-center justify-between w-full px-4 py-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition-colors group"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-2xl">📊</span>
-                                            <div>
-                                                <p className="font-semibold text-blue-800 text-sm">Lihat Data Responses</p>
-                                                <p className="text-xs text-blue-600">
-                                                    {survey.total_responses - survey.remaining_responses} dari {survey.total_responses} responden telah mengisi
-                                                </p>
-                                            </div>
+                                <Link
+                                    href={`/my-surveys/${surveyId}/responses`}
+                                    className="flex items-center justify-between w-full px-5 py-4 rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 transition-all group"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-2xl shrink-0">📊</div>
+                                        <div>
+                                            <p className="font-bold text-blue-900 text-sm">Lihat Data Responses</p>
+                                            <p className="text-xs text-blue-600 mt-0.5">
+                                                {survey.total_responses - survey.remaining_responses} dari {survey.total_responses} responden telah mengisi
+                                            </p>
                                         </div>
-                                        <span className="text-blue-400 group-hover:text-blue-600 transition-colors">→</span>
-                                    </Link>
-                                </div>
+                                    </div>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </Link>
                             )}
 
-
-                            {/* Questions Section */}
-                            <div className="border-t border-gray-100 pt-6">
-                                <div className="mb-4 flex items-center justify-between">
-                                    <div>
-                                        <h2 className="text-sm font-bold text-gray-800">Pertanyaan Survey</h2>
-                                        <p className="text-xs text-gray-400">{questions.length} pertanyaan</p>
+                            {/* ===== QUESTIONS SECTION ===== */}
+                            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-slate-800">Pertanyaan Survey</p>
+                                            <p className="text-xs text-slate-400">{questions.length} pertanyaan ditambahkan</p>
+                                        </div>
                                     </div>
                                     {survey.status === 'draft' && (
                                         <Link
                                             href={`/my-surveys/${surveyId}/add-question`}
-                                            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-blue-700 hover:shadow-md"
+                                            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-700 hover:shadow-md transition-all"
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -1083,38 +1208,46 @@ export default function SurveyDetailPage() {
                                     )}
                                 </div>
 
-                                {questions.length === 0 ? (
-                                    <div className="flex flex-col items-center rounded-xl border border-dashed border-gray-200 bg-gray-50/50 py-10 text-center">
-                                        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-2xl">📝</div>
-                                        <p className="text-sm font-semibold text-gray-700">Belum ada pertanyaan</p>
-                                        <p className="mt-1 text-xs text-gray-400">Tambahkan pertanyaan untuk mulai membangun surveymu.</p>
-                                        {survey.status === 'draft' && (
-                                            <Link href={`/my-surveys/${surveyId}/add-question`}
-                                                className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-700">
-                                                + Tambah Pertanyaan Pertama
-                                            </Link>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <div className="space-y-3">
-                                        {questions.map((q: Question, i: number) => (
-                                            <QuestionItem
-                                                key={q.id}
-                                                question={q}
-                                                index={i}
-                                                onDelete={survey.status === 'draft' ? handleDeleteQuestion : undefined}
-                                                onEdit={survey.status === 'draft' ? handleEditQuestion : undefined}
-                                            />
-                                        ))}
-                                    </div>
-                                )}
+                                <div className="p-5">
+                                    {questions.length === 0 ? (
+                                        <div className="flex flex-col items-center py-10 text-center">
+                                            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-3xl">📝</div>
+                                            <p className="text-sm font-semibold text-slate-700">Belum ada pertanyaan</p>
+                                            <p className="mt-1 text-xs text-slate-400">Tambahkan pertanyaan untuk mulai membangun surveymu.</p>
+                                            {survey.status === 'draft' && (
+                                                <Link
+                                                    href={`/my-surveys/${surveyId}/add-question`}
+                                                    className="mt-4 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition-all"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                                                    </svg>
+                                                    Tambah Pertanyaan Pertama
+                                                </Link>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {questions.map((q: Question, i: number) => (
+                                                <QuestionItem
+                                                    key={q.id}
+                                                    question={q}
+                                                    index={i}
+                                                    onDelete={survey.status === 'draft' ? handleDeleteQuestion : undefined}
+                                                    onEdit={survey.status === 'draft' ? handleEditQuestion : undefined}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
-                            </div>{/* end p-6 body */}
                         </div>
                     )}
-                </div>
-            </div>
+            </section>
+
+
+
 
             {/* ===== CLOSE SURVEY CONFIRMATION MODAL ===== */}
             {showCloseModal && survey && (
@@ -1125,29 +1258,29 @@ export default function SurveyDetailPage() {
                     />
                     <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 z-10">
                         <div className="flex items-center gap-3 mb-5">
-                            <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center text-xl shrink-0">🛑</div>
+                            <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center text-2xl shrink-0">🛑</div>
                             <div>
-                                <h2 className="text-lg font-bold text-gray-900">Tutup Survey Permanen</h2>
-                                <p className="text-xs text-gray-500">Tindakan ini tidak bisa dibatalkan</p>
+                                <h2 className="text-lg font-bold text-slate-900">Tutup Survey Permanen</h2>
+                                <p className="text-xs text-slate-400">Tindakan ini tidak bisa dibatalkan</p>
                             </div>
                         </div>
 
-                        <div className="bg-gray-50 rounded-xl p-4 space-y-3 mb-5">
+                        <div className="bg-slate-50 rounded-xl p-4 space-y-3 mb-5 border border-slate-100">
                             <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-500">Judul Survey</span>
-                                <span className="font-semibold text-gray-800 text-right max-w-[55%] truncate">{survey.title}</span>
+                                <span className="text-slate-500">Judul Survey</span>
+                                <span className="font-semibold text-slate-800 text-right max-w-[55%] truncate">{survey.title}</span>
                             </div>
                             <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-500">Responden Masuk</span>
-                                <span className="font-semibold text-gray-800">{survey.total_responses - survey.remaining_responses} dari {survey.total_responses}</span>
+                                <span className="text-slate-500">Responden Masuk</span>
+                                <span className="font-semibold text-slate-800">{survey.total_responses - survey.remaining_responses} dari {survey.total_responses}</span>
                             </div>
                             <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-500">Slot Tersisa</span>
-                                <span className="font-semibold text-gray-800">{survey.remaining_responses}</span>
+                                <span className="text-slate-500">Slot Tersisa</span>
+                                <span className="font-semibold text-slate-800">{survey.remaining_responses}</span>
                             </div>
-                            <div className="border-t pt-3 flex justify-between items-center">
-                                <span className="text-sm font-semibold text-gray-700">Estimasi Refund</span>
-                                <span className="text-lg font-bold text-green-700">
+                            <div className="border-t border-slate-200 pt-3 flex justify-between items-center">
+                                <span className="text-sm font-semibold text-slate-700">Estimasi Refund</span>
+                                <span className="text-lg font-bold text-emerald-700">
                                     {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(survey.remaining_responses * survey.reward_per_response)}
                                 </span>
                             </div>
@@ -1163,13 +1296,13 @@ export default function SurveyDetailPage() {
                         <div className="flex gap-3">
                             <button
                                 onClick={() => setShowCloseModal(false)}
-                                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors"
+                                className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors"
                             >
                                 Batal
                             </button>
                             <button
                                 onClick={handleConfirmClose}
-                                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-colors"
+                                className="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition-colors"
                             >
                                 🛑 Ya, Tutup Permanen
                             </button>
@@ -1187,60 +1320,42 @@ export default function SurveyDetailPage() {
                     />
                     <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 z-10">
                         <div className="flex items-center gap-3 mb-5">
-                            <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center text-xl shrink-0">🚀</div>
+                            <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center text-2xl shrink-0">🚀</div>
                             <div>
-                                <h2 className="text-lg font-bold text-gray-900">Konfirmasi Publish Survey</h2>
-                                <p className="text-xs text-gray-500">Tinjau detail sebelum melanjutkan</p>
+                                <h2 className="text-lg font-bold text-slate-900">Konfirmasi Publish Survey</h2>
+                                <p className="text-xs text-slate-400">Tinjau detail sebelum melanjutkan</p>
                             </div>
                         </div>
 
-                        <div className="bg-slate-50 border border-slate-200 text-slate-700 rounded-xl p-4 space-y-3 mb-5">
-                            <div className="flex justify-between items-center text-sm border-b border-slate-200 pb-2">
-                                <span className="text-slate-500">Judul Survey</span>
-                                <span className="font-semibold text-slate-800 text-right max-w-[55%] truncate">{survey.title}</span>
-                            </div>
-                            <div className="flex justify-between items-center text-sm border-b border-slate-200 pb-2">
-                                <span className="text-slate-500">Jumlah Pertanyaan</span>
-                                <span className={`font-semibold ${questions.length === 0 ? 'text-red-500' : 'text-slate-800'}`}>
-                                    {questions.length} pertanyaan {questions.length === 0 && '⚠️'}
-                                </span>
-                            </div>
-                            <div className="flex justify-between items-center text-sm border-b border-slate-200 pb-2">
-                                <span className="text-slate-500">Target Responden</span>
-                                <span className="font-semibold text-slate-800">{survey.total_responses} orang</span>
-                            </div>
-                            <div className="flex justify-between items-center text-sm border-b border-slate-200 pb-2">
-                                <span className="text-slate-500">Reward / Responden</span>
-                                <span className="font-semibold text-blue-600">
-                                    {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(survey.reward_per_response)}
-                                </span>
-                            </div>
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-slate-500">Total Budget</span>
-                                <span className="font-semibold text-emerald-600">
-                                    {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(survey.reward_per_response * survey.total_responses)}
-                                </span>
-                            </div>
+                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3 mb-5">
+                            {[
+                                { label: 'Judul Survey', value: survey.title, truncate: true },
+                                { label: 'Jumlah Pertanyaan', value: `${questions.length} pertanyaan`, warn: questions.length === 0 },
+                                { label: 'Target Responden', value: `${survey.total_responses} orang` },
+                                { label: 'Reward / Responden', value: new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(survey.reward_per_response), highlight: 'blue' },
+                                { label: 'Total Budget', value: new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(survey.reward_per_response * survey.total_responses), highlight: 'green' },
+                            ].map((item, i, arr) => (
+                                <div key={item.label} className={`flex justify-between items-center text-sm ${i < arr.length - 1 ? 'pb-3 border-b border-slate-200' : ''}`}>
+                                    <span className="text-slate-500">{item.label}</span>
+                                    <span className={`font-semibold text-right max-w-[55%] ${item.truncate ? 'truncate' : ''} ${item.warn && questions.length === 0 ? 'text-red-500' : item.highlight === 'blue' ? 'text-blue-600' : item.highlight === 'green' ? 'text-emerald-600' : 'text-slate-800'}`}>
+                                        {item.value} {item.warn && questions.length === 0 && '⚠️'}
+                                    </span>
+                                </div>
+                            ))}
                         </div>
 
                         {rewardEval && !rewardEval.hardOk && (
-                            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-5 text-sm text-red-800">
-                                <p className="font-bold text-red-600 mb-3 flex items-center gap-2">
+                            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-5">
+                                <p className="font-bold text-red-600 mb-3 flex items-center gap-2 text-sm">
                                     <span>❌</span> Reward terlalu rendah
                                 </p>
-                                <div className="mb-4 space-y-1 text-sm">
+                                <div className="mb-4 space-y-1 text-sm text-red-800">
                                     <p>Minimal: <span className="font-semibold">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(rewardEval.minRequired)}</span></p>
-                                    <p>Rekomendasi final: <span className="font-semibold">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(rewardEval.recommended)}</span></p>
-                                    <p className="text-xs text-red-700 italic mt-1">Berdasarkan {questions.length} pertanyaan dan estimasi waktu pengisian.</p>
+                                    <p>Rekomendasi: <span className="font-semibold">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(rewardEval.recommended)}</span></p>
                                 </div>
                                 <button
-                                    onClick={() => {
-                                        setShowPublishModal(false);
-                                        setEditReward(rewardEval.recommended);
-                                        setIsEditingReward(true);
-                                        window.scrollTo({ top: document.getElementById('reward-section')?.offsetTop, behavior: 'smooth' });
-                                    }}
-                                    className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-semibold rounded-lg transition-colors border border-red-300 w-full"
+                                    onClick={() => { setShowPublishModal(false); setEditReward(rewardEval.recommended); setIsEditingReward(true); window.scrollTo({ top: document.getElementById('reward-section')?.offsetTop, behavior: 'smooth' }); }}
+                                    className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-semibold rounded-xl transition-colors border border-red-300 w-full text-sm"
                                 >
                                     ✨ Gunakan Rekomendasi Final
                                 </button>
@@ -1248,38 +1363,27 @@ export default function SurveyDetailPage() {
                         )}
 
                         {rewardEval && rewardEval.hardOk && !rewardEval.softOk && (
-                            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5 text-sm text-amber-900">
-                                <p className="font-bold text-amber-600 mb-3 flex items-center gap-2">
+                            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5">
+                                <p className="font-bold text-amber-600 mb-3 flex items-center gap-2 text-sm">
                                     <span>⚠️</span> Reward di bawah rekomendasi
                                 </p>
-                                <div className="mb-4">
-                                    <p className="font-medium mb-1">Survey kemungkinan:</p>
-                                    <ul className="list-disc pl-5 space-y-1 text-amber-800 mb-2">
-                                        <li>Berjalan lambat</li>
-                                        <li>Mendapat banyak respon low quality</li>
-                                    </ul>
-                                    <p className="text-xs text-amber-700 italic">Berdasarkan {questions.length} pertanyaan dan estimasi waktu pengisian.</p>
-                                </div>
-                                <div className="flex flex-col gap-2">
-                                    <button
-                                        onClick={() => {
-                                            setShowPublishModal(false);
-                                            setEditReward(rewardEval.recommended);
-                                            setIsEditingReward(true);
-                                            window.scrollTo({ top: document.getElementById('reward-section')?.offsetTop, behavior: 'smooth' });
-                                        }}
-                                        className="px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-800 font-semibold rounded-lg transition-colors border border-amber-300 w-full text-center"
-                                    >
-                                        ✨ Gunakan Rekomendasi Final Rp {rewardEval.recommended.toLocaleString('id-ID')}
-                                    </button>
-                                </div>
+                                <ul className="list-disc pl-5 space-y-1 text-xs text-amber-800 mb-3">
+                                    <li>Survey kemungkinan berjalan lambat</li>
+                                    <li>Risiko mendapat banyak respon low quality</li>
+                                </ul>
+                                <button
+                                    onClick={() => { setShowPublishModal(false); setEditReward(rewardEval.recommended); setIsEditingReward(true); window.scrollTo({ top: document.getElementById('reward-section')?.offsetTop, behavior: 'smooth' }); }}
+                                    className="px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-800 font-semibold rounded-xl transition-colors border border-amber-300 w-full text-sm text-center"
+                                >
+                                    ✨ Gunakan Rekomendasi Rp {rewardEval.recommended.toLocaleString('id-ID')}
+                                </button>
                             </div>
                         )}
 
-                        <div className="flex justify-end gap-3 mt-4">
+                        <div className="flex gap-3 mt-4">
                             <button
                                 onClick={() => setShowPublishModal(false)}
-                                className="px-4 py-2 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors"
+                                className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors"
                             >
                                 Batal
                             </button>
@@ -1287,8 +1391,7 @@ export default function SurveyDetailPage() {
                                 <button
                                     onClick={handleConfirmPublish}
                                     disabled={questions.length === 0}
-                                    className={`px-4 py-2 rounded-xl text-white text-sm font-semibold transition-colors ${questions.length === 0 ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
-                                        }`}
+                                    className={`flex-1 py-3 rounded-xl text-white text-sm font-bold transition-all ${questions.length === 0 ? 'bg-slate-300 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 shadow-sm hover:shadow-md'}`}
                                 >
                                     ✅ Ya, Publish Sekarang
                                 </button>

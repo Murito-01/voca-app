@@ -149,7 +149,7 @@ export default function CreateSurveyPage() {
     }
 
     return (
-        <div className="mx-auto w-full max-w-4xl">
+        <section className="mx-auto w-full max-w-6xl">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">Buat Survey Baru</h1>
                 <p className="text-gray-500 text-sm mb-8">
@@ -734,6 +734,6 @@ export default function CreateSurveyPage() {
                     )}
                 </div>
             </div>
-        </div>
+        </section>
     )
 }

@@ -35,7 +35,7 @@ export default function CreatorPage() {
   }, [])
 
   return (
-    <section className="mx-auto w-full max-w-[1600px] space-y-6">
+    <section className="mx-auto w-full max-w-6xl space-y-6">
       {/* Page Header */}
       <div className="rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 p-6 text-white shadow-md sm:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
