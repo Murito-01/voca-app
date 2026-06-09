@@ -265,7 +265,7 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
   }
 
   return (
-    <div>
+    <section className="mx-auto w-full max-w-6xl">
       <Link href="/responder/explore" className="text-blue-600 hover:underline mb-6 inline-block font-medium">
         &larr; Back to Surveys
       </Link>
@@ -520,6 +520,6 @@ export default function SurveyDetailPage({ params }: { params: Promise<{ id: str
           )}
         </>
       )}
-    </div>
+    </section>
   );
 }
