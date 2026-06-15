@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
+import { isAdmin } from "@/lib/admin";
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
@@ -29,6 +30,11 @@ export default function Home() {
       setUser(user);
       
       if (user) {
+        if (isAdmin(user.email)) {
+          setIsRedirecting(true);
+          router.push('/admin/withdrawals');
+          return;
+        }
         const lastWorkspace = localStorage.getItem('lastWorkspace');
         if (lastWorkspace === 'creator') {
           setIsRedirecting(true);
@@ -49,6 +55,11 @@ export default function Home() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
+        if (isAdmin(session.user.email)) {
+          setIsRedirecting(true);
+          router.push('/admin/withdrawals');
+          return;
+        }
         const lastWorkspace = localStorage.getItem('lastWorkspace');
         if (lastWorkspace === 'creator') {
           setIsRedirecting(true);

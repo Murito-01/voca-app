@@ -2,11 +2,11 @@ import { createClient } from '@supabase/supabase-js'
 
 /**
  * POST /api/withdrawals
- * Creates a withdrawal request, locks and deducts wallet balance atomically,
- * and executes a Xendit Payout disbursement with fail-safe automatic refunds on error.
+ * Creates a withdrawal request with status 'pending'.
+ * Admin will manually process the transfer and mark as paid via the admin dashboard.
+ * Wallet balance is locked atomically via the request_withdrawal RPC.
  */
 export async function POST(req: Request) {
-    let withdrawalId: string | null = null
     const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -44,12 +44,13 @@ export async function POST(req: Request) {
             return Response.json({ error: 'Bank/e-wallet channel dan nomor rekening harus diisi' }, { status: 400 })
         }
 
-        // Generate unique external ID for payout
+        // Generate unique external ID for the withdrawal
         const timestamp = Date.now()
         const randomNum = Math.floor(100000 + Math.random() * 900000)
         const externalId = `WITHDRAW-${timestamp}-${randomNum}`
 
         // 3. Request Database Balance Deduction (Atomic RPC)
+        // This locks the balance and creates a pending withdrawal record
         const { data: rpcResult, error: rpcError } = await supabase.rpc('request_withdrawal', {
             p_user_id: user.id,
             p_amount: amount,
@@ -71,110 +72,19 @@ export async function POST(req: Request) {
         }
 
         // @ts-ignore
-        withdrawalId = rpcResult.withdrawal_id
+        const withdrawalId = rpcResult.withdrawal_id
 
-        // 4. Request Xendit Payout
-        const secretKey = process.env.XENDIT_SECRET_KEY
-        if (!secretKey) {
-            console.error('XENDIT_SECRET_KEY environment variable is not defined')
-            if (withdrawalId) {
-                await supabase.rpc('fail_withdrawal', {
-                    p_withdrawal_id: withdrawalId,
-                    p_failure_reason: 'Server configuration error: XENDIT_SECRET_KEY not configured'
-                })
-            }
-            return Response.json({ error: 'Konfigurasi server pembayaran tidak tersedia' }, { status: 500 })
-        }
-
-        const basicAuth = Buffer.from(`${secretKey}:`).toString('base64')
-
-        let payoutResponse
-        try {
-            const xenditRes = await fetch('https://api.xendit.co/v2/payouts', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Basic ${basicAuth}`,
-                    'idempotency-key': externalId
-                },
-                body: JSON.stringify({
-                    reference_id: externalId,
-                    channel_code,
-                    channel_properties: {
-                        account_number,
-                        account_holder_name: account_holder_name || undefined
-                    },
-                    amount,
-                    currency: 'IDR',
-                    description: `Penarikan Saldo Voca - ${externalId}`
-                })
-            })
-
-            if (!xenditRes.ok) {
-                const errorData = await xenditRes.json().catch(() => ({}))
-                throw new Error(errorData.message || `HTTP error! status: ${xenditRes.status}`)
-            }
-
-            payoutResponse = await xenditRes.json()
-        } catch (xenditError: any) {
-            console.error('Xendit Payout API error:', xenditError)
-            // AUTOMATIC REFUND GUARD: Refund active wallet balance immediately if Xendit creation fails
-            const errorMessage = xenditError?.message || 'Gagal menghubungi Xendit Payout'
-            if (withdrawalId) {
-                await supabase.rpc('fail_withdrawal', {
-                    p_withdrawal_id: withdrawalId,
-                    p_failure_reason: `Xendit Payout Error: ${errorMessage}`
-                })
-            }
-            return Response.json({ error: `Gagal memproses penarikan dana ke Xendit: ${errorMessage}` }, { status: 500 })
-        }
-
-        // 5. Update status based on Xendit response
-        const xenditPayoutId = payoutResponse.id
-        const xenditStatus = payoutResponse.status // 'PENDING', 'ACCEPTED', 'SUCCEEDED', 'FAILED'
-
-        if (xenditStatus === 'SUCCEEDED') {
-            await supabase.rpc('success_withdrawal', {
-                p_withdrawal_id: withdrawalId,
-                p_xendit_payout_id: xenditPayoutId
-            })
-        } else if (xenditStatus === 'FAILED') {
-            await supabase.rpc('fail_withdrawal', {
-                p_withdrawal_id: withdrawalId,
-                p_failure_reason: 'Xendit payout status returned FAILED'
-            })
-        } else {
-            // Keep pending/accepted in DB and save payout ID
-            await supabase
-                .from('withdrawals')
-                .update({
-                    xendit_payout_id: xenditPayoutId,
-                    status: xenditStatus.toLowerCase()
-                })
-                .eq('id', withdrawalId)
-        }
-
+        // 4. Withdrawal created with status 'pending'
+        // Admin will manually transfer and mark as paid via the admin dashboard
         return Response.json({
             success: true,
-            message: 'Permintaan penarikan berhasil diproses',
+            message: 'Permintaan penarikan berhasil diajukan. Admin akan memproses transfer dalam 1-2 hari kerja.',
             withdrawal_id: withdrawalId,
-            xendit_payout_id: xenditPayoutId,
-            status: xenditStatus.toLowerCase()
+            status: 'pending'
         })
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Internal server error during withdrawal creation:', error)
-        // Catch-all fail-safe refund
-        if (withdrawalId) {
-            try {
-                await supabase.rpc('fail_withdrawal', {
-                    p_withdrawal_id: withdrawalId,
-                    p_failure_reason: `Internal server error: ${error.message || error}`
-                })
-            } catch (refundError) {
-                console.error('Fail-safe refund failed:', refundError)
-            }
-        }
         return Response.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
