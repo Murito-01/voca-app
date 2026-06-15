@@ -289,6 +289,7 @@ export default function WalletPageContent() {
       setWithdrawStep('success')
       // Refresh wallet data in background
       loadWallet(false)
+      window.dispatchEvent(new Event('wallet-updated'))
     } catch (err: any) {
       setWithdrawError(err.message || 'Terjadi kesalahan')
       setWithdrawStep('error')

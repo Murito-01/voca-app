@@ -25,8 +25,13 @@ export default function CreatorLayout({ children }: { children: React.ReactNode 
     }
 
     fetchWallet()
+
+    const handleWalletUpdated = () => fetchWallet()
+    window.addEventListener('wallet-updated', handleWalletUpdated)
+
     return () => {
       cancelled = true
+      window.removeEventListener('wallet-updated', handleWalletUpdated)
     }
   }, [])
 
