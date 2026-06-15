@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js'
-import { Xendit } from 'xendit-node'
 
 export async function POST(req: Request) {
     try {
@@ -52,20 +51,17 @@ export async function POST(req: Request) {
             return Response.json({ error: 'Gagal membuat transaksi top up' }, { status: 500 })
         }
 
-        // 2. Request Xendit Invoice
-        const secretKey = process.env.XENDIT_SECRET_KEY
-        if (!secretKey) {
-            console.error('XENDIT_SECRET_KEY environment variable is not defined')
+        // 2. Build Pakasir payment URL (redirect mode)
+        const slug = process.env.PAKASIR_PROJECT_SLUG
+        if (!slug) {
+            console.error('PAKASIR_PROJECT_SLUG environment variable is not defined')
             return Response.json({ error: 'Konfigurasi server pembayaran tidak tersedia' }, { status: 500 })
         }
 
-        const xenditClient = new Xendit({ secretKey })
-        const { Invoice } = xenditClient
-
         const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
         const referer = req.headers.get('referer')
-        
-        let returnUrl = `${origin}/creator/wallet` // Safe default fallback
+
+        let returnUrl = `${origin}/creator/wallet`
         if (referer) {
             try {
                 const refererUrl = new URL(referer)
@@ -74,53 +70,30 @@ export async function POST(req: Request) {
                 console.error('Error parsing referer URL:', e)
             }
         }
-        
-        let invoice
-        try {
-            invoice = await Invoice.createInvoice({
-                data: {
-                    amount,
-                    externalId: orderId,
-                    description: `Top up Saldo Voca - ${orderId}`,
-                    currency: 'IDR',
-                    payerEmail: user.email || undefined,
-                    successRedirectUrl: `${returnUrl}?status=success`,
-                    failureRedirectUrl: `${returnUrl}?status=failed`,
-                }
-            })
-        } catch (xenditError: any) {
-            console.error('Xendit API error:', xenditError)
-            // Update topup status to failed
-            await supabase
-                .from('topups')
-                .update({ status: 'failed' })
-                .eq('order_id', orderId)
 
-            return Response.json({ error: 'Gagal menghubungi payment gateway' }, { status: 500 })
-        }
+        const successRedirect = `${returnUrl}?status=success`
+        const paymentUrl = `https://app.pakasir.com/pay/${encodeURIComponent(slug)}/${amount}?order_id=${encodeURIComponent(orderId)}&redirect=${encodeURIComponent(successRedirect)}`
 
-        // 3. Save the invoice ID and redirect URL returned from Xendit into the topups row
+        // 3. Save the redirect URL into the topups row
         const { error: updateError } = await supabase
             .from('topups')
             .update({
-                snap_token: invoice.id,
-                redirect_url: invoice.invoiceUrl
+                redirect_url: paymentUrl
             })
             .eq('order_id', orderId)
 
         if (updateError) {
-            console.error('Error updating topup row with Xendit invoice details:', updateError)
-            return Response.json({ error: 'Gagal menyimpan token transaksi' }, { status: 500 })
+            console.error('Error updating topup row with Pakasir payment URL:', updateError)
+            return Response.json({ error: 'Gagal menyimpan data transaksi' }, { status: 500 })
         }
 
-        // Return snap_token (invoice ID) and redirect_url
+        // Return redirect_url for frontend to redirect user to Pakasir payment page
         return Response.json({
-            snap_token: invoice.id,
-            redirect_url: invoice.invoiceUrl,
+            redirect_url: paymentUrl,
             order_id: orderId
         })
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Internal server error during topup creation:', error)
         return Response.json({ error: 'Internal server error' }, { status: 500 })
     }

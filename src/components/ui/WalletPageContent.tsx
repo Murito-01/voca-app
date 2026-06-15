@@ -114,7 +114,7 @@ function txDescription(tx: Transaction): string {
   const type = meta?.ledger_type || tx.type
   switch (type) {
     case 'topup':
-      return 'Top up saldo via Xendit'
+      return 'Top up saldo via Pakasir'
     case 'reward':
       return `Reward survey — ${tx.reference_type ?? 'response'}`
     case 'refund':
@@ -203,7 +203,7 @@ export default function WalletPageContent() {
   useEffect(() => {
     loadWallet(true)
 
-    // Scan for redirect parameters from Xendit payment gateway
+    // Scan for redirect parameters from Pakasir payment gateway
     const params = new URLSearchParams(window.location.search)
     const status = params.get('status')
     if (status === 'success') {
@@ -317,7 +317,7 @@ export default function WalletPageContent() {
         throw new Error('URL pembayaran tidak valid dari payment gateway')
       }
 
-      // Redirect user to the Xendit Invoice payment page
+      // Redirect user to the Pakasir payment page
       window.location.href = redirectUrl
     } catch (err: any) {
       setTopupError(err.message || 'Terjadi kesalahan saat memproses pembayaran')
@@ -657,7 +657,7 @@ export default function WalletPageContent() {
               </div>
               <div>
                 <h3 className="text-sm font-bold text-white leading-none">Isi Saldo</h3>
-                <p className="text-[10px] text-emerald-100/80 mt-0.5">Xendit Payment Gateway</p>
+                <p className="text-[10px] text-emerald-100/80 mt-0.5">Pakasir Payment Gateway</p>
               </div>
             </div>
 
@@ -777,7 +777,7 @@ export default function WalletPageContent() {
               </div>
 
               <p className="text-xs text-gray-500 leading-relaxed">
-                Tarik saldo aktif langsung ke rekening bank atau e-wallet pilihanmu via Xendit.
+                Tarik saldo aktif langsung ke rekening bank atau e-wallet pilihanmu. Dana akan diproses admin dalam 1-2 hari kerja.
               </p>
 
               <button
@@ -1124,7 +1124,7 @@ export default function WalletPageContent() {
                   </div>
                   <div>
                     <p className="text-sm font-bold text-gray-800">Memproses Penarikan</p>
-                    <p className="text-xs text-gray-400 mt-1">Menghubungi Xendit Payout...</p>
+                    <p className="text-xs text-gray-400 mt-1">Memproses permintaan penarikan...</p>
                   </div>
                 </div>
               )}
