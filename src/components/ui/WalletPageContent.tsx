@@ -252,6 +252,10 @@ export default function WalletPageContent() {
       setWithdrawError('Nomor rekening/akun harus diisi')
       return
     }
+    if (!withdrawAccountName.trim()) {
+      setWithdrawError('Nama pemilik rekening/akun harus diisi')
+      return
+    }
     setWithdrawError(null)
     setWithdrawStep('confirm')
   }
@@ -1024,10 +1028,10 @@ export default function WalletPageContent() {
                     />
                   </div>
 
-                  {/* Account holder name (optional) */}
+                  {/* Account holder name */}
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                      Nama Pemilik Rekening <span className="text-gray-400 font-normal">(opsional)</span>
+                      Nama Pemilik Rekening
                     </label>
                     <input
                       type="text"
